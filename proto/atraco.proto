@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option go_package = "/proto";
+
+
+// Servicio que manejaran entre Michael y Lester
+service Oferta {
+
+  // Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
+  rpc EntregarOferta (SolicitudOferta) returns (OfertaDisponible); 
+
+}
+
+// Solicitud de oferta que enviara Michael
+message SolicitudOferta {
+  int32 rechazos = 1;
+}
+
+// Oferta disponible que enviara Lester luego de recibir una solicitud, incluye el botin inicial, la probabilidad de exito de Trevor y Franklin y el Riesgo policial
+message OfertaDisponible {
+  bool disponible = 1;
+  int32 botin_inicial = 2;
+  float probabilidad_franklin = 3;
+  float probabilidad_trevor = 4;
+  float riesgo_policial = 5;
+}
+
+// Servicio que manejara Michael con Franklin o Trevor (segun quien se escoja para la fase 2)
+service SegundaFase {
+  // FUncion remota 1: recibe un informe de trabajo y devuelve el resultado de la mision 
+  rpc InformarEstadoSegundaFase (InformarTrabajo) returns (Resultado);
+}
+
+// Informe de trabajo que enviara Michael que incluye la probabilidad de exito del trabajador
+message InformarTrabajo {
+  float probabilidad_exito = 2;
+}
+
+// Resultado de la mision enviado por Franklin o Trevor que incluye un indicador sobre si la mision fue un exito o fracaso
+message Resultado {
+  bool exito = 1;
+}
+
+
