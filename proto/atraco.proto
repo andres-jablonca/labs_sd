@@ -8,12 +8,12 @@ service Oferta {
 
   // Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
   rpc EntregarOferta (SolicitudOferta) returns (OfertaDisponible); 
+  rpc ConfirmarOferta (Confirmacion) returns (AckConfirmacion);
 
 }
 
 // Solicitud de oferta que enviara Michael
 message SolicitudOferta {
-  int32 rechazos = 1;
 }
 
 // Oferta disponible que enviara Lester luego de recibir una solicitud, incluye el botin inicial, la probabilidad de exito de Trevor y Franklin y el Riesgo policial
@@ -24,6 +24,12 @@ message OfertaDisponible {
   float probabilidad_trevor = 4;
   float riesgo_policial = 5;
 }
+
+message Confirmacion {
+  bool aceptada = 1;
+}
+
+message AckConfirmacion {}
 
 // Servicio que manejara Michael con Franklin o Trevor (segun quien se escoja para la fase 2)
 service SegundaFase {

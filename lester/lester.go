@@ -10,46 +10,59 @@ import (
 
 	pb "lab1/proto"
 
-	"github.com/streadway/amqp"
+	//"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 )
 
+var rechazos int = 0
+
 type server struct {
 	pb.UnimplementedOfertaServer
-	ch *amqp.Channel
-	q  amqp.Queue
+	//ch *amqp.Channel
+	//q  amqp.Queue
 }
 
 func (s *server) EntregarOferta(ctx context.Context, req *pb.SolicitudOferta) (*pb.OfertaDisponible, error) {
 
 	fmt.Printf("Solicitud recibida!\n")
-	time.Sleep(30 * time.Millisecond)
+	time.Sleep(time.Second)
 
 	rand.Seed(time.Now().UnixNano())
 
 	prob_aceptar := rand.Float32()
 
-	if req.GetRechazos()%3 == 0 && req.GetRechazos() != 0 {
-		fmt.Println("Deja de rechazar loco\nEspera 10 segundos...")
-		for range 10 {
-			fmt.Println("Esperando...")
-		}
-	}
-
 	if prob_aceptar < 0.1 {
 		fmt.Printf("No hay ofertas disponibles\n")
-
+		time.Sleep(time.Second)
 		return &pb.OfertaDisponible{Disponible: false}, nil
 	} else {
 		botin := rand.Intn(20000)
 		prob_franklin := rand.Float32()
 		prob_trevor := rand.Float32()
 		riesgo := rand.Float32()
-		fmt.Println("Oferta enviada!")
-		time.Sleep(30 * time.Millisecond)
+		fmt.Printf("Oferta enviada!\n")
+		time.Sleep(time.Second)
 		return &pb.OfertaDisponible{Disponible: true, BotinInicial: int32(botin), ProbabilidadFranklin: prob_franklin, ProbabilidadTrevor: prob_trevor, RiesgoPolicial: riesgo}, nil
 	}
 
+}
+
+func (s *server) ConfirmarOferta(ctx context.Context, req *pb.Confirmacion) (*pb.AckConfirmacion, error) {
+	confir := req.GetAceptada()
+	if !confir {
+		fmt.Printf(">:(\n")
+		time.Sleep(time.Second)
+		rechazos++
+	} else {
+		fmt.Printf("Enterado de la aceptación de la oferta!\n")
+		time.Sleep(time.Second)
+		return &pb.AckConfirmacion{}, nil
+	}
+	if rechazos%3 == 0 || rechazos == 0 {
+		fmt.Printf("Deja de rechazar loco, ahora espera 10 segundos..\n")
+		time.Sleep(10 * time.Second)
+	}
+	return &pb.AckConfirmacion{}, nil
 }
 
 func main() {
@@ -62,7 +75,7 @@ func main() {
 	s := grpc.NewServer()
 	pb.RegisterOfertaServer(s, &server{})
 
-	log.Printf("\nLester en linea\n")
+	fmt.Printf("\nLester en linea\n")
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Error al servir: %v", err)

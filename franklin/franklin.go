@@ -32,7 +32,7 @@ func (s *server) InformarEstadoSegundaFase(ctx context.Context, inf *pb.Informar
 	for i := range turnos_necesarios {
 		if i != mitad_turnos {
 			fmt.Printf("Franklin trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
-			time.Sleep(5 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 		} else {
 			probabilidad_fallar = rand.Float32()
 			if probabilidad_fallar < 0.1 {

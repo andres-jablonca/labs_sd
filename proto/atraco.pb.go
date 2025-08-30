@@ -24,7 +24,6 @@ const (
 // Solicitud de oferta que enviara Michael
 type SolicitudOferta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Rechazos      int32                  `protobuf:"varint,1,opt,name=rechazos,proto3" json:"rechazos,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -57,13 +56,6 @@ func (x *SolicitudOferta) ProtoReflect() protoreflect.Message {
 // Deprecated: Use SolicitudOferta.ProtoReflect.Descriptor instead.
 func (*SolicitudOferta) Descriptor() ([]byte, []int) {
 	return file_proto_atraco_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *SolicitudOferta) GetRechazos() int32 {
-	if x != nil {
-		return x.Rechazos
-	}
-	return 0
 }
 
 // Oferta disponible que enviara Lester luego de recibir una solicitud, incluye el botin inicial, la probabilidad de exito de Trevor y Franklin y el Riesgo policial
@@ -143,6 +135,86 @@ func (x *OfertaDisponible) GetRiesgoPolicial() float32 {
 	return 0
 }
 
+type Confirmacion struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Aceptada      bool                   `protobuf:"varint,1,opt,name=aceptada,proto3" json:"aceptada,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Confirmacion) Reset() {
+	*x = Confirmacion{}
+	mi := &file_proto_atraco_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Confirmacion) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Confirmacion) ProtoMessage() {}
+
+func (x *Confirmacion) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_atraco_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Confirmacion.ProtoReflect.Descriptor instead.
+func (*Confirmacion) Descriptor() ([]byte, []int) {
+	return file_proto_atraco_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Confirmacion) GetAceptada() bool {
+	if x != nil {
+		return x.Aceptada
+	}
+	return false
+}
+
+type AckConfirmacion struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AckConfirmacion) Reset() {
+	*x = AckConfirmacion{}
+	mi := &file_proto_atraco_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AckConfirmacion) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AckConfirmacion) ProtoMessage() {}
+
+func (x *AckConfirmacion) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_atraco_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AckConfirmacion.ProtoReflect.Descriptor instead.
+func (*AckConfirmacion) Descriptor() ([]byte, []int) {
+	return file_proto_atraco_proto_rawDescGZIP(), []int{3}
+}
+
 // Informe de trabajo que enviara Michael que incluye la probabilidad de exito del trabajador
 type InformarTrabajo struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
@@ -153,7 +225,7 @@ type InformarTrabajo struct {
 
 func (x *InformarTrabajo) Reset() {
 	*x = InformarTrabajo{}
-	mi := &file_proto_atraco_proto_msgTypes[2]
+	mi := &file_proto_atraco_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -165,7 +237,7 @@ func (x *InformarTrabajo) String() string {
 func (*InformarTrabajo) ProtoMessage() {}
 
 func (x *InformarTrabajo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_atraco_proto_msgTypes[2]
+	mi := &file_proto_atraco_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -178,7 +250,7 @@ func (x *InformarTrabajo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InformarTrabajo.ProtoReflect.Descriptor instead.
 func (*InformarTrabajo) Descriptor() ([]byte, []int) {
-	return file_proto_atraco_proto_rawDescGZIP(), []int{2}
+	return file_proto_atraco_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *InformarTrabajo) GetProbabilidadExito() float32 {
@@ -198,7 +270,7 @@ type Resultado struct {
 
 func (x *Resultado) Reset() {
 	*x = Resultado{}
-	mi := &file_proto_atraco_proto_msgTypes[3]
+	mi := &file_proto_atraco_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +282,7 @@ func (x *Resultado) String() string {
 func (*Resultado) ProtoMessage() {}
 
 func (x *Resultado) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_atraco_proto_msgTypes[3]
+	mi := &file_proto_atraco_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +295,7 @@ func (x *Resultado) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Resultado.ProtoReflect.Descriptor instead.
 func (*Resultado) Descriptor() ([]byte, []int) {
-	return file_proto_atraco_proto_rawDescGZIP(), []int{3}
+	return file_proto_atraco_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Resultado) GetExito() bool {
@@ -237,9 +309,8 @@ var File_proto_atraco_proto protoreflect.FileDescriptor
 
 const file_proto_atraco_proto_rawDesc = "" +
 	"\n" +
-	"\x12proto/atraco.proto\"-\n" +
-	"\x0fSolicitudOferta\x12\x1a\n" +
-	"\brechazos\x18\x01 \x01(\x05R\brechazos\"\xe6\x01\n" +
+	"\x12proto/atraco.proto\"\x11\n" +
+	"\x0fSolicitudOferta\"\xe6\x01\n" +
 	"\x10OfertaDisponible\x12\x1e\n" +
 	"\n" +
 	"disponible\x18\x01 \x01(\bR\n" +
@@ -247,13 +318,17 @@ const file_proto_atraco_proto_rawDesc = "" +
 	"\rbotin_inicial\x18\x02 \x01(\x05R\fbotinInicial\x123\n" +
 	"\x15probabilidad_franklin\x18\x03 \x01(\x02R\x14probabilidadFranklin\x12/\n" +
 	"\x13probabilidad_trevor\x18\x04 \x01(\x02R\x12probabilidadTrevor\x12'\n" +
-	"\x0friesgo_policial\x18\x05 \x01(\x02R\x0eriesgoPolicial\"@\n" +
+	"\x0friesgo_policial\x18\x05 \x01(\x02R\x0eriesgoPolicial\"*\n" +
+	"\fConfirmacion\x12\x1a\n" +
+	"\baceptada\x18\x01 \x01(\bR\baceptada\"\x11\n" +
+	"\x0fAckConfirmacion\"@\n" +
 	"\x0fInformarTrabajo\x12-\n" +
 	"\x12probabilidad_exito\x18\x02 \x01(\x02R\x11probabilidadExito\"!\n" +
 	"\tResultado\x12\x14\n" +
-	"\x05exito\x18\x01 \x01(\bR\x05exito2?\n" +
+	"\x05exito\x18\x01 \x01(\bR\x05exito2s\n" +
 	"\x06Oferta\x125\n" +
-	"\x0eEntregarOferta\x12\x10.SolicitudOferta\x1a\x11.OfertaDisponible2H\n" +
+	"\x0eEntregarOferta\x12\x10.SolicitudOferta\x1a\x11.OfertaDisponible\x122\n" +
+	"\x0fConfirmarOferta\x12\r.Confirmacion\x1a\x10.AckConfirmacion2H\n" +
 	"\vSegundaFase\x129\n" +
 	"\x19InformarEstadoSegundaFase\x12\x10.InformarTrabajo\x1a\n" +
 	".ResultadoB\bZ\x06/protob\x06proto3"
@@ -270,20 +345,24 @@ func file_proto_atraco_proto_rawDescGZIP() []byte {
 	return file_proto_atraco_proto_rawDescData
 }
 
-var file_proto_atraco_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_atraco_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_atraco_proto_goTypes = []any{
 	(*SolicitudOferta)(nil),  // 0: SolicitudOferta
 	(*OfertaDisponible)(nil), // 1: OfertaDisponible
-	(*InformarTrabajo)(nil),  // 2: InformarTrabajo
-	(*Resultado)(nil),        // 3: Resultado
+	(*Confirmacion)(nil),     // 2: Confirmacion
+	(*AckConfirmacion)(nil),  // 3: AckConfirmacion
+	(*InformarTrabajo)(nil),  // 4: InformarTrabajo
+	(*Resultado)(nil),        // 5: Resultado
 }
 var file_proto_atraco_proto_depIdxs = []int32{
 	0, // 0: Oferta.EntregarOferta:input_type -> SolicitudOferta
-	2, // 1: SegundaFase.InformarEstadoSegundaFase:input_type -> InformarTrabajo
-	1, // 2: Oferta.EntregarOferta:output_type -> OfertaDisponible
-	3, // 3: SegundaFase.InformarEstadoSegundaFase:output_type -> Resultado
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	2, // 1: Oferta.ConfirmarOferta:input_type -> Confirmacion
+	4, // 2: SegundaFase.InformarEstadoSegundaFase:input_type -> InformarTrabajo
+	1, // 3: Oferta.EntregarOferta:output_type -> OfertaDisponible
+	3, // 4: Oferta.ConfirmarOferta:output_type -> AckConfirmacion
+	5, // 5: SegundaFase.InformarEstadoSegundaFase:output_type -> Resultado
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -300,7 +379,7 @@ func file_proto_atraco_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_atraco_proto_rawDesc), len(file_proto_atraco_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

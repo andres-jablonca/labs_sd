@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Oferta_EntregarOferta_FullMethodName = "/Oferta/EntregarOferta"
+	Oferta_EntregarOferta_FullMethodName  = "/Oferta/EntregarOferta"
+	Oferta_ConfirmarOferta_FullMethodName = "/Oferta/ConfirmarOferta"
 )
 
 // OfertaClient is the client API for Oferta service.
@@ -30,6 +31,7 @@ const (
 type OfertaClient interface {
 	// Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
 	EntregarOferta(ctx context.Context, in *SolicitudOferta, opts ...grpc.CallOption) (*OfertaDisponible, error)
+	ConfirmarOferta(ctx context.Context, in *Confirmacion, opts ...grpc.CallOption) (*AckConfirmacion, error)
 }
 
 type ofertaClient struct {
@@ -50,6 +52,16 @@ func (c *ofertaClient) EntregarOferta(ctx context.Context, in *SolicitudOferta, 
 	return out, nil
 }
 
+func (c *ofertaClient) ConfirmarOferta(ctx context.Context, in *Confirmacion, opts ...grpc.CallOption) (*AckConfirmacion, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AckConfirmacion)
+	err := c.cc.Invoke(ctx, Oferta_ConfirmarOferta_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OfertaServer is the server API for Oferta service.
 // All implementations must embed UnimplementedOfertaServer
 // for forward compatibility.
@@ -58,6 +70,7 @@ func (c *ofertaClient) EntregarOferta(ctx context.Context, in *SolicitudOferta, 
 type OfertaServer interface {
 	// Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
 	EntregarOferta(context.Context, *SolicitudOferta) (*OfertaDisponible, error)
+	ConfirmarOferta(context.Context, *Confirmacion) (*AckConfirmacion, error)
 	mustEmbedUnimplementedOfertaServer()
 }
 
@@ -70,6 +83,9 @@ type UnimplementedOfertaServer struct{}
 
 func (UnimplementedOfertaServer) EntregarOferta(context.Context, *SolicitudOferta) (*OfertaDisponible, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EntregarOferta not implemented")
+}
+func (UnimplementedOfertaServer) ConfirmarOferta(context.Context, *Confirmacion) (*AckConfirmacion, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfirmarOferta not implemented")
 }
 func (UnimplementedOfertaServer) mustEmbedUnimplementedOfertaServer() {}
 func (UnimplementedOfertaServer) testEmbeddedByValue()                {}
@@ -110,6 +126,24 @@ func _Oferta_EntregarOferta_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Oferta_ConfirmarOferta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Confirmacion)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OfertaServer).ConfirmarOferta(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Oferta_ConfirmarOferta_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OfertaServer).ConfirmarOferta(ctx, req.(*Confirmacion))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Oferta_ServiceDesc is the grpc.ServiceDesc for Oferta service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -120,6 +154,10 @@ var Oferta_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EntregarOferta",
 			Handler:    _Oferta_EntregarOferta_Handler,
+		},
+		{
+			MethodName: "ConfirmarOferta",
+			Handler:    _Oferta_ConfirmarOferta_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
