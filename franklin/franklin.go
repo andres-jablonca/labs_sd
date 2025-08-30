@@ -42,6 +42,9 @@ func (s *server) InformarEstadoSegundaFase(ctx context.Context, inf *pb.Informar
 			}
 		}
 	}
+	if exito {
+		fmt.Println("Distraccion completada!")
+	}
 
 	return &pb.Resultado{Exito: exito}, nil
 
