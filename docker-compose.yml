@@ -1,43 +1,73 @@
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # UI de RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - Wasap
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   lester:
     build:
-      context: .  
-      dockerfile: lester/Dockerfile  
+      context: .
+      dockerfile: lester/Dockerfile
     container_name: Lester
     ports:
       - "50051:50051"
     networks:
       - Wasap
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    # Opcional: si quieres forzar URL por env (tu código ya trae default 'rabbitmq')
+    # environment:
+    #   RABBIT_URL: amqp://guest:guest@rabbitmq:5672/
 
   franklin:
     build:
-      context: .  
-      dockerfile: franklin/Dockerfile  
+      context: .
+      dockerfile: franklin/Dockerfile
     container_name: Franklin
     ports:
       - "50052:50051"
     networks:
       - Wasap
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   trevor:
     build:
-      context: .  
-      dockerfile: trevor/Dockerfile  
+      context: .
+      dockerfile: trevor/Dockerfile
     container_name: Trevor
     ports:
       - "50053:50051"
     networks:
       - Wasap
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   michael:
     build:
-      context: .  
-      dockerfile: michael/Dockerfile  
+      context: .
+      dockerfile: michael/Dockerfile
     container_name: Michael
     depends_on:
       - lester
       - franklin
       - trevor
+      - rabbitmq
     networks:
       - Wasap
     stdin_open: true

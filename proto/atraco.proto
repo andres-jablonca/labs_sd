@@ -47,4 +47,38 @@ message Resultado {
   bool exito = 1;
 }
 
+// ====== FASE 3 ======
+service TerceraFase {
+  // Michael ordena iniciar el golpe; el personaje confirma recepción/inicio.
+  rpc IniciarGolpe (OrdenGolpe) returns (AckInicio);
+}
 
+message OrdenGolpe {
+  // Pasa lo mínimo útil para arrancar la fase 3
+  float probabilidad_exito = 1;
+  float riesgo_policial     = 2;
+  int32 botin_inicial       = 3;
+  string quien               = 4; // "Franklin" o "Trevor" (informativo)
+}
+
+message AckInicio {
+  bool ok        = 1;   // true si el personaje comenzó
+  string detalle = 2;   // mensaje corto para logging
+}
+
+
+// ====== MONITOREO DE ESTRELLAS (FASE 3) ======
+service Monitoreo {
+  rpc IniciarNotificaciones (ObjetivoNotificacion) returns (AckMonitoreo);
+  rpc DetenerNotificaciones (ObjetivoNotificacion) returns (AckMonitoreo);
+}
+
+message ObjetivoNotificacion {
+  string personaje = 1;      // "Franklin" o "Trevor"
+  float  riesgo_policial = 2; // 0.0 - 1.0 (como ya usas)
+}
+
+message AckMonitoreo {
+  bool ok        = 1;
+  string detalle = 2;
+}

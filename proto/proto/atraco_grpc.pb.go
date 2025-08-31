@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.21.12
-// source: proto/atraco.proto
+// source: atraco.proto
 
 package proto
 
@@ -161,7 +161,7 @@ var Oferta_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/atraco.proto",
+	Metadata: "atraco.proto",
 }
 
 const (
@@ -269,7 +269,7 @@ var SegundaFase_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/atraco.proto",
+	Metadata: "atraco.proto",
 }
 
 const (
@@ -377,149 +377,5 @@ var TerceraFase_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/atraco.proto",
-}
-
-const (
-	Monitoreo_IniciarNotificaciones_FullMethodName = "/Monitoreo/IniciarNotificaciones"
-	Monitoreo_DetenerNotificaciones_FullMethodName = "/Monitoreo/DetenerNotificaciones"
-)
-
-// MonitoreoClient is the client API for Monitoreo service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// ====== MONITOREO DE ESTRELLAS (FASE 3) ======
-type MonitoreoClient interface {
-	IniciarNotificaciones(ctx context.Context, in *ObjetivoNotificacion, opts ...grpc.CallOption) (*AckMonitoreo, error)
-	DetenerNotificaciones(ctx context.Context, in *ObjetivoNotificacion, opts ...grpc.CallOption) (*AckMonitoreo, error)
-}
-
-type monitoreoClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewMonitoreoClient(cc grpc.ClientConnInterface) MonitoreoClient {
-	return &monitoreoClient{cc}
-}
-
-func (c *monitoreoClient) IniciarNotificaciones(ctx context.Context, in *ObjetivoNotificacion, opts ...grpc.CallOption) (*AckMonitoreo, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AckMonitoreo)
-	err := c.cc.Invoke(ctx, Monitoreo_IniciarNotificaciones_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *monitoreoClient) DetenerNotificaciones(ctx context.Context, in *ObjetivoNotificacion, opts ...grpc.CallOption) (*AckMonitoreo, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AckMonitoreo)
-	err := c.cc.Invoke(ctx, Monitoreo_DetenerNotificaciones_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// MonitoreoServer is the server API for Monitoreo service.
-// All implementations must embed UnimplementedMonitoreoServer
-// for forward compatibility.
-//
-// ====== MONITOREO DE ESTRELLAS (FASE 3) ======
-type MonitoreoServer interface {
-	IniciarNotificaciones(context.Context, *ObjetivoNotificacion) (*AckMonitoreo, error)
-	DetenerNotificaciones(context.Context, *ObjetivoNotificacion) (*AckMonitoreo, error)
-	mustEmbedUnimplementedMonitoreoServer()
-}
-
-// UnimplementedMonitoreoServer must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedMonitoreoServer struct{}
-
-func (UnimplementedMonitoreoServer) IniciarNotificaciones(context.Context, *ObjetivoNotificacion) (*AckMonitoreo, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IniciarNotificaciones not implemented")
-}
-func (UnimplementedMonitoreoServer) DetenerNotificaciones(context.Context, *ObjetivoNotificacion) (*AckMonitoreo, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DetenerNotificaciones not implemented")
-}
-func (UnimplementedMonitoreoServer) mustEmbedUnimplementedMonitoreoServer() {}
-func (UnimplementedMonitoreoServer) testEmbeddedByValue()                   {}
-
-// UnsafeMonitoreoServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to MonitoreoServer will
-// result in compilation errors.
-type UnsafeMonitoreoServer interface {
-	mustEmbedUnimplementedMonitoreoServer()
-}
-
-func RegisterMonitoreoServer(s grpc.ServiceRegistrar, srv MonitoreoServer) {
-	// If the following call pancis, it indicates UnimplementedMonitoreoServer was
-	// embedded by pointer and is nil.  This will cause panics if an
-	// unimplemented method is ever invoked, so we test this at initialization
-	// time to prevent it from happening at runtime later due to I/O.
-	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
-		t.testEmbeddedByValue()
-	}
-	s.RegisterService(&Monitoreo_ServiceDesc, srv)
-}
-
-func _Monitoreo_IniciarNotificaciones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ObjetivoNotificacion)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MonitoreoServer).IniciarNotificaciones(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Monitoreo_IniciarNotificaciones_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MonitoreoServer).IniciarNotificaciones(ctx, req.(*ObjetivoNotificacion))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Monitoreo_DetenerNotificaciones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ObjetivoNotificacion)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MonitoreoServer).DetenerNotificaciones(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Monitoreo_DetenerNotificaciones_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MonitoreoServer).DetenerNotificaciones(ctx, req.(*ObjetivoNotificacion))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// Monitoreo_ServiceDesc is the grpc.ServiceDesc for Monitoreo service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var Monitoreo_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Monitoreo",
-	HandlerType: (*MonitoreoServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "IniciarNotificaciones",
-			Handler:    _Monitoreo_IniciarNotificaciones_Handler,
-		},
-		{
-			MethodName: "DetenerNotificaciones",
-			Handler:    _Monitoreo_DetenerNotificaciones_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/atraco.proto",
+	Metadata: "atraco.proto",
 }

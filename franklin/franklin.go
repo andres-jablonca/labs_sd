@@ -15,6 +15,18 @@ import (
 
 type server struct {
 	pb.UnimplementedSegundaFaseServer
+	pb.UnimplementedTerceraFaseServer // <-- agrega esto
+
+}
+
+func (s *server) IniciarGolpe(ctx context.Context, req *pb.OrdenGolpe) (*pb.AckInicio, error) {
+	fmt.Printf("[Franklin] 🚀 IniciarGolpe() recibido: quien=%s, p=%.2f, riesgo=%.2f, botin=%d\n",
+		req.GetQuien(), req.GetProbabilidadExito(), req.GetRiesgoPolicial(), req.GetBotinInicial())
+	fmt.Println("[Franklin] ✅ ConfirmarInicio: comenzando ejecución de la Fase 3")
+	return &pb.AckInicio{
+		Ok:      true,
+		Detalle: "Franklin inició el golpe",
+	}, nil
 }
 
 func (s *server) InformarEstadoSegundaFase(ctx context.Context, inf *pb.InformarTrabajo) (*pb.Resultado, error) {
@@ -59,6 +71,8 @@ func main() {
 
 	s := grpc.NewServer()
 	pb.RegisterSegundaFaseServer(s, &server{})
+	pb.RegisterTerceraFaseServer(s, &server{}) // <-- registra Fase 3
+
 
 	log.Printf("\nFranklin en linea\n")
 

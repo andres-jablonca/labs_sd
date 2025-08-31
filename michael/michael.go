@@ -166,14 +166,67 @@ func main() {
 		}
 	}
 
-	// ------------------ FASE 3 ------------------------
+// ------------------ FASE 3 ------------------------
+fmt.Println("\n========== FASE 3: EL GOLPE ==========")
 
-	if !franklin {
+// Si Franklin hizo la Fase 2, ahora la Fase 3 la hace Trevor; y viceversa.
+objetivo := "Trevor"
+probSeleccionado := prob_trevor
+hostPersonaje := "trevor:50051"
+if !franklin { // en Fase 2 trabajó Trevor → ahora Franklin
+	objetivo = "Franklin"
+	probSeleccionado = prob_franklin
+	hostPersonaje = "franklin:50051"
+}
+fmt.Printf("Seleccionado para Fase 3: %s (por descarte)\n", objetivo)
 
-		// Informar a Lester y a Franklin para proceder a fase 3
+// 1) Pedir a Lester que inicie las notificaciones de estrellas
+mon := pb.NewMonitoreoClient(conn_lester)
+ctxMon, cancelMon := context.WithTimeout(context.Background(), 3*time.Second)
+defer cancelMon()
+_, err := mon.IniciarNotificaciones(ctxMon, &pb.ObjetivoNotificacion{
+	Personaje:      objetivo,
+	RiesgoPolicial: riesgo,
+})
+if err != nil {
+	fmt.Printf("[Michael] ❌ Error IniciarNotificacionEstrellas() -> %s: %v\n", objetivo, err)
+	return
+}
+fmt.Printf("[Michael] 📡 IniciarNotificacionEstrellas() -> %s\n", objetivo)
 
-	} else {
+// 2) Ordenar al personaje que inicie el golpe
+connPers, err := grpc.Dial(hostPersonaje, grpc.WithTransportCredentials(insecure.NewCredentials()))
+if err != nil {
+	fmt.Printf("[Michael] ❌ No se pudo conectar a %s: %v\n", objetivo, err)
+	return
+}
+defer connPers.Close()
 
-		// Informar a Lester y a Trevor para proceder a fase 3
-	}
+cFase3 := pb.NewTerceraFaseClient(connPers)
+req := &pb.OrdenGolpe{
+	ProbabilidadExito: probSeleccionado,
+	RiesgoPolicial:    riesgo,
+	BotinInicial:      botin,
+	Quien:             objetivo,
+}
+
+fmt.Printf("[Michael] ▶️ IniciarGolpe() -> %s (gRPC)\n", objetivo)
+ack, err := cFase3.IniciarGolpe(context.Background(), req)
+if err != nil {
+	fmt.Printf("[Michael] ❌ Error IniciarGolpe con %s: %v\n", objetivo, err)
+	return
+}
+if ack.GetOk() {
+	fmt.Printf("[Michael] ⬅️ ConfirmarInicio() de %s: %s\n", objetivo, ack.GetDetalle())
+} else {
+	fmt.Printf("[Michael] ⬅️ ConfirmarInicio() de %s: rechazado\n", objetivo)
+}
+
+fmt.Println("========== FASE 3: INICIO CONFIRMADO ==========\n")
+
+// (Opcional) cuando el golpe termine podrías:
+// ctxStop, cancelStop := context.WithTimeout(context.Background(), 3*time.Second)
+// defer cancelStop()
+// _, _ = mon.DetenerNotificaciones(ctxStop, &pb.ObjetivoNotificacion{Personaje: objetivo})
+
 }
