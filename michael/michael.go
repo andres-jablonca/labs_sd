@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math/rand"
 
 	"time"
 
@@ -12,6 +13,54 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+func generar_reporte_final(botin_inicial int32, botin_final int, exito bool, fase int32,
+	pago_lester int32, resto int, msj_lester string,
+	pago_franklin int32, msj_franklin string,
+	pago_trevor int32, msj_trevor string) {
+
+	//botin_extra := botin_final - int(botin_inicial)
+
+	fmt.Printf("=========================================================\n")
+	fmt.Printf("== REPORTE FINAL DE LA MISION ==\n")
+	fmt.Printf("=========================================================\n")
+
+	banco := rand.Intn(10000) + 1000
+	fmt.Printf("Mision: Asalto al Banco # %d\n", banco)
+
+	if exito {
+		fmt.Printf("Resultado Global: MISION COMPLETADA CON EXITO!\n")
+	} else {
+		fmt.Printf("Resultado Global: MISION FRACASADA EN FASE %d\n", fase)
+	}
+
+	fmt.Printf("--- REPARTO DEL BOTIN ---\n")
+	fmt.Printf("Botin Base: $%d\n", botin_inicial)
+	if exito {
+		fmt.Printf("Botin Extra (Habilidad de Chop): $%d\n", 0)
+	} else {
+		fmt.Printf("Botin Extra (Habilidad de Chop): $0\n")
+	}
+	fmt.Printf("Botin Total: $%d\n", botin_final)
+	fmt.Printf("----------------------------------------------------\n")
+
+	if exito {
+		fmt.Printf("Pago a Franklin: $%d\n", pago_franklin)
+		fmt.Printf("Respuesta de Franklin: \"%s\"\n", msj_franklin)
+		fmt.Printf("Pago a Trevor: $%d\n", pago_trevor)
+		fmt.Printf("Respuesta de Trevor: \"%s\"\n", msj_trevor)
+		fmt.Printf("Pago a Lester: $%d (reparto) + $%d (resto)\n", pago_lester-int32(resto), resto)
+		fmt.Printf("Respuesta de Lester: \"%s\"\n", msj_lester)
+	} else {
+		fmt.Printf("Pago a Franklin: $0\n")
+		fmt.Printf("Pago a Trevor: $0\n")
+		fmt.Printf("Pago a Lester: $0\n")
+	}
+
+	fmt.Printf("----------------------------------------------------\n")
+	fmt.Printf("Saldo Final de la Operacion: $%d\n", botin_final)
+	fmt.Printf("=========================================================\n")
+}
+
 func main() {
 
 	var botin int32
@@ -19,17 +68,34 @@ func main() {
 	var prob_trevor float32
 	var riesgo float32
 
+	// ESTABLECER CONEXIONES
+
 	conn_lester, err_lester := grpc.Dial("lester:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err_lester != nil {
 		fmt.Printf("No se pudo conectar: %v\n", err_lester)
 		return
 	}
-
 	defer conn_lester.Close()
+
+	conn_trevor, err_trevor := grpc.Dial("trevor:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err_trevor != nil {
+		fmt.Printf("No se pudo conectar: %v\n", err_trevor)
+		return
+	}
+	defer conn_trevor.Close()
+
+	conn_franklin, err_franklin := grpc.Dial("franklin:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err_franklin != nil {
+		fmt.Printf("No se pudo conectar: %v\n", err_franklin)
+		return
+	}
+	defer conn_franklin.Close()
+
+	// INICIO
 
 	fmt.Println("---\nIniciar fase 1!")
 	time.Sleep(time.Second)
-	client_lester := pb.NewOfertaClient(conn_lester)
+	client_lester := pb.NewMichaelLesterClient(conn_lester)
 
 	for {
 
@@ -103,31 +169,24 @@ func main() {
 	franklin := prob_franklin > prob_trevor
 
 	// ------------------ FASE 2 -------------------------
-
+	exito_fase_2 := false
 	if franklin {
 
-		conn_franklin, err_franklin := grpc.Dial("franklin:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err_franklin != nil {
-			fmt.Printf("No se pudo conectar: %v\n", err_franklin)
-			return
-		}
-
-		defer conn_franklin.Close()
-
-		client_franklin := pb.NewSegundaFaseClient(conn_franklin)
-		request_franklin := &pb.InformarTrabajo{ProbabilidadExito: prob_franklin}
+		client_franklin := pb.NewMichaelTrevorFranklinClient(conn_franklin)
+		request_franklin := &pb.InformarDistraccion{ProbabilidadExito: prob_franklin}
 
 		fmt.Println("----------\nInformando a Franklin para proceder a fase 2!")
 		time.Sleep(2 * time.Second)
-		exito_primera_mision, err_franklin := client_franklin.InformarEstadoSegundaFase(context.Background(), request_franklin)
+		exito_segunda_fase, err_franklin := client_franklin.InformarEstadoSegundaFase(context.Background(), request_franklin)
 
 		if err_franklin != nil {
 			fmt.Printf("Error al llamar al servicio: %v\n", err_franklin)
 			return
 		}
 		time.Sleep(80 * time.Millisecond)
-		if exito_primera_mision.GetExito() {
+		if exito_segunda_fase.GetExito() {
 			fmt.Printf("\nFase 2 finalizada con exito!!!\n")
+			exito_fase_2 = true
 			time.Sleep(time.Second)
 		} else {
 			fmt.Printf("\nFase 2 fracasó D:\n")
@@ -136,29 +195,22 @@ func main() {
 
 	} else {
 
-		conn_trevor, err_trevor := grpc.Dial("trevor:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err_trevor != nil {
-			fmt.Printf("No se pudo conectar: %v\n", err_trevor)
-			return
-		}
-
-		defer conn_trevor.Close()
-
-		client_trevor := pb.NewSegundaFaseClient(conn_trevor)
-		request_trevor := &pb.InformarTrabajo{ProbabilidadExito: prob_trevor}
+		client_trevor := pb.NewMichaelTrevorFranklinClient(conn_trevor)
+		request_trevor := &pb.InformarDistraccion{ProbabilidadExito: prob_trevor}
 
 		fmt.Println("----------\nInformando a Trevor para proceder con fase 2!")
 		time.Sleep(2 * time.Second)
 
-		exito_primera_mision, err_trevor := client_trevor.InformarEstadoSegundaFase(context.Background(), request_trevor)
+		exito_segunda_fase, err_trevor := client_trevor.InformarEstadoSegundaFase(context.Background(), request_trevor)
 
 		if err_trevor != nil {
 			fmt.Printf("Error al llamar al servicio: %v\n", err_trevor)
 			return
 		}
 
-		if exito_primera_mision.GetExito() {
+		if exito_segunda_fase.GetExito() {
 			fmt.Printf("\nFase 2 finalizada con exito!!!\n")
+			exito_fase_2 = true
 			time.Sleep(time.Second)
 		} else {
 			fmt.Printf("\nFase 2 fracasó D:\n")
@@ -167,13 +219,114 @@ func main() {
 	}
 
 	// ------------------ FASE 3 ------------------------
+	exito_fase_3 := false
+	botin_final := 0
 
-	if !franklin {
+	if !franklin && exito_fase_2 {
 
-		// Informar a Lester y a Franklin para proceder a fase 3
+		client_franklin := pb.NewMichaelTrevorFranklinClient(conn_franklin)
+		request_franklin := &pb.InformarGolpe{ProbabilidadExito: prob_franklin}
+
+		fmt.Println("----------\nInformando a Franklin para proceder a fase 3!")
+		time.Sleep(2 * time.Second)
+		exito_tercera_fase, err_franklin := client_franklin.InformarEstadoTerceraFase(context.Background(), request_franklin)
+
+		if err_franklin != nil {
+			fmt.Printf("Error al llamar al servicio: %v\n", err_franklin)
+			return
+		}
+
+		if exito_tercera_fase.GetExito() {
+			exito_fase_3 = true
+			fmt.Printf("\nFase 3 finalizada con exito!!!\n")
+			botin_final = int(exito_tercera_fase.GetBotin())
+			fmt.Printf("Botin recolectado: %v\n", botin_final)
+			time.Sleep(time.Second)
+		} else {
+			fmt.Printf("\nFase 3 fracasó D:\n")
+			time.Sleep(time.Second)
+		}
+
+	} else if franklin && exito_fase_2 {
+
+		client_trevor := pb.NewMichaelTrevorFranklinClient(conn_trevor)
+		request_trevor := &pb.InformarGolpe{ProbabilidadExito: prob_trevor}
+
+		fmt.Println("----------\nInformando a Trevor para proceder con fase 3!")
+		time.Sleep(2 * time.Second)
+
+		exito_tercera_fase, err_trevor := client_trevor.InformarEstadoTerceraFase(context.Background(), request_trevor)
+
+		if err_trevor != nil {
+			fmt.Printf("Error al llamar al servicio: %v\n", err_trevor)
+			return
+		}
+
+		if exito_tercera_fase.GetExito() {
+			exito_fase_3 = true
+			fmt.Printf("\nFase 3 finalizada con exito!!!\n")
+			botin_final = int(exito_tercera_fase.GetBotin())
+			fmt.Printf("Botin recolectado: %v\n", botin_final)
+			time.Sleep(time.Second)
+		} else {
+			fmt.Printf("\nFase 3 fracasó D:\n")
+			time.Sleep(time.Second)
+		}
+	}
+
+	// ------------------- FASE 4 ---------------------------
+
+	correspondencias := 0
+	correspondencias_lester := 0
+	resto := 0
+
+	correspondencias = botin_final / 4
+	correspondencias_lester = correspondencias
+	resto = botin_final % 4
+
+	botin = int32(botin)
+	if exito_fase_2 && exito_fase_3 {
+
+		if resto != 0 {
+			correspondencias_lester = correspondencias + resto
+		}
+
+		request_lester := &pb.Monto{Correspondencia: int32(correspondencias_lester), Total: int32(botin_final)}
+
+		respuesta_lester, err := client_lester.Pagar(context.Background(), request_lester)
+		if err != nil {
+			fmt.Printf("Error al llamar al servicio: %v\n", err)
+			return
+		}
+
+		client_franklin := pb.NewMichaelTrevorFranklinClient(conn_franklin)
+		request_franklin := &pb.Monto{Correspondencia: int32(correspondencias), Total: int32(botin_final)}
+
+		respuesta_franklin, err := client_franklin.Pagar(context.Background(), request_franklin)
+		if err != nil {
+			fmt.Printf("Error al llamar al servicio: %v\n", err)
+			return
+		}
+
+		client_trevor := pb.NewMichaelTrevorFranklinClient(conn_trevor)
+		request_trevor := &pb.Monto{Correspondencia: int32(correspondencias), Total: int32(botin_final)}
+
+		respuesta_trevor, err := client_trevor.Pagar(context.Background(), request_trevor)
+		if err != nil {
+			fmt.Printf("Error al llamar al servicio: %v\n", err)
+			return
+		}
+		time.Sleep(5 * time.Second)
+		generar_reporte_final(botin, botin_final, true, 4, int32(correspondencias_lester), resto, respuesta_lester.GetMensaje(), int32(correspondencias), respuesta_franklin.GetMensaje(), int32(correspondencias), respuesta_trevor.GetMensaje())
+
+	} else if exito_fase_2 && !exito_fase_3 {
+
+		generar_reporte_final(botin, botin_final, false, 3, 0, resto, "", 0, "", 0, "")
 
 	} else {
 
-		// Informar a Lester y a Trevor para proceder a fase 3
+		generar_reporte_final(botin, botin_final, false, 2, 0, resto, "", 0, "", 0, "")
+
 	}
+
 }

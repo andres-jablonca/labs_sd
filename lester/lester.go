@@ -65,6 +65,32 @@ func (s *server) ConfirmarOferta(ctx context.Context, req *pb.Confirmacion) (*pb
 	return &pb.AckConfirmacion{}, nil
 }
 
+func (s *server) Pagar(ctx context.Context, req *pb.Monto) (*pb.ConfirmarPago, error) {
+	total := req.GetTotal()
+	pagoRecibido := req.GetCorrespondencia()
+
+	pagoEsperadoPorPersona := total / 4
+	resto := total % 4
+
+	pagoEsperadoLester := pagoEsperadoPorPersona + resto
+
+	check := false
+	msj := "Esto no es lo que acordamos.."
+
+	if pagoRecibido == pagoEsperadoLester {
+		check = true
+		msj = "Un placer hacer negocios."
+	} else if pagoRecibido == pagoEsperadoPorPersona && resto == 0 {
+		check = true
+		msj = "Un placer hacer negocios."
+	}
+
+	fmt.Printf("Total: %d, Recibido: %d, Esperado: %d \n", total, pagoRecibido, pagoEsperadoLester)
+	fmt.Println(msj)
+
+	return &pb.ConfirmarPago{Correcto: check, Mensaje: msj}, nil
+}
+
 func main() {
 	//port := ":50051"
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
