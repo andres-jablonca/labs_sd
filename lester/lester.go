@@ -17,7 +17,7 @@ import (
 var rechazos int = 0
 
 type server struct {
-	pb.UnimplementedOfertaServer
+	pb.UnimplementedMichaelLesterServer
 	//ch *amqp.Channel
 	//q  amqp.Queue
 }
@@ -99,7 +99,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterOfertaServer(s, &server{})
+	pb.RegisterMichaelLesterServer(s, &server{})
 
 	fmt.Printf("\nLester en linea\n")
 

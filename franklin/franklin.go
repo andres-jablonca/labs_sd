@@ -14,7 +14,7 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedFaseDosTresServer
+	pb.UnimplementedMichaelTrevorFranklinServer
 }
 
 func (s *server) InformarEstadoSegundaFase(ctx context.Context, inf *pb.InformarDistraccion) (*pb.ResultadoDistraccion, error) {
@@ -95,7 +95,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterFaseDosTresServer(s, &server{})
+	pb.RegisterMichaelTrevorFranklinServer(s, &server{})
 
 	log.Printf("\nFranklin en linea\n")
 
