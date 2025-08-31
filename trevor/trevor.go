@@ -36,7 +36,7 @@ func (s *server) InformarEstadoSegundaFase(ctx context.Context, inf *pb.Informar
 		} else {
 			probabilidad_fallar = rand.Float32()
 			if probabilidad_fallar < 0.1 {
-				fmt.Println("La mision fracasó debido a que Trevor se emborrachó y fue descubierto")
+				fmt.Println("La mision fracasó debido a que Trevor se emborrachó")
 				exito = false
 				break
 			}
@@ -44,8 +44,10 @@ func (s *server) InformarEstadoSegundaFase(ctx context.Context, inf *pb.Informar
 	}
 	if exito {
 		fmt.Println("Distraccion completada!")
+		return &pb.ResultadoDistraccion{Exito: exito}, nil
+	} else {
+		return &pb.ResultadoDistraccion{Exito: exito, Motivo: "Trevor se emborrachó"}, nil
 	}
-	return &pb.ResultadoDistraccion{Exito: exito}, nil
 
 }
 
@@ -68,7 +70,7 @@ func (s *server) InformarEstadoTerceraFase(ctx context.Context, inf *pb.Informar
 	if exito {
 		fmt.Println("Golpe completado!")
 	}
-	return &pb.ResultadoGolpe{Exito: exito, Botin: 10000}, nil
+	return &pb.ResultadoGolpe{Exito: exito, Botin: inf.GetBotin(), Motivo: "Maximo de estrellas", BotinExtra: 0}, nil
 
 }
 
@@ -96,7 +98,7 @@ func main() {
 	s := grpc.NewServer()
 	pb.RegisterMichaelTrevorFranklinServer(s, &server{})
 
-	log.Printf("\nTrevor en linea\n")
+	fmt.Printf("\nTrevor en linea\n")
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Error al servir: %v", err)

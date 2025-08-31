@@ -44,22 +44,26 @@ service MichaelTrevorFranklin {
 
 // Informe de trabajo que enviara Michael que incluye la probabilidad de exito del trabajador
 message InformarDistraccion {
-  float probabilidad_exito = 2;
+  float probabilidad_exito = 1;
 }
 
 // Resultado de la mision enviado por Franklin o Trevor que incluye un indicador sobre si la mision fue un exito o fracaso
 message ResultadoDistraccion {
   bool exito = 1;
+  string motivo = 2;
 }
 
 message InformarGolpe {
-  float probabilidad_exito = 2;
+  float probabilidad_exito = 1;
+  int32 botin = 2;
 }
 
 // Resultado de la mision enviado por Franklin o Trevor que incluye un indicador sobre si la mision fue un exito o fracaso
 message ResultadoGolpe {
   bool exito = 1;
   int32 botin = 2;
+  string motivo = 3;
+  int32 botin_extra = 4;
 }
 
 
@@ -71,4 +75,4 @@ message Monto {
 message ConfirmarPago {
   bool correcto = 1;
   string mensaje = 2;
-}
+} 

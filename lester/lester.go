@@ -92,7 +92,6 @@ func (s *server) Pagar(ctx context.Context, req *pb.Monto) (*pb.ConfirmarPago, e
 }
 
 func main() {
-	//port := ":50051"
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
 	if err != nil {
 		log.Fatalf("Error al escuchar: %v", err)

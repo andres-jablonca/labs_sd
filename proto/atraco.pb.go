@@ -218,7 +218,7 @@ func (*AckConfirmacion) Descriptor() ([]byte, []int) {
 // Informe de trabajo que enviara Michael que incluye la probabilidad de exito del trabajador
 type InformarDistraccion struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	ProbabilidadExito float32                `protobuf:"fixed32,2,opt,name=probabilidad_exito,json=probabilidadExito,proto3" json:"probabilidad_exito,omitempty"`
+	ProbabilidadExito float32                `protobuf:"fixed32,1,opt,name=probabilidad_exito,json=probabilidadExito,proto3" json:"probabilidad_exito,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -264,6 +264,7 @@ func (x *InformarDistraccion) GetProbabilidadExito() float32 {
 type ResultadoDistraccion struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Exito         bool                   `protobuf:"varint,1,opt,name=exito,proto3" json:"exito,omitempty"`
+	Motivo        string                 `protobuf:"bytes,2,opt,name=motivo,proto3" json:"motivo,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -305,9 +306,17 @@ func (x *ResultadoDistraccion) GetExito() bool {
 	return false
 }
 
+func (x *ResultadoDistraccion) GetMotivo() string {
+	if x != nil {
+		return x.Motivo
+	}
+	return ""
+}
+
 type InformarGolpe struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	ProbabilidadExito float32                `protobuf:"fixed32,2,opt,name=probabilidad_exito,json=probabilidadExito,proto3" json:"probabilidad_exito,omitempty"`
+	ProbabilidadExito float32                `protobuf:"fixed32,1,opt,name=probabilidad_exito,json=probabilidadExito,proto3" json:"probabilidad_exito,omitempty"`
+	Botin             int32                  `protobuf:"varint,2,opt,name=botin,proto3" json:"botin,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -349,11 +358,20 @@ func (x *InformarGolpe) GetProbabilidadExito() float32 {
 	return 0
 }
 
+func (x *InformarGolpe) GetBotin() int32 {
+	if x != nil {
+		return x.Botin
+	}
+	return 0
+}
+
 // Resultado de la mision enviado por Franklin o Trevor que incluye un indicador sobre si la mision fue un exito o fracaso
 type ResultadoGolpe struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Exito         bool                   `protobuf:"varint,1,opt,name=exito,proto3" json:"exito,omitempty"`
 	Botin         int32                  `protobuf:"varint,2,opt,name=botin,proto3" json:"botin,omitempty"`
+	Motivo        string                 `protobuf:"bytes,3,opt,name=motivo,proto3" json:"motivo,omitempty"`
+	BotinExtra    int32                  `protobuf:"varint,4,opt,name=botin_extra,json=botinExtra,proto3" json:"botin_extra,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -398,6 +416,20 @@ func (x *ResultadoGolpe) GetExito() bool {
 func (x *ResultadoGolpe) GetBotin() int32 {
 	if x != nil {
 		return x.Botin
+	}
+	return 0
+}
+
+func (x *ResultadoGolpe) GetMotivo() string {
+	if x != nil {
+		return x.Motivo
+	}
+	return ""
+}
+
+func (x *ResultadoGolpe) GetBotinExtra() int32 {
+	if x != nil {
+		return x.BotinExtra
 	}
 	return 0
 }
@@ -524,14 +556,19 @@ const file_proto_atraco_proto_rawDesc = "" +
 	"\baceptada\x18\x01 \x01(\bR\baceptada\"\x11\n" +
 	"\x0fAckConfirmacion\"D\n" +
 	"\x13InformarDistraccion\x12-\n" +
-	"\x12probabilidad_exito\x18\x02 \x01(\x02R\x11probabilidadExito\",\n" +
+	"\x12probabilidad_exito\x18\x01 \x01(\x02R\x11probabilidadExito\"D\n" +
 	"\x14ResultadoDistraccion\x12\x14\n" +
-	"\x05exito\x18\x01 \x01(\bR\x05exito\">\n" +
+	"\x05exito\x18\x01 \x01(\bR\x05exito\x12\x16\n" +
+	"\x06motivo\x18\x02 \x01(\tR\x06motivo\"T\n" +
 	"\rInformarGolpe\x12-\n" +
-	"\x12probabilidad_exito\x18\x02 \x01(\x02R\x11probabilidadExito\"<\n" +
+	"\x12probabilidad_exito\x18\x01 \x01(\x02R\x11probabilidadExito\x12\x14\n" +
+	"\x05botin\x18\x02 \x01(\x05R\x05botin\"u\n" +
 	"\x0eResultadoGolpe\x12\x14\n" +
 	"\x05exito\x18\x01 \x01(\bR\x05exito\x12\x14\n" +
-	"\x05botin\x18\x02 \x01(\x05R\x05botin\"G\n" +
+	"\x05botin\x18\x02 \x01(\x05R\x05botin\x12\x16\n" +
+	"\x06motivo\x18\x03 \x01(\tR\x06motivo\x12\x1f\n" +
+	"\vbotin_extra\x18\x04 \x01(\x05R\n" +
+	"botinExtra\"G\n" +
 	"\x05Monto\x12(\n" +
 	"\x0fcorrespondencia\x18\x01 \x01(\x05R\x0fcorrespondencia\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"E\n" +

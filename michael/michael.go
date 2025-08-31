@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func generar_reporte_final(botin_inicial int32, botin_final int, exito bool, fase int32,
+func generar_reporte_exito(botin_inicial int32, botin_final int, fase int32,
 	pago_lester int32, resto int, msj_lester string,
 	pago_franklin int32, msj_franklin string,
 	pago_trevor int32, msj_trevor string) {
@@ -27,34 +27,59 @@ func generar_reporte_final(botin_inicial int32, botin_final int, exito bool, fas
 	banco := rand.Intn(10000) + 1000
 	fmt.Printf("Mision: Asalto al Banco # %d\n", banco)
 
-	if exito {
-		fmt.Printf("Resultado Global: MISION COMPLETADA CON EXITO!\n")
-	} else {
-		fmt.Printf("Resultado Global: MISION FRACASADA EN FASE %d\n", fase)
-	}
+	fmt.Printf("Resultado Global: MISION COMPLETADA CON EXITO!\n")
 
 	fmt.Printf("--- REPARTO DEL BOTIN ---\n")
 	fmt.Printf("Botin Base: $%d\n", botin_inicial)
-	if exito {
-		fmt.Printf("Botin Extra (Habilidad de Chop): $%d\n", 0)
-	} else {
-		fmt.Printf("Botin Extra (Habilidad de Chop): $0\n")
-	}
+
+	fmt.Printf("Botin Extra (Habilidad de Chop): $%d\n", 0)
+
 	fmt.Printf("Botin Total: $%d\n", botin_final)
 	fmt.Printf("----------------------------------------------------\n")
 
-	if exito {
-		fmt.Printf("Pago a Franklin: $%d\n", pago_franklin)
-		fmt.Printf("Respuesta de Franklin: \"%s\"\n", msj_franklin)
-		fmt.Printf("Pago a Trevor: $%d\n", pago_trevor)
-		fmt.Printf("Respuesta de Trevor: \"%s\"\n", msj_trevor)
-		fmt.Printf("Pago a Lester: $%d (reparto) + $%d (resto)\n", pago_lester-int32(resto), resto)
-		fmt.Printf("Respuesta de Lester: \"%s\"\n", msj_lester)
+	fmt.Printf("Pago a Franklin: $%d\n", pago_franklin)
+	fmt.Printf("Respuesta de Franklin: \"%s\"\n", msj_franklin)
+	fmt.Printf("Pago a Trevor: $%d\n", pago_trevor)
+	fmt.Printf("Respuesta de Trevor: \"%s\"\n", msj_trevor)
+	fmt.Printf("Pago a Lester: $%d (reparto) + $%d (resto)\n", pago_lester-int32(resto), resto)
+	fmt.Printf("Respuesta de Lester: \"%s\"\n", msj_lester)
+
+	fmt.Printf("----------------------------------------------------\n")
+	fmt.Printf("Saldo Final de la Operacion: $%d\n", botin_final)
+	fmt.Printf("=========================================================\n")
+}
+
+func generar_reporte_fracaso(botin_inicial int32, botin_final int, botin_extra int32, fase int32, franklin bool, motivo_fracaso string) {
+	var quien string
+	if franklin {
+		quien = "Franklin"
 	} else {
-		fmt.Printf("Pago a Franklin: $0\n")
-		fmt.Printf("Pago a Trevor: $0\n")
-		fmt.Printf("Pago a Lester: $0\n")
+		quien = "Trevor"
 	}
+
+	fmt.Printf("=========================================================\n")
+	fmt.Printf("== REPORTE FINAL DE LA MISION ==\n")
+	fmt.Printf("=========================================================\n")
+
+	banco := rand.Intn(10000) + 1000
+	fmt.Printf("Mision: Asalto al Banco # %d\n", banco)
+
+	fmt.Printf("Resultado Global: MISION FRACASADA EN FASE %d\n", fase)
+
+	fmt.Printf("\nQuien fracasó: %s\n", quien)
+	fmt.Printf("Motivo del fracaso: %s\n", motivo_fracaso)
+
+	fmt.Printf("--- REPARTO DEL BOTIN ---\n")
+	fmt.Printf("Botin Base: $%d\n", botin_inicial)
+
+	fmt.Printf("Botin Extra (Habilidad de Chop): $%d\n", botin_extra)
+
+	fmt.Printf("Botin Total: $%d\n", botin_final)
+	fmt.Printf("----------------------------------------------------\n")
+
+	fmt.Printf("Pago a Franklin: $0\n")
+	fmt.Printf("Pago a Trevor: $0\n")
+	fmt.Printf("Pago a Lester: $0\n")
 
 	fmt.Printf("----------------------------------------------------\n")
 	fmt.Printf("Saldo Final de la Operacion: $%d\n", botin_final)
@@ -170,6 +195,8 @@ func main() {
 
 	// ------------------ FASE 2 -------------------------
 	exito_fase_2 := false
+	motivo_fracaso_fase_2 := ""
+
 	if franklin {
 
 		client_franklin := pb.NewMichaelTrevorFranklinClient(conn_franklin)
@@ -183,7 +210,6 @@ func main() {
 			fmt.Printf("Error al llamar al servicio: %v\n", err_franklin)
 			return
 		}
-		time.Sleep(80 * time.Millisecond)
 		if exito_segunda_fase.GetExito() {
 			fmt.Printf("\nFase 2 finalizada con exito!!!\n")
 			exito_fase_2 = true
@@ -191,6 +217,7 @@ func main() {
 		} else {
 			fmt.Printf("\nFase 2 fracasó D:\n")
 			time.Sleep(time.Second)
+			motivo_fracaso_fase_2 = exito_segunda_fase.GetMotivo()
 		}
 
 	} else {
@@ -214,6 +241,7 @@ func main() {
 			time.Sleep(time.Second)
 		} else {
 			fmt.Printf("\nFase 2 fracasó D:\n")
+			motivo_fracaso_fase_2 = exito_segunda_fase.GetMotivo()
 			time.Sleep(time.Second)
 		}
 	}
@@ -221,11 +249,13 @@ func main() {
 	// ------------------ FASE 3 ------------------------
 	exito_fase_3 := false
 	botin_final := 0
+	motivo_fracaso_fase_3 := ""
+	botin_extra := 0
 
 	if !franklin && exito_fase_2 {
 
 		client_franklin := pb.NewMichaelTrevorFranklinClient(conn_franklin)
-		request_franklin := &pb.InformarGolpe{ProbabilidadExito: prob_franklin}
+		request_franklin := &pb.InformarGolpe{ProbabilidadExito: prob_franklin, Botin: botin}
 
 		fmt.Println("----------\nInformando a Franklin para proceder a fase 3!")
 		time.Sleep(2 * time.Second)
@@ -244,13 +274,15 @@ func main() {
 			time.Sleep(time.Second)
 		} else {
 			fmt.Printf("\nFase 3 fracasó D:\n")
+			motivo_fracaso_fase_3 = exito_tercera_fase.GetMotivo()
+			botin_extra = int(exito_tercera_fase.GetBotinExtra())
 			time.Sleep(time.Second)
 		}
 
 	} else if franklin && exito_fase_2 {
 
 		client_trevor := pb.NewMichaelTrevorFranklinClient(conn_trevor)
-		request_trevor := &pb.InformarGolpe{ProbabilidadExito: prob_trevor}
+		request_trevor := &pb.InformarGolpe{ProbabilidadExito: prob_trevor, Botin: botin}
 
 		fmt.Println("----------\nInformando a Trevor para proceder con fase 3!")
 		time.Sleep(2 * time.Second)
@@ -270,6 +302,8 @@ func main() {
 			time.Sleep(time.Second)
 		} else {
 			fmt.Printf("\nFase 3 fracasó D:\n")
+			motivo_fracaso_fase_3 = exito_tercera_fase.GetMotivo()
+			botin_extra = int(exito_tercera_fase.GetBotinExtra())
 			time.Sleep(time.Second)
 		}
 	}
@@ -317,15 +351,15 @@ func main() {
 			return
 		}
 		time.Sleep(5 * time.Second)
-		generar_reporte_final(botin, botin_final, true, 4, int32(correspondencias_lester), resto, respuesta_lester.GetMensaje(), int32(correspondencias), respuesta_franklin.GetMensaje(), int32(correspondencias), respuesta_trevor.GetMensaje())
+		generar_reporte_exito(botin, botin_final, 4, int32(correspondencias_lester), resto, respuesta_lester.GetMensaje(), int32(correspondencias), respuesta_franklin.GetMensaje(), int32(correspondencias), respuesta_trevor.GetMensaje())
 
 	} else if exito_fase_2 && !exito_fase_3 {
 
-		generar_reporte_final(botin, botin_final, false, 3, 0, resto, "", 0, "", 0, "")
+		generar_reporte_fracaso(botin, botin_final, int32(botin_extra), 3, franklin, motivo_fracaso_fase_3)
 
 	} else {
 
-		generar_reporte_final(botin, botin_final, false, 2, 0, resto, "", 0, "", 0, "")
+		generar_reporte_fracaso(botin, botin_final, 0, 2, franklin, motivo_fracaso_fase_2)
 
 	}
 
