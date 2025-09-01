@@ -2,19 +2,11 @@ FROM golang:1.25-alpine
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY . .
 
-RUN apk add --no-cache protoc
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-
-COPY proto/ ./proto/
-RUN protoc --go_out=. --go-grpc_out=. proto/atraco.proto
-
-COPY franklin/franklin.go .
-RUN go build -o server franklin.go
+RUN go mod tidy
+RUN go build -o franklin .
 
 EXPOSE 50051
 
-CMD ["./server"]
+CMD ["./franklin"]

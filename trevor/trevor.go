@@ -8,7 +8,7 @@ import (
 	"net"
 	"time"
 
-	pb "lab1/proto"
+	pb "trevor/proto"
 
 	"google.golang.org/grpc"
 )

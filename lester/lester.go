@@ -8,7 +8,7 @@ import (
 	"net"
 	"time"
 
-	pb "lab1/proto"
+	pb "lester/proto"
 
 	//"github.com/streadway/amqp"
 	"google.golang.org/grpc"

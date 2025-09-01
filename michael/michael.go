@@ -7,7 +7,7 @@ import (
 
 	"time"
 
-	pb "lab1/proto"
+	pb "michael/proto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

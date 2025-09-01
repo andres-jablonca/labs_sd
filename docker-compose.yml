@@ -1,48 +1,30 @@
 services:
   lester:
     build:
-      context: .  
-      dockerfile: lester/Dockerfile  
+      context: ./lester
     container_name: Lester
     ports:
       - "50051:50051"
-    networks:
-      - Wasap
 
   franklin:
     build:
-      context: .  
-      dockerfile: franklin/Dockerfile  
+      context: ./franklin
     container_name: Franklin
     ports:
       - "50052:50051"
-    networks:
-      - Wasap
 
   trevor:
     build:
-      context: .  
-      dockerfile: trevor/Dockerfile  
+      context: ./trevor 
     container_name: Trevor
     ports:
       - "50053:50051"
-    networks:
-      - Wasap
 
   michael:
     build:
-      context: .  
-      dockerfile: michael/Dockerfile  
+      context: ./michael 
     container_name: Michael
     depends_on:
       - lester
       - franklin
       - trevor
-    networks:
-      - Wasap
-    stdin_open: true
-    tty: true
-
-networks:
-  Wasap:
-    driver: bridge
