@@ -1,13 +1,18 @@
 # labs_sd
 trabaja mati
 
-version actualizada con entidades independientes, para correr todos los contenedores por la misma consola:
+## Version actualizada con entidades independientes
+
+### Compilar proto
+make proto
+
+### Para correr todos los contenedores por la misma consola:
 docker compose down
 docker compose up -- build
 
-para correr contenedores por separado:
+## Para correr contenedores por terminales separadas:
 make docker-{nombre_entidad}
 
-en donde nombre entidad: {lester, franklin, trevor, michael}
+En donde nombre entidad: {lester, franklin, trevor, michael}
 
-michael siempre se debe ejecutar al final, de lo contrario al intentar comunicarse con un servidor que no esta up, va a terminar
+### Michael siempre se debe ejecutar una vez todos los servidores estén up, de lo contrario al intentar comunicarse con un servidor que no esta up, va a terminar inmediatamente
