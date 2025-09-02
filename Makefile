@@ -18,3 +18,9 @@ docker-michael:
 docker-turnoff:
 	@echo "🛑 Parando toda la infraestructura..."
 	sudo docker compose down
+
+proto:
+	protoc --go_out=. --go-grpc_out=. ./franklin/proto/atraco.proto
+	protoc --go_out=. --go-grpc_out=. ./trevor/proto/atraco.proto
+	protoc --go_out=. --go-grpc_out=. ./lester/proto/atraco.proto
+	protoc --go_out=. --go-grpc_out=. ./michael/proto/atraco.proto

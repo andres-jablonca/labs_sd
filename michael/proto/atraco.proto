@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "/proto";
+option go_package = "michael/proto";
 
 
 // Servicio que manejaran entre Michael y Lester
@@ -8,16 +8,19 @@ service MichaelLester {
 
   // Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
   rpc EntregarOferta (SolicitudOferta) returns (OfertaDisponible); 
-  rpc ConfirmarOferta (Confirmacion) returns (AckConfirmacion);
-  rpc Pagar (Monto) returns (ConfirmarPago);
-
+  rpc ConfirmarOferta (ConfirmacionOferta) returns (AckConfirmacionOferta);
+  rpc PagarLester (MontoPago) returns (ConfirmarPagoLester);
+  
+  // Nuevos métodos para notificaciones
+  rpc IniciarNotificacionesEstrellas (InicioNotifEstrellas) returns (AckInicioNotif);
+  rpc DetenerNotificacionesEstrellas (DetenerNotifEstrellas) returns (AckDetenerNotif);
 }
 
 // Solicitud de oferta que enviara Michael
 message SolicitudOferta {
 }
 
-// Oferta disponible que enviara Lester luego de recibir una solicitud, incluye el botin inicial, la probabilidad de exito de Trevor y Franklin y el Riesgo policial
+// Oferta disponible que enviara Lester luego de recibir una solicitud
 message OfertaDisponible {
   bool disponible = 1;
   int32 botin_inicial = 2;
@@ -26,53 +29,70 @@ message OfertaDisponible {
   float riesgo_policial = 5;
 }
 
-message Confirmacion {
+message ConfirmacionOferta {
   bool aceptada = 1;
 }
 
-message AckConfirmacion {}
+message AckConfirmacionOferta {}
 
-// Servicio que manejara Michael con Franklin o Trevor (segun quien se escoja para la fase 2)
-service MichaelTrevorFranklin {
-  // FUncion remota 1: recibe un informe de la distraccion y devuelve el resultado de la distraccion 
-  rpc InformarEstadoSegundaFase (InformarDistraccion) returns (ResultadoDistraccion);
-  // FUncion remota 2: recibe un informe del golpe y devuelve el resultado del golpe 
-  rpc InformarEstadoTerceraFase (InformarGolpe) returns (ResultadoGolpe);
-
-  rpc Pagar (Monto) returns (ConfirmarPago);
+message InicioNotifEstrellas {
+  string personaje = 1;
+  float riesgo_policial = 2;
 }
 
-// Informe de trabajo que enviara Michael que incluye la probabilidad de exito del trabajador
-message InformarDistraccion {
+message DetenerNotifEstrellas {
+  string personaje = 1;
+}
+
+message AckInicioNotif {}
+message AckDetenerNotif {}
+
+// Servicio que manejara Michael con Franklin o Trevor
+service MichaelTrevorFranklin {
+  rpc InformarDistraccion (InfoDistraccion) returns (ResultadoDistraccion);
+  rpc InformarGolpe (InfoGolpe) returns (ResultadoGolpe);
+  rpc PagarMiembro (MontoPagoMiembro) returns (ConfirmarPagoMiembro);
+}
+
+message InfoDistraccion {
   float probabilidad_exito = 1;
 }
 
-// Resultado de la mision enviado por Franklin o Trevor que incluye un indicador sobre si la mision fue un exito o fracaso
 message ResultadoDistraccion {
   bool exito = 1;
   string motivo = 2;
 }
 
-message InformarGolpe {
+message InfoGolpe {
   float probabilidad_exito = 1;
   int32 botin = 2;
+  float riesgo_policial = 3;
 }
 
-// Resultado de la mision enviado por Franklin o Trevor que incluye un indicador sobre si la mision fue un exito o fracaso
 message ResultadoGolpe {
   bool exito = 1;
   int32 botin = 2;
   string motivo = 3;
   int32 botin_extra = 4;
+  int32 estrellas_final = 5;
 }
 
-
-message Monto {
+message MontoPago {
   int32 correspondencia = 1;
   int32 total = 2;
 }
 
-message ConfirmarPago {
+message ConfirmarPagoLester {
   bool correcto = 1;
   string mensaje = 2;
-} 
+}
+
+message MontoPagoMiembro {
+  int32 correspondencia = 1;
+  int32 total = 2;
+}
+
+message ConfirmarPagoMiembro {
+  bool correcto = 1;
+  string mensaje = 2;
+}

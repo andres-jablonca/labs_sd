@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.21.12
-// source: proto/atraco.proto
+// source: michael/proto/atraco.proto
 
 package proto
 
@@ -19,9 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MichaelLester_EntregarOferta_FullMethodName  = "/MichaelLester/EntregarOferta"
-	MichaelLester_ConfirmarOferta_FullMethodName = "/MichaelLester/ConfirmarOferta"
-	MichaelLester_Pagar_FullMethodName           = "/MichaelLester/Pagar"
+	MichaelLester_EntregarOferta_FullMethodName                 = "/MichaelLester/EntregarOferta"
+	MichaelLester_ConfirmarOferta_FullMethodName                = "/MichaelLester/ConfirmarOferta"
+	MichaelLester_PagarLester_FullMethodName                    = "/MichaelLester/PagarLester"
+	MichaelLester_IniciarNotificacionesEstrellas_FullMethodName = "/MichaelLester/IniciarNotificacionesEstrellas"
+	MichaelLester_DetenerNotificacionesEstrellas_FullMethodName = "/MichaelLester/DetenerNotificacionesEstrellas"
 )
 
 // MichaelLesterClient is the client API for MichaelLester service.
@@ -32,8 +34,11 @@ const (
 type MichaelLesterClient interface {
 	// Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
 	EntregarOferta(ctx context.Context, in *SolicitudOferta, opts ...grpc.CallOption) (*OfertaDisponible, error)
-	ConfirmarOferta(ctx context.Context, in *Confirmacion, opts ...grpc.CallOption) (*AckConfirmacion, error)
-	Pagar(ctx context.Context, in *Monto, opts ...grpc.CallOption) (*ConfirmarPago, error)
+	ConfirmarOferta(ctx context.Context, in *ConfirmacionOferta, opts ...grpc.CallOption) (*AckConfirmacionOferta, error)
+	PagarLester(ctx context.Context, in *MontoPago, opts ...grpc.CallOption) (*ConfirmarPagoLester, error)
+	// Nuevos métodos para notificaciones
+	IniciarNotificacionesEstrellas(ctx context.Context, in *InicioNotifEstrellas, opts ...grpc.CallOption) (*AckInicioNotif, error)
+	DetenerNotificacionesEstrellas(ctx context.Context, in *DetenerNotifEstrellas, opts ...grpc.CallOption) (*AckDetenerNotif, error)
 }
 
 type michaelLesterClient struct {
@@ -54,9 +59,9 @@ func (c *michaelLesterClient) EntregarOferta(ctx context.Context, in *SolicitudO
 	return out, nil
 }
 
-func (c *michaelLesterClient) ConfirmarOferta(ctx context.Context, in *Confirmacion, opts ...grpc.CallOption) (*AckConfirmacion, error) {
+func (c *michaelLesterClient) ConfirmarOferta(ctx context.Context, in *ConfirmacionOferta, opts ...grpc.CallOption) (*AckConfirmacionOferta, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AckConfirmacion)
+	out := new(AckConfirmacionOferta)
 	err := c.cc.Invoke(ctx, MichaelLester_ConfirmarOferta_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -64,10 +69,30 @@ func (c *michaelLesterClient) ConfirmarOferta(ctx context.Context, in *Confirmac
 	return out, nil
 }
 
-func (c *michaelLesterClient) Pagar(ctx context.Context, in *Monto, opts ...grpc.CallOption) (*ConfirmarPago, error) {
+func (c *michaelLesterClient) PagarLester(ctx context.Context, in *MontoPago, opts ...grpc.CallOption) (*ConfirmarPagoLester, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ConfirmarPago)
-	err := c.cc.Invoke(ctx, MichaelLester_Pagar_FullMethodName, in, out, cOpts...)
+	out := new(ConfirmarPagoLester)
+	err := c.cc.Invoke(ctx, MichaelLester_PagarLester_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *michaelLesterClient) IniciarNotificacionesEstrellas(ctx context.Context, in *InicioNotifEstrellas, opts ...grpc.CallOption) (*AckInicioNotif, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AckInicioNotif)
+	err := c.cc.Invoke(ctx, MichaelLester_IniciarNotificacionesEstrellas_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *michaelLesterClient) DetenerNotificacionesEstrellas(ctx context.Context, in *DetenerNotifEstrellas, opts ...grpc.CallOption) (*AckDetenerNotif, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AckDetenerNotif)
+	err := c.cc.Invoke(ctx, MichaelLester_DetenerNotificacionesEstrellas_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +107,11 @@ func (c *michaelLesterClient) Pagar(ctx context.Context, in *Monto, opts ...grpc
 type MichaelLesterServer interface {
 	// Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
 	EntregarOferta(context.Context, *SolicitudOferta) (*OfertaDisponible, error)
-	ConfirmarOferta(context.Context, *Confirmacion) (*AckConfirmacion, error)
-	Pagar(context.Context, *Monto) (*ConfirmarPago, error)
+	ConfirmarOferta(context.Context, *ConfirmacionOferta) (*AckConfirmacionOferta, error)
+	PagarLester(context.Context, *MontoPago) (*ConfirmarPagoLester, error)
+	// Nuevos métodos para notificaciones
+	IniciarNotificacionesEstrellas(context.Context, *InicioNotifEstrellas) (*AckInicioNotif, error)
+	DetenerNotificacionesEstrellas(context.Context, *DetenerNotifEstrellas) (*AckDetenerNotif, error)
 	mustEmbedUnimplementedMichaelLesterServer()
 }
 
@@ -97,11 +125,17 @@ type UnimplementedMichaelLesterServer struct{}
 func (UnimplementedMichaelLesterServer) EntregarOferta(context.Context, *SolicitudOferta) (*OfertaDisponible, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EntregarOferta not implemented")
 }
-func (UnimplementedMichaelLesterServer) ConfirmarOferta(context.Context, *Confirmacion) (*AckConfirmacion, error) {
+func (UnimplementedMichaelLesterServer) ConfirmarOferta(context.Context, *ConfirmacionOferta) (*AckConfirmacionOferta, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConfirmarOferta not implemented")
 }
-func (UnimplementedMichaelLesterServer) Pagar(context.Context, *Monto) (*ConfirmarPago, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Pagar not implemented")
+func (UnimplementedMichaelLesterServer) PagarLester(context.Context, *MontoPago) (*ConfirmarPagoLester, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PagarLester not implemented")
+}
+func (UnimplementedMichaelLesterServer) IniciarNotificacionesEstrellas(context.Context, *InicioNotifEstrellas) (*AckInicioNotif, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IniciarNotificacionesEstrellas not implemented")
+}
+func (UnimplementedMichaelLesterServer) DetenerNotificacionesEstrellas(context.Context, *DetenerNotifEstrellas) (*AckDetenerNotif, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DetenerNotificacionesEstrellas not implemented")
 }
 func (UnimplementedMichaelLesterServer) mustEmbedUnimplementedMichaelLesterServer() {}
 func (UnimplementedMichaelLesterServer) testEmbeddedByValue()                       {}
@@ -143,7 +177,7 @@ func _MichaelLester_EntregarOferta_Handler(srv interface{}, ctx context.Context,
 }
 
 func _MichaelLester_ConfirmarOferta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Confirmacion)
+	in := new(ConfirmacionOferta)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -155,25 +189,61 @@ func _MichaelLester_ConfirmarOferta_Handler(srv interface{}, ctx context.Context
 		FullMethod: MichaelLester_ConfirmarOferta_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MichaelLesterServer).ConfirmarOferta(ctx, req.(*Confirmacion))
+		return srv.(MichaelLesterServer).ConfirmarOferta(ctx, req.(*ConfirmacionOferta))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MichaelLester_Pagar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Monto)
+func _MichaelLester_PagarLester_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MontoPago)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MichaelLesterServer).Pagar(ctx, in)
+		return srv.(MichaelLesterServer).PagarLester(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MichaelLester_Pagar_FullMethodName,
+		FullMethod: MichaelLester_PagarLester_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MichaelLesterServer).Pagar(ctx, req.(*Monto))
+		return srv.(MichaelLesterServer).PagarLester(ctx, req.(*MontoPago))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MichaelLester_IniciarNotificacionesEstrellas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InicioNotifEstrellas)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MichaelLesterServer).IniciarNotificacionesEstrellas(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MichaelLester_IniciarNotificacionesEstrellas_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MichaelLesterServer).IniciarNotificacionesEstrellas(ctx, req.(*InicioNotifEstrellas))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MichaelLester_DetenerNotificacionesEstrellas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DetenerNotifEstrellas)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MichaelLesterServer).DetenerNotificacionesEstrellas(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MichaelLester_DetenerNotificacionesEstrellas_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MichaelLesterServer).DetenerNotificacionesEstrellas(ctx, req.(*DetenerNotifEstrellas))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -194,31 +264,37 @@ var MichaelLester_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MichaelLester_ConfirmarOferta_Handler,
 		},
 		{
-			MethodName: "Pagar",
-			Handler:    _MichaelLester_Pagar_Handler,
+			MethodName: "PagarLester",
+			Handler:    _MichaelLester_PagarLester_Handler,
+		},
+		{
+			MethodName: "IniciarNotificacionesEstrellas",
+			Handler:    _MichaelLester_IniciarNotificacionesEstrellas_Handler,
+		},
+		{
+			MethodName: "DetenerNotificacionesEstrellas",
+			Handler:    _MichaelLester_DetenerNotificacionesEstrellas_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/atraco.proto",
+	Metadata: "michael/proto/atraco.proto",
 }
 
 const (
-	MichaelTrevorFranklin_InformarEstadoSegundaFase_FullMethodName = "/MichaelTrevorFranklin/InformarEstadoSegundaFase"
-	MichaelTrevorFranklin_InformarEstadoTerceraFase_FullMethodName = "/MichaelTrevorFranklin/InformarEstadoTerceraFase"
-	MichaelTrevorFranklin_Pagar_FullMethodName                     = "/MichaelTrevorFranklin/Pagar"
+	MichaelTrevorFranklin_InformarDistraccion_FullMethodName = "/MichaelTrevorFranklin/InformarDistraccion"
+	MichaelTrevorFranklin_InformarGolpe_FullMethodName       = "/MichaelTrevorFranklin/InformarGolpe"
+	MichaelTrevorFranklin_PagarMiembro_FullMethodName        = "/MichaelTrevorFranklin/PagarMiembro"
 )
 
 // MichaelTrevorFranklinClient is the client API for MichaelTrevorFranklin service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Servicio que manejara Michael con Franklin o Trevor (segun quien se escoja para la fase 2)
+// Servicio que manejara Michael con Franklin o Trevor
 type MichaelTrevorFranklinClient interface {
-	// FUncion remota 1: recibe un informe de la distraccion y devuelve el resultado de la distraccion
-	InformarEstadoSegundaFase(ctx context.Context, in *InformarDistraccion, opts ...grpc.CallOption) (*ResultadoDistraccion, error)
-	// FUncion remota 2: recibe un informe del golpe y devuelve el resultado del golpe
-	InformarEstadoTerceraFase(ctx context.Context, in *InformarGolpe, opts ...grpc.CallOption) (*ResultadoGolpe, error)
-	Pagar(ctx context.Context, in *Monto, opts ...grpc.CallOption) (*ConfirmarPago, error)
+	InformarDistraccion(ctx context.Context, in *InfoDistraccion, opts ...grpc.CallOption) (*ResultadoDistraccion, error)
+	InformarGolpe(ctx context.Context, in *InfoGolpe, opts ...grpc.CallOption) (*ResultadoGolpe, error)
+	PagarMiembro(ctx context.Context, in *MontoPagoMiembro, opts ...grpc.CallOption) (*ConfirmarPagoMiembro, error)
 }
 
 type michaelTrevorFranklinClient struct {
@@ -229,30 +305,30 @@ func NewMichaelTrevorFranklinClient(cc grpc.ClientConnInterface) MichaelTrevorFr
 	return &michaelTrevorFranklinClient{cc}
 }
 
-func (c *michaelTrevorFranklinClient) InformarEstadoSegundaFase(ctx context.Context, in *InformarDistraccion, opts ...grpc.CallOption) (*ResultadoDistraccion, error) {
+func (c *michaelTrevorFranklinClient) InformarDistraccion(ctx context.Context, in *InfoDistraccion, opts ...grpc.CallOption) (*ResultadoDistraccion, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResultadoDistraccion)
-	err := c.cc.Invoke(ctx, MichaelTrevorFranklin_InformarEstadoSegundaFase_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, MichaelTrevorFranklin_InformarDistraccion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *michaelTrevorFranklinClient) InformarEstadoTerceraFase(ctx context.Context, in *InformarGolpe, opts ...grpc.CallOption) (*ResultadoGolpe, error) {
+func (c *michaelTrevorFranklinClient) InformarGolpe(ctx context.Context, in *InfoGolpe, opts ...grpc.CallOption) (*ResultadoGolpe, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResultadoGolpe)
-	err := c.cc.Invoke(ctx, MichaelTrevorFranklin_InformarEstadoTerceraFase_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, MichaelTrevorFranklin_InformarGolpe_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *michaelTrevorFranklinClient) Pagar(ctx context.Context, in *Monto, opts ...grpc.CallOption) (*ConfirmarPago, error) {
+func (c *michaelTrevorFranklinClient) PagarMiembro(ctx context.Context, in *MontoPagoMiembro, opts ...grpc.CallOption) (*ConfirmarPagoMiembro, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ConfirmarPago)
-	err := c.cc.Invoke(ctx, MichaelTrevorFranklin_Pagar_FullMethodName, in, out, cOpts...)
+	out := new(ConfirmarPagoMiembro)
+	err := c.cc.Invoke(ctx, MichaelTrevorFranklin_PagarMiembro_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -263,13 +339,11 @@ func (c *michaelTrevorFranklinClient) Pagar(ctx context.Context, in *Monto, opts
 // All implementations must embed UnimplementedMichaelTrevorFranklinServer
 // for forward compatibility.
 //
-// Servicio que manejara Michael con Franklin o Trevor (segun quien se escoja para la fase 2)
+// Servicio que manejara Michael con Franklin o Trevor
 type MichaelTrevorFranklinServer interface {
-	// FUncion remota 1: recibe un informe de la distraccion y devuelve el resultado de la distraccion
-	InformarEstadoSegundaFase(context.Context, *InformarDistraccion) (*ResultadoDistraccion, error)
-	// FUncion remota 2: recibe un informe del golpe y devuelve el resultado del golpe
-	InformarEstadoTerceraFase(context.Context, *InformarGolpe) (*ResultadoGolpe, error)
-	Pagar(context.Context, *Monto) (*ConfirmarPago, error)
+	InformarDistraccion(context.Context, *InfoDistraccion) (*ResultadoDistraccion, error)
+	InformarGolpe(context.Context, *InfoGolpe) (*ResultadoGolpe, error)
+	PagarMiembro(context.Context, *MontoPagoMiembro) (*ConfirmarPagoMiembro, error)
 	mustEmbedUnimplementedMichaelTrevorFranklinServer()
 }
 
@@ -280,14 +354,14 @@ type MichaelTrevorFranklinServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMichaelTrevorFranklinServer struct{}
 
-func (UnimplementedMichaelTrevorFranklinServer) InformarEstadoSegundaFase(context.Context, *InformarDistraccion) (*ResultadoDistraccion, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InformarEstadoSegundaFase not implemented")
+func (UnimplementedMichaelTrevorFranklinServer) InformarDistraccion(context.Context, *InfoDistraccion) (*ResultadoDistraccion, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InformarDistraccion not implemented")
 }
-func (UnimplementedMichaelTrevorFranklinServer) InformarEstadoTerceraFase(context.Context, *InformarGolpe) (*ResultadoGolpe, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InformarEstadoTerceraFase not implemented")
+func (UnimplementedMichaelTrevorFranklinServer) InformarGolpe(context.Context, *InfoGolpe) (*ResultadoGolpe, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InformarGolpe not implemented")
 }
-func (UnimplementedMichaelTrevorFranklinServer) Pagar(context.Context, *Monto) (*ConfirmarPago, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Pagar not implemented")
+func (UnimplementedMichaelTrevorFranklinServer) PagarMiembro(context.Context, *MontoPagoMiembro) (*ConfirmarPagoMiembro, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PagarMiembro not implemented")
 }
 func (UnimplementedMichaelTrevorFranklinServer) mustEmbedUnimplementedMichaelTrevorFranklinServer() {}
 func (UnimplementedMichaelTrevorFranklinServer) testEmbeddedByValue()                               {}
@@ -310,56 +384,56 @@ func RegisterMichaelTrevorFranklinServer(s grpc.ServiceRegistrar, srv MichaelTre
 	s.RegisterService(&MichaelTrevorFranklin_ServiceDesc, srv)
 }
 
-func _MichaelTrevorFranklin_InformarEstadoSegundaFase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InformarDistraccion)
+func _MichaelTrevorFranklin_InformarDistraccion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InfoDistraccion)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MichaelTrevorFranklinServer).InformarEstadoSegundaFase(ctx, in)
+		return srv.(MichaelTrevorFranklinServer).InformarDistraccion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MichaelTrevorFranklin_InformarEstadoSegundaFase_FullMethodName,
+		FullMethod: MichaelTrevorFranklin_InformarDistraccion_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MichaelTrevorFranklinServer).InformarEstadoSegundaFase(ctx, req.(*InformarDistraccion))
+		return srv.(MichaelTrevorFranklinServer).InformarDistraccion(ctx, req.(*InfoDistraccion))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MichaelTrevorFranklin_InformarEstadoTerceraFase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InformarGolpe)
+func _MichaelTrevorFranklin_InformarGolpe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InfoGolpe)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MichaelTrevorFranklinServer).InformarEstadoTerceraFase(ctx, in)
+		return srv.(MichaelTrevorFranklinServer).InformarGolpe(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MichaelTrevorFranklin_InformarEstadoTerceraFase_FullMethodName,
+		FullMethod: MichaelTrevorFranklin_InformarGolpe_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MichaelTrevorFranklinServer).InformarEstadoTerceraFase(ctx, req.(*InformarGolpe))
+		return srv.(MichaelTrevorFranklinServer).InformarGolpe(ctx, req.(*InfoGolpe))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MichaelTrevorFranklin_Pagar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Monto)
+func _MichaelTrevorFranklin_PagarMiembro_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MontoPagoMiembro)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MichaelTrevorFranklinServer).Pagar(ctx, in)
+		return srv.(MichaelTrevorFranklinServer).PagarMiembro(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MichaelTrevorFranklin_Pagar_FullMethodName,
+		FullMethod: MichaelTrevorFranklin_PagarMiembro_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MichaelTrevorFranklinServer).Pagar(ctx, req.(*Monto))
+		return srv.(MichaelTrevorFranklinServer).PagarMiembro(ctx, req.(*MontoPagoMiembro))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -372,18 +446,18 @@ var MichaelTrevorFranklin_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MichaelTrevorFranklinServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "InformarEstadoSegundaFase",
-			Handler:    _MichaelTrevorFranklin_InformarEstadoSegundaFase_Handler,
+			MethodName: "InformarDistraccion",
+			Handler:    _MichaelTrevorFranklin_InformarDistraccion_Handler,
 		},
 		{
-			MethodName: "InformarEstadoTerceraFase",
-			Handler:    _MichaelTrevorFranklin_InformarEstadoTerceraFase_Handler,
+			MethodName: "InformarGolpe",
+			Handler:    _MichaelTrevorFranklin_InformarGolpe_Handler,
 		},
 		{
-			MethodName: "Pagar",
-			Handler:    _MichaelTrevorFranklin_Pagar_Handler,
+			MethodName: "PagarMiembro",
+			Handler:    _MichaelTrevorFranklin_PagarMiembro_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/atraco.proto",
+	Metadata: "michael/proto/atraco.proto",
 }
