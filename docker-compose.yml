@@ -36,6 +36,7 @@ services:
     depends_on:
       - rabbitmq
 
+
   michael:
     build:
       context: ./michael 

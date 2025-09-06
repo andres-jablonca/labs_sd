@@ -26,6 +26,10 @@ type server struct {
 	pb.UnimplementedMichaelLesterServer
 }
 
+func isEnviandoNotifs() bool {
+	return enviandoNotifs
+}
+
 func (s *server) EntregarOferta(ctx context.Context, req *pb.SolicitudOferta) (*pb.OfertaDisponible, error) {
 	fmt.Printf("Solicitud recibida!\n")
 	time.Sleep(time.Second)
@@ -70,14 +74,19 @@ func (s *server) ConfirmarOferta(ctx context.Context, req *pb.ConfirmacionOferta
 
 func (s *server) IniciarNotificacionesEstrellas(ctx context.Context, req *pb.InicioNotifEstrellas) (*pb.AckInicioNotif, error) {
 	fmt.Printf("Iniciando notificaciones de estrellas para %s\n", req.GetPersonaje())
-	enviandoNotifs = true
+	if !isEnviandoNotifs() {
+		enviandoNotifs = false
+	}
 	go enviarNotificacionesEstrellas(req.GetPersonaje(), req.GetRiesgoPolicial())
 	return &pb.AckInicioNotif{}, nil
 }
 
 func (s *server) DetenerNotificacionesEstrellas(ctx context.Context, req *pb.DetenerNotifEstrellas) (*pb.AckDetenerNotif, error) {
 	fmt.Printf("Deteniendo notificaciones de estrellas para %s\n", req.GetPersonaje())
-	enviandoNotifs = false
+	if isEnviandoNotifs() {
+		enviandoNotifs = false
+	}
+
 	stopNotificaciones <- true
 	return &pb.AckDetenerNotif{}, nil
 }

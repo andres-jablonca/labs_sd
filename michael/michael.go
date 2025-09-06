@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	pb "michael/proto"
@@ -16,34 +17,40 @@ func generar_reporte_exito(botin_inicial int32, botin_final int, botin_extra int
 	pago_lester int32, resto int, msj_lester string,
 	pago_franklin int32, msj_franklin string,
 	pago_trevor int32, msj_trevor string) {
+	file, err := os.Create("reporte.txt")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer file.Close()
 
-	fmt.Printf("=========================================================\n")
-	fmt.Printf("== REPORTE FINAL DE LA MISION ==\n")
-	fmt.Printf("=========================================================\n")
+	fmt.Fprintf(file, "=========================================================\n")
+	fmt.Fprintf(file, "== REPORTE FINAL DE LA MISION ==\n")
+	fmt.Fprintf(file, "=========================================================\n")
 
 	banco := rand.Intn(10000) + 1000
-	fmt.Printf("Mision: Asalto al Banco # %d\n", banco)
+	fmt.Fprintf(file, "Mision: Asalto al Banco # %d\n", banco)
 
-	fmt.Printf("Resultado Global: MISION COMPLETADA CON EXITO!\n")
+	fmt.Fprintf(file, "Resultado Global: MISION COMPLETADA CON EXITO!\n")
 
-	fmt.Printf("--- REPARTO DEL BOTIN ---\n")
-	fmt.Printf("Botin Base: $%d\n", botin_inicial)
+	fmt.Fprintf(file, "--- REPARTO DEL BOTIN ---\n")
+	fmt.Fprintf(file, "Botin Base: $%d\n", botin_inicial)
 
-	fmt.Printf("Botin Extra (Habilidad de Chop): $%d\n", botin_extra)
+	fmt.Fprintf(file, "Botin Extra (Habilidad de Chop): $%d\n", botin_extra)
 
-	fmt.Printf("Botin Total: $%d\n", botin_final)
-	fmt.Printf("----------------------------------------------------\n")
+	fmt.Fprintf(file, "Botin Total: $%d\n", botin_final)
+	fmt.Fprintf(file, "----------------------------------------------------\n")
 
-	fmt.Printf("Pago a Franklin: $%d\n", pago_franklin)
-	fmt.Printf("Respuesta de Franklin: \"%s\"\n", msj_franklin)
-	fmt.Printf("Pago a Trevor: $%d\n", pago_trevor)
-	fmt.Printf("Respuesta de Trevor: \"%s\"\n", msj_trevor)
-	fmt.Printf("Pago a Lester: $%d (reparto) + $%d (resto)\n", pago_lester-int32(resto), resto)
-	fmt.Printf("Respuesta de Lester: \"%s\"\n", msj_lester)
+	fmt.Fprintf(file, "Pago a Franklin: $%d\n", pago_franklin)
+	fmt.Fprintf(file, "Respuesta de Franklin: \"%s\"\n", msj_franklin)
+	fmt.Fprintf(file, "Pago a Trevor: $%d\n", pago_trevor)
+	fmt.Fprintf(file, "Respuesta de Trevor: \"%s\"\n", msj_trevor)
+	fmt.Fprintf(file, "Pago a Lester: $%d (reparto) + $%d (resto)\n", pago_lester-int32(resto), resto)
+	fmt.Fprintf(file, "Respuesta de Lester: \"%s\"\n", msj_lester)
 
-	fmt.Printf("----------------------------------------------------\n")
-	fmt.Printf("Saldo Final de la Operacion: $%d\n", botin_final)
-	fmt.Printf("=========================================================\n")
+	fmt.Fprintf(file, "----------------------------------------------------\n")
+	fmt.Fprintf(file, "Saldo Final de la Operacion: $%d\n", botin_final)
+	fmt.Fprintf(file, "=========================================================\n")
 }
 
 func generar_reporte_fracaso(botin_inicial int32, botin_final int, botin_extra int32, fase int32, franklin bool, motivo_fracaso string) {
@@ -54,33 +61,40 @@ func generar_reporte_fracaso(botin_inicial int32, botin_final int, botin_extra i
 		quien = "Trevor"
 	}
 
-	fmt.Printf("=========================================================\n")
-	fmt.Printf("== REPORTE FINAL DE LA MISION ==\n")
-	fmt.Printf("=========================================================\n")
+	file, err := os.Create("reporte.txt")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer file.Close()
+
+	fmt.Fprintf(file, "=========================================================\n")
+	fmt.Fprintf(file, "== REPORTE FINAL DE LA MISION ==\n")
+	fmt.Fprintf(file, "=========================================================\n")
 
 	banco := rand.Intn(10000) + 1000
-	fmt.Printf("Mision: Asalto al Banco # %d\n", banco)
+	fmt.Fprintf(file, "Mision: Asalto al Banco # %d\n", banco)
 
-	fmt.Printf("Resultado Global: MISION FRACASADA EN FASE %d\n", fase)
+	fmt.Fprintf(file, "Resultado Global: MISION FRACASADA EN FASE %d\n", fase)
 
-	fmt.Printf("\nQuien fracasó: %s\n", quien)
-	fmt.Printf("Motivo del fracaso: %s\n", motivo_fracaso)
+	fmt.Fprintf(file, "\nQuien fracasó: %s\n", quien)
+	fmt.Fprintf(file, "Motivo del fracaso: %s\n", motivo_fracaso)
 
-	fmt.Printf("--- REPARTO DEL BOTIN ---\n")
-	fmt.Printf("Botin Base: $%d\n", botin_inicial)
+	fmt.Fprintf(file, "--- REPARTO DEL BOTIN ---\n")
+	fmt.Fprintf(file, "Botin Base: $%d\n", botin_inicial)
 
-	fmt.Printf("Botin Extra (Habilidad de Chop): $%d\n", botin_extra)
+	fmt.Fprintf(file, "Botin Extra (Habilidad de Chop): $%d\n", botin_extra)
 
-	fmt.Printf("Botin Total: $%d\n", botin_final)
-	fmt.Printf("----------------------------------------------------\n")
+	fmt.Fprintf(file, "Botin Total: $%d\n", botin_final)
+	fmt.Fprintf(file, "----------------------------------------------------\n")
 
-	fmt.Printf("Pago a Franklin: $0\n")
-	fmt.Printf("Pago a Trevor: $0\n")
-	fmt.Printf("Pago a Lester: $0\n")
+	fmt.Fprintf(file, "Pago a Franklin: $0\n")
+	fmt.Fprintf(file, "Pago a Trevor: $0\n")
+	fmt.Fprintf(file, "Pago a Lester: $0\n")
 
-	fmt.Printf("----------------------------------------------------\n")
-	fmt.Printf("Saldo Final de la Operacion: $%d\n", botin_final)
-	fmt.Printf("=========================================================\n")
+	fmt.Fprintf(file, "----------------------------------------------------\n")
+	fmt.Fprintf(file, "Saldo Final de la Operacion: $%d\n", botin_final)
+	fmt.Fprintf(file, "=========================================================\n")
 }
 
 func main() {
