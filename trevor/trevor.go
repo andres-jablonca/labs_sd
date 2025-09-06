@@ -65,20 +65,25 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 	turnos_necesarios := 200 - int(probabilidad_exito*100)
 	exito := true
 	motivo := ""
-
+	trevor := false
 	for i := range turnos_necesarios {
-		if i%20 == 0 {
-			fmt.Printf("Consultando estrellas...\n\"Lester: %d estrellas\"\n", s.estrellasActuales)
-
-			if s.estrellasActuales >= 5 {
+		if i%5 == 0 {
+			fmt.Printf("[*] CONSULTANDO ESTRELLAS... %d ESTRELLAS DETECTADAS!\n", s.estrellasActuales)
+			if s.estrellasActuales >= 5 && !trevor {
+				fmt.Printf("================\nHabilidad activada: Limite de estrellas aumentado!\n================\n")
+				trevor = true
+			} else if s.estrellasActuales >= 7 {
 				exito = false
 				fmt.Printf("%d estrellas?!?!\n", s.estrellasActuales)
 				motivo = "Limite de estrellas alcanzado."
 				break
 			}
 		}
-
-		log.Printf("Trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
+		if !trevor {
+			fmt.Printf("Trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
+		} else {
+			fmt.Printf("Trabajando con furia! (%d turnos restantes)\n", turnos_necesarios-i)
+		}
 		time.Sleep(500 * time.Millisecond)
 	}
 
@@ -103,14 +108,14 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 func (s *server) consumirEstrellas() {
 	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 	if err != nil {
-		log.Printf("No se pudo conectar a RabbitMQ: %v", err)
+		fmt.Printf("No se pudo conectar a RabbitMQ: %v", err)
 		return
 	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	if err != nil {
-		log.Printf("No se pudo abrir canal RabbitMQ: %v", err)
+		fmt.Printf("No se pudo abrir canal RabbitMQ: %v", err)
 		return
 	}
 	defer ch.Close()
@@ -124,7 +129,7 @@ func (s *server) consumirEstrellas() {
 		nil,
 	)
 	if err != nil {
-		log.Printf("Error declarando cola: %v", err)
+		fmt.Printf("Error declarando cola: %v", err)
 		return
 	}
 
@@ -138,11 +143,11 @@ func (s *server) consumirEstrellas() {
 		nil,
 	)
 	if err != nil {
-		log.Printf("Error consumiendo mensajes: %v", err)
+		fmt.Printf("Error consumiendo mensajes: %v", err)
 		return
 	}
 
-	log.Println("Estaré atento a las notificaciones, Lester")
+	fmt.Println("Estaré atento a las notificaciones, Lester")
 
 	for msg := range msgs {
 		parts := strings.Split(string(msg.Body), ":")

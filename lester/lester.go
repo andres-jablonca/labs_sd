@@ -46,6 +46,7 @@ func (s *server) EntregarOferta(ctx context.Context, req *pb.SolicitudOferta) (*
 		fmt.Printf("Oferta enviada!\n")
 		time.Sleep(time.Second)
 		return &pb.OfertaDisponible{Disponible: true, BotinInicial: int32(botin), ProbabilidadFranklin: prob_franklin, ProbabilidadTrevor: prob_trevor, RiesgoPolicial: riesgo}, nil
+		//return &pb.OfertaDisponible{Disponible: true, BotinInicial: int32(botin), ProbabilidadFranklin: 0.53, ProbabilidadTrevor: 0.1, RiesgoPolicial: 0.75}, nil
 	}
 }
 
@@ -99,15 +100,15 @@ func enviarNotificacionesEstrellas(personaje string, riesgoPolicial float32) {
 			return
 		default:
 			turno++
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(520 * time.Millisecond)
 
 			if turno%frecuenciaTurnos == 0 {
 				estrellas++
 				estre++
 				if estrellas >= 5 {
-					log.Printf("Turno %d: Estrellas: 5, ten cuidado!\n", turno)
+					fmt.Printf("Turno %d: Estrellas: 5, ten cuidado!\n", turno)
 				}
-				log.Printf("Turno %d: Aumento de estrellas: %d -> %d, ten cuidado!\n", turno, estre, estrellas)
+				fmt.Printf("Turno %d: Aumento de estrellas: %d -> %d, ten cuidado!\n", turno, estre, estrellas)
 
 				err := enviarMensajeRabbitMQ(personaje, estrellas)
 				if err != nil {

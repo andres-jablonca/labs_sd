@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func generar_reporte_exito(botin_inicial int32, botin_final int, fase int32,
+func generar_reporte_exito(botin_inicial int32, botin_final int, botin_extra int32,
 	pago_lester int32, resto int, msj_lester string,
 	pago_franklin int32, msj_franklin string,
 	pago_trevor int32, msj_trevor string) {
@@ -29,7 +29,7 @@ func generar_reporte_exito(botin_inicial int32, botin_final int, fase int32,
 	fmt.Printf("--- REPARTO DEL BOTIN ---\n")
 	fmt.Printf("Botin Base: $%d\n", botin_inicial)
 
-	fmt.Printf("Botin Extra (Habilidad de Chop): $%d\n", 0)
+	fmt.Printf("Botin Extra (Habilidad de Chop): $%d\n", botin_extra)
 
 	fmt.Printf("Botin Total: $%d\n", botin_final)
 	fmt.Printf("----------------------------------------------------\n")
@@ -48,7 +48,7 @@ func generar_reporte_exito(botin_inicial int32, botin_final int, fase int32,
 
 func generar_reporte_fracaso(botin_inicial int32, botin_final int, botin_extra int32, fase int32, franklin bool, motivo_fracaso string) {
 	var quien string
-	if franklin {
+	if franklin && fase == 2 {
 		quien = "Franklin"
 	} else {
 		quien = "Trevor"
@@ -402,15 +402,15 @@ func main() {
 			return
 		}
 		time.Sleep(5 * time.Second)
-		generar_reporte_exito(botin, botin_final, 4, int32(correspondencias_lester), resto, respuesta_lester.GetMensaje(), int32(correspondencias), respuesta_franklin.GetMensaje(), int32(correspondencias), respuesta_trevor.GetMensaje())
+		generar_reporte_exito(botin, botin_final, int32(botin_extra), int32(correspondencias_lester), resto, respuesta_lester.GetMensaje(), int32(correspondencias), respuesta_franklin.GetMensaje(), int32(correspondencias), respuesta_trevor.GetMensaje())
 
 	} else if exito_fase_2 && !exito_fase_3 {
 
 		generar_reporte_fracaso(botin, botin_final, int32(botin_extra), 3, franklin, motivo_fracaso_fase_3)
 
-	} else {
+	} else if !exito_fase_2 && !exito_fase_3 {
 
-		generar_reporte_fracaso(botin, botin_final, 0, 2, franklin, motivo_fracaso_fase_2)
+		generar_reporte_fracaso(botin, botin_final, int32(botin_extra), 2, franklin, motivo_fracaso_fase_2)
 
 	}
 

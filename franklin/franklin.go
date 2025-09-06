@@ -65,12 +65,16 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 	turnos_necesarios := 200 - int(probabilidad_exito*100)
 	exito := true
 	motivo := ""
-
+	extra := 0
+	chop := false
 	for i := range turnos_necesarios {
-		if i%20 == 0 {
-			fmt.Printf("Consultando estrellas...\n\"Lester: %d estrellas\"\n", s.estrellasActuales)
+		if i%5 == 0 {
+			fmt.Printf("[*] CONSULTANDO ESTRELLAS... %d ESTRELLAS DETECTADAS!\n", s.estrellasActuales)
 
-			if s.estrellasActuales >= 5 {
+			if s.estrellasActuales >= 3 && !chop {
+				fmt.Printf("================\nHabilidad activada: Chop recolectando botin extra!\n================\n")
+				chop = true
+			} else if s.estrellasActuales >= 5 {
 				exito = false
 				fmt.Printf("%d estrellas?!?!\n", s.estrellasActuales)
 				motivo = "Limite de estrellas alcanzado."
@@ -78,15 +82,23 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 			}
 		}
 
-		log.Printf("Trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
+		fmt.Printf("Trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
+		if chop {
+			fmt.Printf("+1000\n")
+			extra += 1000
+		}
 		time.Sleep(500 * time.Millisecond)
 	}
-
+	///if s.estrellasActuales >= 5 {
+	///	fmt.Printf("Límite de estrellas alcanzado\n")
+	///	exito = false
+	///}
 	if exito {
 		fmt.Println("La fase 3 fue todo un éxito!")
 		return &pb.ResultadoGolpe{
 			Exito:          exito,
 			Botin:          inf.GetBotin(),
+			BotinExtra:     int32(extra),
 			EstrellasFinal: int32(s.estrellasActuales),
 		}, nil
 	} else {
@@ -95,6 +107,7 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 			Exito:          exito,
 			Botin:          inf.GetBotin(),
 			Motivo:         motivo,
+			BotinExtra:     int32(extra),
 			EstrellasFinal: int32(s.estrellasActuales),
 		}, nil
 	}
@@ -103,14 +116,14 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 func (s *server) consumirEstrellas() {
 	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 	if err != nil {
-		log.Printf("No se pudo conectar a RabbitMQ: %v", err)
+		fmt.Printf("No se pudo conectar a RabbitMQ: %v", err)
 		return
 	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	if err != nil {
-		log.Printf("No se pudo abrir canal RabbitMQ: %v", err)
+		fmt.Printf("No se pudo abrir canal RabbitMQ: %v", err)
 		return
 	}
 	defer ch.Close()
@@ -124,7 +137,7 @@ func (s *server) consumirEstrellas() {
 		nil,
 	)
 	if err != nil {
-		log.Printf("Error declarando cola: %v", err)
+		fmt.Printf("Error declarando cola: %v", err)
 		return
 	}
 
@@ -138,11 +151,11 @@ func (s *server) consumirEstrellas() {
 		nil,
 	)
 	if err != nil {
-		log.Printf("Error consumiendo mensajes: %v", err)
+		fmt.Printf("Error consumiendo mensajes: %v", err)
 		return
 	}
 
-	log.Println("Estaré atento a las notificaciones, Lester")
+	fmt.Println("Estaré atento a las notificaciones, Lester")
 
 	for msg := range msgs {
 		parts := strings.Split(string(msg.Body), ":")
