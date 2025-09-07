@@ -43,13 +43,13 @@ func (s *server) EntregarOferta(ctx context.Context, req *pb.SolicitudOferta) (*
 		time.Sleep(time.Second)
 		return &pb.OfertaDisponible{Disponible: false}, nil
 	} else {
-		botin := rand.Intn(20000) + 10000
+		//botin := rand.Intn(20000) + 10000
 		prob_franklin := rand.Float32()
 		prob_trevor := rand.Float32()
 		riesgo := rand.Float32()
 		fmt.Printf("Oferta enviada!\n")
 		time.Sleep(time.Second)
-		return &pb.OfertaDisponible{Disponible: true, BotinInicial: int32(botin), ProbabilidadFranklin: prob_franklin, ProbabilidadTrevor: prob_trevor, RiesgoPolicial: riesgo}, nil
+		return &pb.OfertaDisponible{Disponible: true, ProbabilidadFranklin: prob_franklin, ProbabilidadTrevor: prob_trevor, RiesgoPolicial: riesgo}, nil
 		//return &pb.OfertaDisponible{Disponible: true, BotinInicial: int32(botin), ProbabilidadFranklin: 0.53, ProbabilidadTrevor: 0.1, RiesgoPolicial: 0.75}, nil
 	}
 }

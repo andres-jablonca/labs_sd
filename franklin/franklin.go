@@ -87,7 +87,16 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 			fmt.Printf("+1000\n")
 			extra += 1000
 		}
+
+		if s.estrellasActuales >= 5 && i == turnos_necesarios-1 {
+			exito = false
+			fmt.Printf("%d estrellas?!?!\n", s.estrellasActuales)
+			motivo = "Limite de estrellas alcanzado."
+			break
+		}
+
 		time.Sleep(500 * time.Millisecond)
+
 	}
 	///if s.estrellasActuales >= 5 {
 	///	fmt.Printf("Límite de estrellas alcanzado\n")

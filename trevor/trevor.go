@@ -79,12 +79,22 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 				break
 			}
 		}
+
 		if !trevor {
 			fmt.Printf("Trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
 		} else {
 			fmt.Printf("Trabajando con furia! (%d turnos restantes)\n", turnos_necesarios-i)
 		}
+
+		if s.estrellasActuales >= 7 && i == turnos_necesarios-1 {
+			exito = false
+			fmt.Printf("%d estrellas?!?!\n", s.estrellasActuales)
+			motivo = "Limite de estrellas alcanzado."
+			break
+		}
+
 		time.Sleep(500 * time.Millisecond)
+
 	}
 
 	if exito {

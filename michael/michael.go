@@ -147,7 +147,19 @@ func main() {
 			return
 		}
 
-		if response.GetDisponible() {
+		if response.GetBotinInicial() == 0 || response.GetProbabilidadFranklin() == 0.0 || response.GetProbabilidadTrevor() == 0.0 || response.GetRiesgoPolicial() == 0.0 {
+			//---INFORMAR A LESTER QUE SE RECHAZO
+			fmt.Printf("\nOferta INVALIDA, se enviara otra solicitud\n")
+			time.Sleep(time.Second)
+			request_lester := &pb.ConfirmacionOferta{Aceptada: false}
+			fmt.Println("---\nInformando rechazo de oferta")
+			time.Sleep(2 * time.Second)
+			_, err_lester := client_lester.ConfirmarOferta(context.Background(), request_lester)
+			if err_lester != nil {
+				fmt.Printf("Error al llamar al servicio: %v\n", err_lester)
+				return
+			}
+		} else if response.GetDisponible() {
 
 			fmt.Printf("Oferta recibida:\n\n")
 			time.Sleep(time.Second)
@@ -415,7 +427,8 @@ func main() {
 			fmt.Printf("Error al llamar al servicio: %v\n", err)
 			return
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
+
 		generar_reporte_exito(botin, botin_final, int32(botin_extra), int32(correspondencias_lester), resto, respuesta_lester.GetMensaje(), int32(correspondencias), respuesta_franklin.GetMensaje(), int32(correspondencias), respuesta_trevor.GetMensaje())
 
 	} else if exito_fase_2 && !exito_fase_3 {

@@ -13,10 +13,10 @@ docker-trevor:
 # Dockerizar client
 docker-michael:
 	sudo docker compose up --build michael
+	@sudo docker cp Michael:/app/reporte.txt ./reporte.txt
 
 # Parar todo
 docker-turnoff:
-	@echo "🛑 Parando toda la infraestructura..."
 	sudo docker compose down
 
 proto:
