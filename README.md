@@ -3,14 +3,16 @@ trabaja mati
 
 ## Version actualizada con entidades independientes
 
+## Instalar go, proto y plugins
+
+### Actualizar go.sum
+make tidy
+
 ### Compilar proto
 make proto
 
-### Para correr todos los contenedores por la misma consola:
-docker compose down
-docker compose up -- build
-
-## Para correr contenedores por terminales separadas:
+## Levantar entidades por terminales separadas:
+make docker-down
 make docker-{nombre_entidad}
 
 En donde nombre entidad: {lester, franklin, trevor, michael}

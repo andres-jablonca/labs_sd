@@ -205,12 +205,12 @@ func main() {
 		}
 	}
 
-	fmt.Printf("\n--- OFERTA FINAL ---\n\n")
+	fmt.Printf("\n====== OFERTA FINAL ======\n\n")
 	fmt.Printf("BOTIN INICIAL: %d\n", botin)
 	fmt.Printf("PROBABILIDAD DE EXITO DE FRANKLIN: %f\n", prob_franklin)
 	fmt.Printf("PROBABILIDAD DE EXITO DE TREVOR: %f\n", prob_trevor)
-	fmt.Printf("RIESGO POLICIAL: %f\n", riesgo)
-	fmt.Println("\n--- OFERTA FINAL ---")
+	fmt.Printf("RIESGO POLICIAL: %f\n\n", riesgo)
+	fmt.Printf("\n====== OFERTA FINAL ======\n")
 	time.Sleep(time.Second)
 	fmt.Printf("\nProceder a fase 2!\n\n")
 	time.Sleep(time.Second)

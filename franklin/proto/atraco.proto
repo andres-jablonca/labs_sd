@@ -1,7 +1,6 @@
 syntax = "proto3";
 
-option go_package = "franklin/proto";
-
+option go_package = "lester/proto";
 
 // Servicio que manejaran entre Michael y Lester
 service MichaelLester {

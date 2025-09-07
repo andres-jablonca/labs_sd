@@ -1,19 +1,19 @@
 =========================================================
 == REPORTE FINAL DE LA MISION ==
 =========================================================
-Mision: Asalto al Banco # 8028
+Mision: Asalto al Banco # 1779
 Resultado Global: MISION COMPLETADA CON EXITO!
 --- REPARTO DEL BOTIN ---
-Botin Base: $26385
+Botin Base: $672392
 Botin Extra (Habilidad de Chop): $0
-Botin Total: $26385
+Botin Total: $672392
 ----------------------------------------------------
-Pago a Franklin: $6596
+Pago a Franklin: $168098
 Respuesta de Franklin: "Excelente Michael! El pago es correcto."
-Pago a Trevor: $6596
+Pago a Trevor: $168098
 Respuesta de Trevor: "Justo lo que esperaba!"
-Pago a Lester: $6596 (reparto) + $1 (resto)
+Pago a Lester: $168098 (reparto) + $0 (resto)
 Respuesta de Lester: "Un placer hacer negocios."
 ----------------------------------------------------
-Saldo Final de la Operacion: $26385
+Saldo Final de la Operacion: $672392
 =========================================================

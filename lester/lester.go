@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
 	"math/rand"
 	"net"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	pb "lester/proto"
@@ -13,6 +17,76 @@ import (
 	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 )
+
+type OfertaCSV struct {
+	BotinInicial      int32
+	ProbExitoFranklin int32
+	ProbExitoTrevor   int32
+	RiesgoPolicial    int32
+}
+
+func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var validRows []OfertaCSV
+
+	// Saltar la primera línea
+	if scanner.Scan() {
+	}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		fields := strings.Split(line, ",")
+
+		// Asegurar que tenga al menos 4 columnas
+		if len(fields) < 4 {
+			continue
+		}
+
+		// Verificar que al menos uno de los primeros 4 no esté vacío
+		valid := false
+		for i := 0; i < 4; i++ {
+			if strings.TrimSpace(fields[i]) != "" {
+				valid = true
+				break
+			}
+		}
+
+		if valid {
+			// Convertir a int32
+			botin, _ := strconv.Atoi(strings.TrimSpace(fields[0]))
+			franklin, _ := strconv.Atoi(strings.TrimSpace(fields[1]))
+			trevor, _ := strconv.Atoi(strings.TrimSpace(fields[2]))
+			riesgo, _ := strconv.Atoi(strings.TrimSpace(fields[3]))
+
+			oferta := OfertaCSV{
+				BotinInicial:      int32(botin),
+				ProbExitoFranklin: int32(franklin),
+				ProbExitoTrevor:   int32(trevor),
+				RiesgoPolicial:    int32(riesgo),
+			}
+			validRows = append(validRows, oferta)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(validRows) == 0 {
+		return nil, fmt.Errorf("no se encontraron filas válidas")
+	}
+
+	// Selección aleatoria
+	rand.Seed(time.Now().UnixNano())
+	randomIndex := rand.Intn(len(validRows))
+	return &validRows[randomIndex], nil
+}
 
 var (
 	rechazos           int = 0
@@ -43,14 +117,18 @@ func (s *server) EntregarOferta(ctx context.Context, req *pb.SolicitudOferta) (*
 		time.Sleep(time.Second)
 		return &pb.OfertaDisponible{Disponible: false}, nil
 	} else {
-		//botin := rand.Intn(20000) + 10000
-		prob_franklin := rand.Float32()
-		prob_trevor := rand.Float32()
-		riesgo := rand.Float32()
+
+		oferta, err := OfertaAleatoria("ofertas_grande.csv")
+		if err != nil {
+			log.Fatal(err)
+		}
+		botin := oferta.BotinInicial
+		prob_franklin := oferta.ProbExitoFranklin
+		prob_trevor := oferta.ProbExitoTrevor
+		riesgo := oferta.RiesgoPolicial
 		fmt.Printf("Oferta enviada!\n")
 		time.Sleep(time.Second)
-		return &pb.OfertaDisponible{Disponible: true, ProbabilidadFranklin: prob_franklin, ProbabilidadTrevor: prob_trevor, RiesgoPolicial: riesgo}, nil
-		//return &pb.OfertaDisponible{Disponible: true, BotinInicial: int32(botin), ProbabilidadFranklin: 0.53, ProbabilidadTrevor: 0.1, RiesgoPolicial: 0.75}, nil
+		return &pb.OfertaDisponible{Disponible: true, BotinInicial: botin, ProbabilidadFranklin: float32(prob_franklin) / 100.0, ProbabilidadTrevor: float32(prob_trevor) / 100.0, RiesgoPolicial: float32(riesgo) / 100.0}, nil
 	}
 }
 

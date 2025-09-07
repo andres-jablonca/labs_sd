@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v3.21.12
-// source: lester/proto/atraco.proto
+// source: michael/proto/atraco.proto
 
 package proto
 
@@ -30,7 +30,7 @@ type SolicitudOferta struct {
 
 func (x *SolicitudOferta) Reset() {
 	*x = SolicitudOferta{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[0]
+	mi := &file_michael_proto_atraco_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *SolicitudOferta) String() string {
 func (*SolicitudOferta) ProtoMessage() {}
 
 func (x *SolicitudOferta) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[0]
+	mi := &file_michael_proto_atraco_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *SolicitudOferta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SolicitudOferta.ProtoReflect.Descriptor instead.
 func (*SolicitudOferta) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{0}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{0}
 }
 
 // Oferta disponible que enviara Lester luego de recibir una solicitud
@@ -72,7 +72,7 @@ type OfertaDisponible struct {
 
 func (x *OfertaDisponible) Reset() {
 	*x = OfertaDisponible{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[1]
+	mi := &file_michael_proto_atraco_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -84,7 +84,7 @@ func (x *OfertaDisponible) String() string {
 func (*OfertaDisponible) ProtoMessage() {}
 
 func (x *OfertaDisponible) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[1]
+	mi := &file_michael_proto_atraco_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -97,7 +97,7 @@ func (x *OfertaDisponible) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OfertaDisponible.ProtoReflect.Descriptor instead.
 func (*OfertaDisponible) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{1}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *OfertaDisponible) GetDisponible() bool {
@@ -144,7 +144,7 @@ type ConfirmacionOferta struct {
 
 func (x *ConfirmacionOferta) Reset() {
 	*x = ConfirmacionOferta{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[2]
+	mi := &file_michael_proto_atraco_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -156,7 +156,7 @@ func (x *ConfirmacionOferta) String() string {
 func (*ConfirmacionOferta) ProtoMessage() {}
 
 func (x *ConfirmacionOferta) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[2]
+	mi := &file_michael_proto_atraco_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -169,7 +169,7 @@ func (x *ConfirmacionOferta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmacionOferta.ProtoReflect.Descriptor instead.
 func (*ConfirmacionOferta) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{2}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ConfirmacionOferta) GetAceptada() bool {
@@ -187,7 +187,7 @@ type AckConfirmacionOferta struct {
 
 func (x *AckConfirmacionOferta) Reset() {
 	*x = AckConfirmacionOferta{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[3]
+	mi := &file_michael_proto_atraco_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -199,7 +199,7 @@ func (x *AckConfirmacionOferta) String() string {
 func (*AckConfirmacionOferta) ProtoMessage() {}
 
 func (x *AckConfirmacionOferta) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[3]
+	mi := &file_michael_proto_atraco_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -212,7 +212,7 @@ func (x *AckConfirmacionOferta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AckConfirmacionOferta.ProtoReflect.Descriptor instead.
 func (*AckConfirmacionOferta) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{3}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{3}
 }
 
 type InicioNotifEstrellas struct {
@@ -225,7 +225,7 @@ type InicioNotifEstrellas struct {
 
 func (x *InicioNotifEstrellas) Reset() {
 	*x = InicioNotifEstrellas{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[4]
+	mi := &file_michael_proto_atraco_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -237,7 +237,7 @@ func (x *InicioNotifEstrellas) String() string {
 func (*InicioNotifEstrellas) ProtoMessage() {}
 
 func (x *InicioNotifEstrellas) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[4]
+	mi := &file_michael_proto_atraco_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -250,7 +250,7 @@ func (x *InicioNotifEstrellas) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InicioNotifEstrellas.ProtoReflect.Descriptor instead.
 func (*InicioNotifEstrellas) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{4}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *InicioNotifEstrellas) GetPersonaje() string {
@@ -276,7 +276,7 @@ type DetenerNotifEstrellas struct {
 
 func (x *DetenerNotifEstrellas) Reset() {
 	*x = DetenerNotifEstrellas{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[5]
+	mi := &file_michael_proto_atraco_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -288,7 +288,7 @@ func (x *DetenerNotifEstrellas) String() string {
 func (*DetenerNotifEstrellas) ProtoMessage() {}
 
 func (x *DetenerNotifEstrellas) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[5]
+	mi := &file_michael_proto_atraco_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -301,7 +301,7 @@ func (x *DetenerNotifEstrellas) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DetenerNotifEstrellas.ProtoReflect.Descriptor instead.
 func (*DetenerNotifEstrellas) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{5}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DetenerNotifEstrellas) GetPersonaje() string {
@@ -319,7 +319,7 @@ type AckInicioNotif struct {
 
 func (x *AckInicioNotif) Reset() {
 	*x = AckInicioNotif{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[6]
+	mi := &file_michael_proto_atraco_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -331,7 +331,7 @@ func (x *AckInicioNotif) String() string {
 func (*AckInicioNotif) ProtoMessage() {}
 
 func (x *AckInicioNotif) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[6]
+	mi := &file_michael_proto_atraco_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -344,7 +344,7 @@ func (x *AckInicioNotif) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AckInicioNotif.ProtoReflect.Descriptor instead.
 func (*AckInicioNotif) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{6}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{6}
 }
 
 type AckDetenerNotif struct {
@@ -355,7 +355,7 @@ type AckDetenerNotif struct {
 
 func (x *AckDetenerNotif) Reset() {
 	*x = AckDetenerNotif{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[7]
+	mi := &file_michael_proto_atraco_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -367,7 +367,7 @@ func (x *AckDetenerNotif) String() string {
 func (*AckDetenerNotif) ProtoMessage() {}
 
 func (x *AckDetenerNotif) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[7]
+	mi := &file_michael_proto_atraco_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -380,7 +380,7 @@ func (x *AckDetenerNotif) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AckDetenerNotif.ProtoReflect.Descriptor instead.
 func (*AckDetenerNotif) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{7}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{7}
 }
 
 type InfoDistraccion struct {
@@ -392,7 +392,7 @@ type InfoDistraccion struct {
 
 func (x *InfoDistraccion) Reset() {
 	*x = InfoDistraccion{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[8]
+	mi := &file_michael_proto_atraco_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -404,7 +404,7 @@ func (x *InfoDistraccion) String() string {
 func (*InfoDistraccion) ProtoMessage() {}
 
 func (x *InfoDistraccion) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[8]
+	mi := &file_michael_proto_atraco_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -417,7 +417,7 @@ func (x *InfoDistraccion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InfoDistraccion.ProtoReflect.Descriptor instead.
 func (*InfoDistraccion) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{8}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *InfoDistraccion) GetProbabilidadExito() float32 {
@@ -437,7 +437,7 @@ type ResultadoDistraccion struct {
 
 func (x *ResultadoDistraccion) Reset() {
 	*x = ResultadoDistraccion{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[9]
+	mi := &file_michael_proto_atraco_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -449,7 +449,7 @@ func (x *ResultadoDistraccion) String() string {
 func (*ResultadoDistraccion) ProtoMessage() {}
 
 func (x *ResultadoDistraccion) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[9]
+	mi := &file_michael_proto_atraco_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -462,7 +462,7 @@ func (x *ResultadoDistraccion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResultadoDistraccion.ProtoReflect.Descriptor instead.
 func (*ResultadoDistraccion) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{9}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ResultadoDistraccion) GetExito() bool {
@@ -490,7 +490,7 @@ type InfoGolpe struct {
 
 func (x *InfoGolpe) Reset() {
 	*x = InfoGolpe{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[10]
+	mi := &file_michael_proto_atraco_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -502,7 +502,7 @@ func (x *InfoGolpe) String() string {
 func (*InfoGolpe) ProtoMessage() {}
 
 func (x *InfoGolpe) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[10]
+	mi := &file_michael_proto_atraco_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -515,7 +515,7 @@ func (x *InfoGolpe) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InfoGolpe.ProtoReflect.Descriptor instead.
 func (*InfoGolpe) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{10}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *InfoGolpe) GetProbabilidadExito() float32 {
@@ -552,7 +552,7 @@ type ResultadoGolpe struct {
 
 func (x *ResultadoGolpe) Reset() {
 	*x = ResultadoGolpe{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[11]
+	mi := &file_michael_proto_atraco_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -564,7 +564,7 @@ func (x *ResultadoGolpe) String() string {
 func (*ResultadoGolpe) ProtoMessage() {}
 
 func (x *ResultadoGolpe) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[11]
+	mi := &file_michael_proto_atraco_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -577,7 +577,7 @@ func (x *ResultadoGolpe) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResultadoGolpe.ProtoReflect.Descriptor instead.
 func (*ResultadoGolpe) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{11}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ResultadoGolpe) GetExito() bool {
@@ -625,7 +625,7 @@ type MontoPago struct {
 
 func (x *MontoPago) Reset() {
 	*x = MontoPago{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[12]
+	mi := &file_michael_proto_atraco_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -637,7 +637,7 @@ func (x *MontoPago) String() string {
 func (*MontoPago) ProtoMessage() {}
 
 func (x *MontoPago) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[12]
+	mi := &file_michael_proto_atraco_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -650,7 +650,7 @@ func (x *MontoPago) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MontoPago.ProtoReflect.Descriptor instead.
 func (*MontoPago) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{12}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MontoPago) GetCorrespondencia() int32 {
@@ -677,7 +677,7 @@ type ConfirmarPagoLester struct {
 
 func (x *ConfirmarPagoLester) Reset() {
 	*x = ConfirmarPagoLester{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[13]
+	mi := &file_michael_proto_atraco_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -689,7 +689,7 @@ func (x *ConfirmarPagoLester) String() string {
 func (*ConfirmarPagoLester) ProtoMessage() {}
 
 func (x *ConfirmarPagoLester) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[13]
+	mi := &file_michael_proto_atraco_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -702,7 +702,7 @@ func (x *ConfirmarPagoLester) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmarPagoLester.ProtoReflect.Descriptor instead.
 func (*ConfirmarPagoLester) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{13}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ConfirmarPagoLester) GetCorrecto() bool {
@@ -729,7 +729,7 @@ type MontoPagoMiembro struct {
 
 func (x *MontoPagoMiembro) Reset() {
 	*x = MontoPagoMiembro{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[14]
+	mi := &file_michael_proto_atraco_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -741,7 +741,7 @@ func (x *MontoPagoMiembro) String() string {
 func (*MontoPagoMiembro) ProtoMessage() {}
 
 func (x *MontoPagoMiembro) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[14]
+	mi := &file_michael_proto_atraco_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -754,7 +754,7 @@ func (x *MontoPagoMiembro) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MontoPagoMiembro.ProtoReflect.Descriptor instead.
 func (*MontoPagoMiembro) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{14}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MontoPagoMiembro) GetCorrespondencia() int32 {
@@ -781,7 +781,7 @@ type ConfirmarPagoMiembro struct {
 
 func (x *ConfirmarPagoMiembro) Reset() {
 	*x = ConfirmarPagoMiembro{}
-	mi := &file_lester_proto_atraco_proto_msgTypes[15]
+	mi := &file_michael_proto_atraco_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -793,7 +793,7 @@ func (x *ConfirmarPagoMiembro) String() string {
 func (*ConfirmarPagoMiembro) ProtoMessage() {}
 
 func (x *ConfirmarPagoMiembro) ProtoReflect() protoreflect.Message {
-	mi := &file_lester_proto_atraco_proto_msgTypes[15]
+	mi := &file_michael_proto_atraco_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -806,7 +806,7 @@ func (x *ConfirmarPagoMiembro) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmarPagoMiembro.ProtoReflect.Descriptor instead.
 func (*ConfirmarPagoMiembro) Descriptor() ([]byte, []int) {
-	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{15}
+	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ConfirmarPagoMiembro) GetCorrecto() bool {
@@ -823,11 +823,11 @@ func (x *ConfirmarPagoMiembro) GetMensaje() string {
 	return ""
 }
 
-var File_lester_proto_atraco_proto protoreflect.FileDescriptor
+var File_michael_proto_atraco_proto protoreflect.FileDescriptor
 
-const file_lester_proto_atraco_proto_rawDesc = "" +
+const file_michael_proto_atraco_proto_rawDesc = "" +
 	"\n" +
-	"\x19lester/proto/atraco.proto\"\x11\n" +
+	"\x1amichael/proto/atraco.proto\"\x11\n" +
 	"\x0fSolicitudOferta\"\xe6\x01\n" +
 	"\x10OfertaDisponible\x12\x1e\n" +
 	"\n" +
@@ -889,19 +889,19 @@ const file_lester_proto_atraco_proto_rawDesc = "" +
 	"\fPagarMiembro\x12\x11.MontoPagoMiembro\x1a\x15.ConfirmarPagoMiembroB\x0eZ\flester/protob\x06proto3"
 
 var (
-	file_lester_proto_atraco_proto_rawDescOnce sync.Once
-	file_lester_proto_atraco_proto_rawDescData []byte
+	file_michael_proto_atraco_proto_rawDescOnce sync.Once
+	file_michael_proto_atraco_proto_rawDescData []byte
 )
 
-func file_lester_proto_atraco_proto_rawDescGZIP() []byte {
-	file_lester_proto_atraco_proto_rawDescOnce.Do(func() {
-		file_lester_proto_atraco_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_lester_proto_atraco_proto_rawDesc), len(file_lester_proto_atraco_proto_rawDesc)))
+func file_michael_proto_atraco_proto_rawDescGZIP() []byte {
+	file_michael_proto_atraco_proto_rawDescOnce.Do(func() {
+		file_michael_proto_atraco_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_michael_proto_atraco_proto_rawDesc), len(file_michael_proto_atraco_proto_rawDesc)))
 	})
-	return file_lester_proto_atraco_proto_rawDescData
+	return file_michael_proto_atraco_proto_rawDescData
 }
 
-var file_lester_proto_atraco_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_lester_proto_atraco_proto_goTypes = []any{
+var file_michael_proto_atraco_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_michael_proto_atraco_proto_goTypes = []any{
 	(*SolicitudOferta)(nil),       // 0: SolicitudOferta
 	(*OfertaDisponible)(nil),      // 1: OfertaDisponible
 	(*ConfirmacionOferta)(nil),    // 2: ConfirmacionOferta
@@ -919,7 +919,7 @@ var file_lester_proto_atraco_proto_goTypes = []any{
 	(*MontoPagoMiembro)(nil),      // 14: MontoPagoMiembro
 	(*ConfirmarPagoMiembro)(nil),  // 15: ConfirmarPagoMiembro
 }
-var file_lester_proto_atraco_proto_depIdxs = []int32{
+var file_michael_proto_atraco_proto_depIdxs = []int32{
 	0,  // 0: MichaelLester.EntregarOferta:input_type -> SolicitudOferta
 	2,  // 1: MichaelLester.ConfirmarOferta:input_type -> ConfirmacionOferta
 	12, // 2: MichaelLester.PagarLester:input_type -> MontoPago
@@ -943,26 +943,26 @@ var file_lester_proto_atraco_proto_depIdxs = []int32{
 	0,  // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_lester_proto_atraco_proto_init() }
-func file_lester_proto_atraco_proto_init() {
-	if File_lester_proto_atraco_proto != nil {
+func init() { file_michael_proto_atraco_proto_init() }
+func file_michael_proto_atraco_proto_init() {
+	if File_michael_proto_atraco_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lester_proto_atraco_proto_rawDesc), len(file_lester_proto_atraco_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_michael_proto_atraco_proto_rawDesc), len(file_michael_proto_atraco_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
-		GoTypes:           file_lester_proto_atraco_proto_goTypes,
-		DependencyIndexes: file_lester_proto_atraco_proto_depIdxs,
-		MessageInfos:      file_lester_proto_atraco_proto_msgTypes,
+		GoTypes:           file_michael_proto_atraco_proto_goTypes,
+		DependencyIndexes: file_michael_proto_atraco_proto_depIdxs,
+		MessageInfos:      file_michael_proto_atraco_proto_msgTypes,
 	}.Build()
-	File_lester_proto_atraco_proto = out.File
-	file_lester_proto_atraco_proto_goTypes = nil
-	file_lester_proto_atraco_proto_depIdxs = nil
+	File_michael_proto_atraco_proto = out.File
+	file_michael_proto_atraco_proto_goTypes = nil
+	file_michael_proto_atraco_proto_depIdxs = nil
 }

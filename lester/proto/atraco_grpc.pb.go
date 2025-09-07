@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.21.12
-// source: lester/proto/atraco.proto
+// source: michael/proto/atraco.proto
 
 package proto
 
@@ -277,7 +277,7 @@ var MichaelLester_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "lester/proto/atraco.proto",
+	Metadata: "michael/proto/atraco.proto",
 }
 
 const (
@@ -459,5 +459,5 @@ var MichaelTrevorFranklin_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "lester/proto/atraco.proto",
+	Metadata: "michael/proto/atraco.proto",
 }
