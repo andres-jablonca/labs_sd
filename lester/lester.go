@@ -33,7 +33,7 @@ func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	var validRows []OfertaCSV
+	var filas_validas []OfertaCSV
 
 	// Saltar la primera línea
 	if scanner.Scan() {
@@ -43,12 +43,6 @@ func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
 		line := scanner.Text()
 		fields := strings.Split(line, ",")
 
-		// Asegurar que tenga al menos 4 columnas
-		if len(fields) < 4 {
-			continue
-		}
-
-		// Verificar que al menos uno de los primeros 4 no esté vacío
 		valid := false
 		for i := 0; i < 4; i++ {
 			if strings.TrimSpace(fields[i]) != "" {
@@ -58,7 +52,6 @@ func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
 		}
 
 		if valid {
-			// Convertir a int32
 			botin, _ := strconv.Atoi(strings.TrimSpace(fields[0]))
 			franklin, _ := strconv.Atoi(strings.TrimSpace(fields[1]))
 			trevor, _ := strconv.Atoi(strings.TrimSpace(fields[2]))
@@ -70,7 +63,7 @@ func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
 				ProbExitoTrevor:   int32(trevor),
 				RiesgoPolicial:    int32(riesgo),
 			}
-			validRows = append(validRows, oferta)
+			filas_validas = append(filas_validas, oferta)
 		}
 	}
 
@@ -78,14 +71,13 @@ func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
 		return nil, err
 	}
 
-	if len(validRows) == 0 {
+	if len(filas_validas) == 0 {
 		return nil, fmt.Errorf("no se encontraron filas válidas")
 	}
 
-	// Selección aleatoria
 	rand.Seed(time.Now().UnixNano())
-	randomIndex := rand.Intn(len(validRows))
-	return &validRows[randomIndex], nil
+	random_index := rand.Intn(len(filas_validas))
+	return &filas_validas[random_index], nil
 }
 
 var (
