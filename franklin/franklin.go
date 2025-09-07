@@ -35,8 +35,8 @@ func (s *server) InformarDistraccion(ctx context.Context, inf *pb.InfoDistraccio
 
 	for i := 0; i < turnos_necesarios; i++ {
 		if i != mitad_turnos {
-			fmt.Printf("Franklin trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
-			time.Sleep(200 * time.Millisecond)
+			fmt.Printf("Trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
+			time.Sleep(500 * time.Millisecond)
 		} else {
 			probabilidad_fallar = rand.Float32()
 			if probabilidad_fallar < 0.1 {
@@ -47,7 +47,7 @@ func (s *server) InformarDistraccion(ctx context.Context, inf *pb.InfoDistraccio
 		}
 	}
 	if exito {
-		fmt.Println("Distraccion completada!")
+		fmt.Println("Distracción completada, procedan!")
 		return &pb.ResultadoDistraccion{Exito: exito}, nil
 	} else {
 		return &pb.ResultadoDistraccion{Exito: exito, Motivo: "Chop se puso a ladrar y Franklin se distrajo"}, nil
@@ -71,10 +71,10 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 		if i%5 == 0 {
 			fmt.Printf("[*] CONSULTANDO ESTRELLAS... %d ESTRELLAS DETECTADAS!\n", s.estrellasActuales)
 
-			if s.estrellasActuales >= 3 && !chop {
+			if s.estrellasActuales >= 3 && !chop { // Verificar si se puede activar la habilidad
 				fmt.Printf("================\nHabilidad activada: Chop recolectando botin extra!\n================\n")
 				chop = true
-			} else if s.estrellasActuales >= 5 {
+			} else if s.estrellasActuales >= 5 { // Verificar si se perdió
 				exito = false
 				fmt.Printf("%d estrellas?!?!\n", s.estrellasActuales)
 				motivo = "Limite de estrellas alcanzado."
@@ -82,12 +82,14 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 			}
 		}
 
+		// Trabajar turnos y recolectar botin extra si habilidad está activa
 		fmt.Printf("Trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
 		if chop {
-			fmt.Printf("+1000\n")
+			fmt.Printf("+ $1000 obtenidos por Chop\n")
 			extra += 1000
 		}
 
+		// Asegurarse de revisar las estrellas un turno antes de terminar la misión
 		if s.estrellasActuales >= 5 && i == turnos_necesarios-1 {
 			exito = false
 			fmt.Printf("%d estrellas?!?!\n", s.estrellasActuales)
@@ -98,25 +100,28 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 		time.Sleep(500 * time.Millisecond)
 
 	}
-	///if s.estrellasActuales >= 5 {
-	///	fmt.Printf("Límite de estrellas alcanzado\n")
-	///	exito = false
-	///}
+
+	// Verificar que no se hubieran llegado a las 5 estrellas una vez terminados los turnos
+	// if s.estrellasActuales >= 5 {
+	// 	fmt.Printf("Límite de estrellas alcanzado\n")
+	//	exito = false
+	// }
+
 	if exito {
-		fmt.Println("La fase 3 fue todo un éxito!")
+		fmt.Println("La fase 3 fue todo un éxito Michael!")
 		return &pb.ResultadoGolpe{
 			Exito:          exito,
 			Botin:          inf.GetBotin(),
 			BotinExtra:     int32(extra),
-			EstrellasFinal: int32(s.estrellasActuales),
+			EstrellasFinal: int32(s.estrellasActuales), // Borrable igual
 		}, nil
 	} else {
-		fmt.Printf("Fase 3 fracasó: %s\n", motivo)
+		fmt.Printf("Fase 3 fracasó, lo siento...\nMotivo: %s\n", motivo)
 		return &pb.ResultadoGolpe{
 			Exito:          exito,
 			Botin:          inf.GetBotin(),
 			Motivo:         motivo,
-			BotinExtra:     int32(extra),
+			BotinExtra:     int32(extra), // Botin extra perdido
 			EstrellasFinal: int32(s.estrellasActuales),
 		}, nil
 	}
@@ -164,7 +169,7 @@ func (s *server) consumirEstrellas() {
 		return
 	}
 
-	fmt.Println("Estaré atento a las notificaciones, Lester")
+	fmt.Println("Estaré atento a tus notificaciones, Lester")
 
 	for msg := range msgs {
 		parts := strings.Split(string(msg.Body), ":")
@@ -172,7 +177,6 @@ func (s *server) consumirEstrellas() {
 			estrellas, err := strconv.Atoi(parts[1])
 			if err == nil {
 				s.estrellasActuales = estrellas
-				//fmt.Printf("~~Notificación~~\n")
 			}
 		}
 	}
@@ -193,7 +197,7 @@ func (s *server) PagarMiembro(ctx context.Context, req *pb.MontoPagoMiembro) (*p
 }
 
 func main() {
-	// Start gRPC server
+
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
 	if err != nil {
 		log.Fatalf("Error al escuchar: %v", err)
