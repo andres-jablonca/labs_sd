@@ -96,8 +96,8 @@ func isEnviandoNotifs() bool {
 }
 
 func (s *server) EntregarOferta(ctx context.Context, req *pb.SolicitudOferta) (*pb.OfertaDisponible, error) {
-	fmt.Printf("Solicitud recibida!\n")
-	time.Sleep(time.Second)
+	fmt.Printf("------\nSolicitud recibida!\n\n")
+	time.Sleep(2 * time.Second)
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -105,7 +105,7 @@ func (s *server) EntregarOferta(ctx context.Context, req *pb.SolicitudOferta) (*
 
 	if prob_aceptar < 0.1 {
 		fmt.Printf("No tengo ofertas disponibles en este momento...\n")
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
 		return &pb.OfertaDisponible{Disponible: false}, nil
 	} else {
 
@@ -117,8 +117,8 @@ func (s *server) EntregarOferta(ctx context.Context, req *pb.SolicitudOferta) (*
 		prob_franklin := oferta.ProbExitoFranklin
 		prob_trevor := oferta.ProbExitoTrevor
 		riesgo := oferta.RiesgoPolicial
-		fmt.Printf("Oferta enviada!\n")
-		time.Sleep(time.Second)
+		fmt.Printf("Oferta enviada!\n\n")
+		time.Sleep(2 * time.Second)
 		return &pb.OfertaDisponible{Disponible: true, BotinInicial: botin, ProbabilidadFranklin: float32(prob_franklin) / 100.0, ProbabilidadTrevor: float32(prob_trevor) / 100.0, RiesgoPolicial: float32(riesgo) / 100.0}, nil
 	}
 }
@@ -127,22 +127,24 @@ func (s *server) ConfirmarOferta(ctx context.Context, req *pb.ConfirmacionOferta
 	confir := req.GetAceptada()
 	if !confir {
 		fmt.Printf(">:(\n")
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
 		rechazos++
 	} else {
 		fmt.Printf("Enterado de la aceptación de la oferta!\n")
-		time.Sleep(time.Second)
+		fmt.Printf("------\n")
+		time.Sleep(2 * time.Second)
 		return &pb.AckConfirmacionOferta{}, nil
 	}
 	if rechazos%3 == 0 && rechazos != 0 {
 		fmt.Printf("Deja de rechazar loco, ahora espera 10 segundos..\n")
 		time.Sleep(10 * time.Second)
 	}
+
 	return &pb.AckConfirmacionOferta{}, nil
 }
 
 func (s *server) IniciarNotificacionesEstrellas(ctx context.Context, req *pb.InicioNotifEstrellas) (*pb.AckInicioNotif, error) {
-	//fmt.Printf("Estaré notificando las estrellas a %s\n", req.GetPersonaje())
+	fmt.Printf("Entendido Michael..\n")
 	if !isEnviandoNotifs() {
 		enviandoNotifs = false
 	}
@@ -151,7 +153,11 @@ func (s *server) IniciarNotificacionesEstrellas(ctx context.Context, req *pb.Ini
 }
 
 func (s *server) DetenerNotificacionesEstrellas(ctx context.Context, req *pb.DetenerNotifEstrellas) (*pb.AckDetenerNotif, error) {
-	//fmt.Printf("Deteniendo envío de notificaciones...\n")
+	if !req.GetExito() {
+		fmt.Printf("\nYa veo...\n\n")
+	} else {
+		fmt.Printf("\nExcelente!\n\n")
+	}
 	if isEnviandoNotifs() {
 		enviandoNotifs = false
 	}
@@ -168,8 +174,8 @@ func enviarNotificacionesEstrellas(personaje string, riesgoPolicial float32) {
 
 	estrellas := 0
 	turno := 0
-	time.Sleep(2*time.Second + 880*time.Millisecond)
-	fmt.Printf("\nEstaré notificando las estrellas a %s cada %d turnos\n", personaje, frecuenciaTurnos)
+	time.Sleep(4*time.Second + 50*time.Millisecond)
+	fmt.Printf("\nEstaré notificando las estrellas a %s cada %d turnos\n\n", personaje, frecuenciaTurnos)
 	estre := -1
 	for {
 		select {
@@ -237,10 +243,13 @@ func (s *server) PagarLester(ctx context.Context, req *pb.MontoPago) (*pb.Confir
 		check = true
 		msj = "Un placer hacer negocios."
 	}
-	time.Sleep(time.Second)
-	fmt.Printf("Total: %d, Recibido: %d, Esperado: %d \n", total, pagoRecibido, pagoEsperadoLester)
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
+	fmt.Printf("------\nTotal: %d\nEsperado: %d\nRecibido: %d\n\n", total, pagoEsperadoLester, pagoRecibido)
+	time.Sleep(2 * time.Second)
 	fmt.Println(msj)
+	if check {
+		fmt.Printf("Llamenme si necesitan mi ayuda en otra ocasión...\n------")
+	}
 
 	return &pb.ConfirmarPagoLester{Correcto: check, Mensaje: msj}, nil
 }
@@ -276,7 +285,7 @@ func main() {
 	s := grpc.NewServer()
 	pb.RegisterMichaelLesterServer(s, &server{})
 
-	fmt.Printf("\nLester en linea!\n")
+	fmt.Printf("\nLester en linea!\n\n")
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Error al servir: %v", err)

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v3.21.12
-// source: michael/proto/atraco.proto
+// source: lester/proto/atraco.proto
 
 package proto
 
@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Solicitud de oferta que enviara Michael
+// Solicitud de oferta que enviara Michael a Lester
 type SolicitudOferta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -30,7 +30,7 @@ type SolicitudOferta struct {
 
 func (x *SolicitudOferta) Reset() {
 	*x = SolicitudOferta{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[0]
+	mi := &file_lester_proto_atraco_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *SolicitudOferta) String() string {
 func (*SolicitudOferta) ProtoMessage() {}
 
 func (x *SolicitudOferta) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[0]
+	mi := &file_lester_proto_atraco_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *SolicitudOferta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SolicitudOferta.ProtoReflect.Descriptor instead.
 func (*SolicitudOferta) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{0}
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{0}
 }
 
 // Oferta disponible que enviara Lester luego de recibir una solicitud
@@ -72,7 +72,7 @@ type OfertaDisponible struct {
 
 func (x *OfertaDisponible) Reset() {
 	*x = OfertaDisponible{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[1]
+	mi := &file_lester_proto_atraco_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -84,7 +84,7 @@ func (x *OfertaDisponible) String() string {
 func (*OfertaDisponible) ProtoMessage() {}
 
 func (x *OfertaDisponible) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[1]
+	mi := &file_lester_proto_atraco_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -97,7 +97,7 @@ func (x *OfertaDisponible) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OfertaDisponible.ProtoReflect.Descriptor instead.
 func (*OfertaDisponible) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{1}
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *OfertaDisponible) GetDisponible() bool {
@@ -135,6 +135,7 @@ func (x *OfertaDisponible) GetRiesgoPolicial() float32 {
 	return 0
 }
 
+// Michael informa a Lester acerca de la confirmación de la oferta que le envió
 type ConfirmacionOferta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Aceptada      bool                   `protobuf:"varint,1,opt,name=aceptada,proto3" json:"aceptada,omitempty"`
@@ -144,7 +145,7 @@ type ConfirmacionOferta struct {
 
 func (x *ConfirmacionOferta) Reset() {
 	*x = ConfirmacionOferta{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[2]
+	mi := &file_lester_proto_atraco_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -156,7 +157,7 @@ func (x *ConfirmacionOferta) String() string {
 func (*ConfirmacionOferta) ProtoMessage() {}
 
 func (x *ConfirmacionOferta) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[2]
+	mi := &file_lester_proto_atraco_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -169,7 +170,7 @@ func (x *ConfirmacionOferta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmacionOferta.ProtoReflect.Descriptor instead.
 func (*ConfirmacionOferta) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{2}
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ConfirmacionOferta) GetAceptada() bool {
@@ -179,6 +180,7 @@ func (x *ConfirmacionOferta) GetAceptada() bool {
 	return false
 }
 
+// Lester envía ACK de la confirmación
 type AckConfirmacionOferta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -187,7 +189,7 @@ type AckConfirmacionOferta struct {
 
 func (x *AckConfirmacionOferta) Reset() {
 	*x = AckConfirmacionOferta{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[3]
+	mi := &file_lester_proto_atraco_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -199,7 +201,7 @@ func (x *AckConfirmacionOferta) String() string {
 func (*AckConfirmacionOferta) ProtoMessage() {}
 
 func (x *AckConfirmacionOferta) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[3]
+	mi := &file_lester_proto_atraco_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -212,409 +214,10 @@ func (x *AckConfirmacionOferta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AckConfirmacionOferta.ProtoReflect.Descriptor instead.
 func (*AckConfirmacionOferta) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{3}
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{3}
 }
 
-type InicioNotifEstrellas struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Personaje      string                 `protobuf:"bytes,1,opt,name=personaje,proto3" json:"personaje,omitempty"`
-	RiesgoPolicial float32                `protobuf:"fixed32,2,opt,name=riesgo_policial,json=riesgoPolicial,proto3" json:"riesgo_policial,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *InicioNotifEstrellas) Reset() {
-	*x = InicioNotifEstrellas{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *InicioNotifEstrellas) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*InicioNotifEstrellas) ProtoMessage() {}
-
-func (x *InicioNotifEstrellas) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use InicioNotifEstrellas.ProtoReflect.Descriptor instead.
-func (*InicioNotifEstrellas) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *InicioNotifEstrellas) GetPersonaje() string {
-	if x != nil {
-		return x.Personaje
-	}
-	return ""
-}
-
-func (x *InicioNotifEstrellas) GetRiesgoPolicial() float32 {
-	if x != nil {
-		return x.RiesgoPolicial
-	}
-	return 0
-}
-
-type DetenerNotifEstrellas struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Personaje     string                 `protobuf:"bytes,1,opt,name=personaje,proto3" json:"personaje,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DetenerNotifEstrellas) Reset() {
-	*x = DetenerNotifEstrellas{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DetenerNotifEstrellas) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DetenerNotifEstrellas) ProtoMessage() {}
-
-func (x *DetenerNotifEstrellas) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DetenerNotifEstrellas.ProtoReflect.Descriptor instead.
-func (*DetenerNotifEstrellas) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *DetenerNotifEstrellas) GetPersonaje() string {
-	if x != nil {
-		return x.Personaje
-	}
-	return ""
-}
-
-type AckInicioNotif struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AckInicioNotif) Reset() {
-	*x = AckInicioNotif{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AckInicioNotif) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AckInicioNotif) ProtoMessage() {}
-
-func (x *AckInicioNotif) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AckInicioNotif.ProtoReflect.Descriptor instead.
-func (*AckInicioNotif) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{6}
-}
-
-type AckDetenerNotif struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AckDetenerNotif) Reset() {
-	*x = AckDetenerNotif{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AckDetenerNotif) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AckDetenerNotif) ProtoMessage() {}
-
-func (x *AckDetenerNotif) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AckDetenerNotif.ProtoReflect.Descriptor instead.
-func (*AckDetenerNotif) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{7}
-}
-
-type InfoDistraccion struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	ProbabilidadExito float32                `protobuf:"fixed32,1,opt,name=probabilidad_exito,json=probabilidadExito,proto3" json:"probabilidad_exito,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
-}
-
-func (x *InfoDistraccion) Reset() {
-	*x = InfoDistraccion{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *InfoDistraccion) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*InfoDistraccion) ProtoMessage() {}
-
-func (x *InfoDistraccion) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use InfoDistraccion.ProtoReflect.Descriptor instead.
-func (*InfoDistraccion) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *InfoDistraccion) GetProbabilidadExito() float32 {
-	if x != nil {
-		return x.ProbabilidadExito
-	}
-	return 0
-}
-
-type ResultadoDistraccion struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Exito         bool                   `protobuf:"varint,1,opt,name=exito,proto3" json:"exito,omitempty"`
-	Motivo        string                 `protobuf:"bytes,2,opt,name=motivo,proto3" json:"motivo,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ResultadoDistraccion) Reset() {
-	*x = ResultadoDistraccion{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ResultadoDistraccion) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ResultadoDistraccion) ProtoMessage() {}
-
-func (x *ResultadoDistraccion) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ResultadoDistraccion.ProtoReflect.Descriptor instead.
-func (*ResultadoDistraccion) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *ResultadoDistraccion) GetExito() bool {
-	if x != nil {
-		return x.Exito
-	}
-	return false
-}
-
-func (x *ResultadoDistraccion) GetMotivo() string {
-	if x != nil {
-		return x.Motivo
-	}
-	return ""
-}
-
-type InfoGolpe struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	ProbabilidadExito float32                `protobuf:"fixed32,1,opt,name=probabilidad_exito,json=probabilidadExito,proto3" json:"probabilidad_exito,omitempty"`
-	Botin             int32                  `protobuf:"varint,2,opt,name=botin,proto3" json:"botin,omitempty"`
-	RiesgoPolicial    float32                `protobuf:"fixed32,3,opt,name=riesgo_policial,json=riesgoPolicial,proto3" json:"riesgo_policial,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
-}
-
-func (x *InfoGolpe) Reset() {
-	*x = InfoGolpe{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *InfoGolpe) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*InfoGolpe) ProtoMessage() {}
-
-func (x *InfoGolpe) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use InfoGolpe.ProtoReflect.Descriptor instead.
-func (*InfoGolpe) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *InfoGolpe) GetProbabilidadExito() float32 {
-	if x != nil {
-		return x.ProbabilidadExito
-	}
-	return 0
-}
-
-func (x *InfoGolpe) GetBotin() int32 {
-	if x != nil {
-		return x.Botin
-	}
-	return 0
-}
-
-func (x *InfoGolpe) GetRiesgoPolicial() float32 {
-	if x != nil {
-		return x.RiesgoPolicial
-	}
-	return 0
-}
-
-type ResultadoGolpe struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Exito          bool                   `protobuf:"varint,1,opt,name=exito,proto3" json:"exito,omitempty"`
-	Botin          int32                  `protobuf:"varint,2,opt,name=botin,proto3" json:"botin,omitempty"`
-	Motivo         string                 `protobuf:"bytes,3,opt,name=motivo,proto3" json:"motivo,omitempty"`
-	BotinExtra     int32                  `protobuf:"varint,4,opt,name=botin_extra,json=botinExtra,proto3" json:"botin_extra,omitempty"`
-	EstrellasFinal int32                  `protobuf:"varint,5,opt,name=estrellas_final,json=estrellasFinal,proto3" json:"estrellas_final,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *ResultadoGolpe) Reset() {
-	*x = ResultadoGolpe{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ResultadoGolpe) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ResultadoGolpe) ProtoMessage() {}
-
-func (x *ResultadoGolpe) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ResultadoGolpe.ProtoReflect.Descriptor instead.
-func (*ResultadoGolpe) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *ResultadoGolpe) GetExito() bool {
-	if x != nil {
-		return x.Exito
-	}
-	return false
-}
-
-func (x *ResultadoGolpe) GetBotin() int32 {
-	if x != nil {
-		return x.Botin
-	}
-	return 0
-}
-
-func (x *ResultadoGolpe) GetMotivo() string {
-	if x != nil {
-		return x.Motivo
-	}
-	return ""
-}
-
-func (x *ResultadoGolpe) GetBotinExtra() int32 {
-	if x != nil {
-		return x.BotinExtra
-	}
-	return 0
-}
-
-func (x *ResultadoGolpe) GetEstrellasFinal() int32 {
-	if x != nil {
-		return x.EstrellasFinal
-	}
-	return 0
-}
-
+// Michael informa del monto total de la operación a Lester y le paga su correspondencia
 type MontoPago struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Correspondencia int32                  `protobuf:"varint,1,opt,name=correspondencia,proto3" json:"correspondencia,omitempty"`
@@ -625,7 +228,7 @@ type MontoPago struct {
 
 func (x *MontoPago) Reset() {
 	*x = MontoPago{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[12]
+	mi := &file_lester_proto_atraco_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -637,7 +240,7 @@ func (x *MontoPago) String() string {
 func (*MontoPago) ProtoMessage() {}
 
 func (x *MontoPago) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[12]
+	mi := &file_lester_proto_atraco_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -650,7 +253,7 @@ func (x *MontoPago) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MontoPago.ProtoReflect.Descriptor instead.
 func (*MontoPago) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{12}
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MontoPago) GetCorrespondencia() int32 {
@@ -667,6 +270,7 @@ func (x *MontoPago) GetTotal() int32 {
 	return 0
 }
 
+// Lester confirma el pago y le responde a Michael
 type ConfirmarPagoLester struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Correcto      bool                   `protobuf:"varint,1,opt,name=correcto,proto3" json:"correcto,omitempty"`
@@ -677,7 +281,7 @@ type ConfirmarPagoLester struct {
 
 func (x *ConfirmarPagoLester) Reset() {
 	*x = ConfirmarPagoLester{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[13]
+	mi := &file_lester_proto_atraco_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -689,7 +293,7 @@ func (x *ConfirmarPagoLester) String() string {
 func (*ConfirmarPagoLester) ProtoMessage() {}
 
 func (x *ConfirmarPagoLester) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[13]
+	mi := &file_lester_proto_atraco_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -702,7 +306,7 @@ func (x *ConfirmarPagoLester) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmarPagoLester.ProtoReflect.Descriptor instead.
 func (*ConfirmarPagoLester) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{13}
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ConfirmarPagoLester) GetCorrecto() bool {
@@ -719,29 +323,30 @@ func (x *ConfirmarPagoLester) GetMensaje() string {
 	return ""
 }
 
-type MontoPagoMiembro struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Correspondencia int32                  `protobuf:"varint,1,opt,name=correspondencia,proto3" json:"correspondencia,omitempty"`
-	Total           int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+// Michael informa a Lester para iniciar el envío de notificaciones a Trevor/Franklin
+type InicioNotifEstrellas struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Personaje      string                 `protobuf:"bytes,1,opt,name=personaje,proto3" json:"personaje,omitempty"`
+	RiesgoPolicial float32                `protobuf:"fixed32,2,opt,name=riesgo_policial,json=riesgoPolicial,proto3" json:"riesgo_policial,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
-func (x *MontoPagoMiembro) Reset() {
-	*x = MontoPagoMiembro{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[14]
+func (x *InicioNotifEstrellas) Reset() {
+	*x = InicioNotifEstrellas{}
+	mi := &file_lester_proto_atraco_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MontoPagoMiembro) String() string {
+func (x *InicioNotifEstrellas) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MontoPagoMiembro) ProtoMessage() {}
+func (*InicioNotifEstrellas) ProtoMessage() {}
 
-func (x *MontoPagoMiembro) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[14]
+func (x *InicioNotifEstrellas) ProtoReflect() protoreflect.Message {
+	mi := &file_lester_proto_atraco_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -752,82 +357,157 @@ func (x *MontoPagoMiembro) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MontoPagoMiembro.ProtoReflect.Descriptor instead.
-func (*MontoPagoMiembro) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{14}
+// Deprecated: Use InicioNotifEstrellas.ProtoReflect.Descriptor instead.
+func (*InicioNotifEstrellas) Descriptor() ([]byte, []int) {
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *MontoPagoMiembro) GetCorrespondencia() int32 {
+func (x *InicioNotifEstrellas) GetPersonaje() string {
 	if x != nil {
-		return x.Correspondencia
-	}
-	return 0
-}
-
-func (x *MontoPagoMiembro) GetTotal() int32 {
-	if x != nil {
-		return x.Total
-	}
-	return 0
-}
-
-type ConfirmarPagoMiembro struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Correcto      bool                   `protobuf:"varint,1,opt,name=correcto,proto3" json:"correcto,omitempty"`
-	Mensaje       string                 `protobuf:"bytes,2,opt,name=mensaje,proto3" json:"mensaje,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ConfirmarPagoMiembro) Reset() {
-	*x = ConfirmarPagoMiembro{}
-	mi := &file_michael_proto_atraco_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ConfirmarPagoMiembro) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ConfirmarPagoMiembro) ProtoMessage() {}
-
-func (x *ConfirmarPagoMiembro) ProtoReflect() protoreflect.Message {
-	mi := &file_michael_proto_atraco_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ConfirmarPagoMiembro.ProtoReflect.Descriptor instead.
-func (*ConfirmarPagoMiembro) Descriptor() ([]byte, []int) {
-	return file_michael_proto_atraco_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *ConfirmarPagoMiembro) GetCorrecto() bool {
-	if x != nil {
-		return x.Correcto
-	}
-	return false
-}
-
-func (x *ConfirmarPagoMiembro) GetMensaje() string {
-	if x != nil {
-		return x.Mensaje
+		return x.Personaje
 	}
 	return ""
 }
 
-var File_michael_proto_atraco_proto protoreflect.FileDescriptor
+func (x *InicioNotifEstrellas) GetRiesgoPolicial() float32 {
+	if x != nil {
+		return x.RiesgoPolicial
+	}
+	return 0
+}
 
-const file_michael_proto_atraco_proto_rawDesc = "" +
+// Lester envía ACK de inicio de envío de notificaciones
+type AckInicioNotif struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AckInicioNotif) Reset() {
+	*x = AckInicioNotif{}
+	mi := &file_lester_proto_atraco_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AckInicioNotif) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AckInicioNotif) ProtoMessage() {}
+
+func (x *AckInicioNotif) ProtoReflect() protoreflect.Message {
+	mi := &file_lester_proto_atraco_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AckInicioNotif.ProtoReflect.Descriptor instead.
+func (*AckInicioNotif) Descriptor() ([]byte, []int) {
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{7}
+}
+
+// Michael informa a Lester para detener el envío de notifiaciones a Trevor/Franklin
+type DetenerNotifEstrellas struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Personaje     string                 `protobuf:"bytes,1,opt,name=personaje,proto3" json:"personaje,omitempty"`
+	Exito         bool                   `protobuf:"varint,2,opt,name=exito,proto3" json:"exito,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DetenerNotifEstrellas) Reset() {
+	*x = DetenerNotifEstrellas{}
+	mi := &file_lester_proto_atraco_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DetenerNotifEstrellas) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DetenerNotifEstrellas) ProtoMessage() {}
+
+func (x *DetenerNotifEstrellas) ProtoReflect() protoreflect.Message {
+	mi := &file_lester_proto_atraco_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DetenerNotifEstrellas.ProtoReflect.Descriptor instead.
+func (*DetenerNotifEstrellas) Descriptor() ([]byte, []int) {
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *DetenerNotifEstrellas) GetPersonaje() string {
+	if x != nil {
+		return x.Personaje
+	}
+	return ""
+}
+
+func (x *DetenerNotifEstrellas) GetExito() bool {
+	if x != nil {
+		return x.Exito
+	}
+	return false
+}
+
+// Lester envía ACK de detención de envío de notificaciones
+type AckDetenerNotif struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AckDetenerNotif) Reset() {
+	*x = AckDetenerNotif{}
+	mi := &file_lester_proto_atraco_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AckDetenerNotif) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AckDetenerNotif) ProtoMessage() {}
+
+func (x *AckDetenerNotif) ProtoReflect() protoreflect.Message {
+	mi := &file_lester_proto_atraco_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AckDetenerNotif.ProtoReflect.Descriptor instead.
+func (*AckDetenerNotif) Descriptor() ([]byte, []int) {
+	return file_lester_proto_atraco_proto_rawDescGZIP(), []int{9}
+}
+
+var File_lester_proto_atraco_proto protoreflect.FileDescriptor
+
+const file_lester_proto_atraco_proto_rawDesc = "" +
 	"\n" +
-	"\x1amichael/proto/atraco.proto\"\x11\n" +
+	"\x19lester/proto/atraco.proto\"\x11\n" +
 	"\x0fSolicitudOferta\"\xe6\x01\n" +
 	"\x10OfertaDisponible\x12\x1e\n" +
 	"\n" +
@@ -839,130 +519,92 @@ const file_michael_proto_atraco_proto_rawDesc = "" +
 	"\x0friesgo_policial\x18\x05 \x01(\x02R\x0eriesgoPolicial\"0\n" +
 	"\x12ConfirmacionOferta\x12\x1a\n" +
 	"\baceptada\x18\x01 \x01(\bR\baceptada\"\x17\n" +
-	"\x15AckConfirmacionOferta\"]\n" +
-	"\x14InicioNotifEstrellas\x12\x1c\n" +
-	"\tpersonaje\x18\x01 \x01(\tR\tpersonaje\x12'\n" +
-	"\x0friesgo_policial\x18\x02 \x01(\x02R\x0eriesgoPolicial\"5\n" +
-	"\x15DetenerNotifEstrellas\x12\x1c\n" +
-	"\tpersonaje\x18\x01 \x01(\tR\tpersonaje\"\x10\n" +
-	"\x0eAckInicioNotif\"\x11\n" +
-	"\x0fAckDetenerNotif\"@\n" +
-	"\x0fInfoDistraccion\x12-\n" +
-	"\x12probabilidad_exito\x18\x01 \x01(\x02R\x11probabilidadExito\"D\n" +
-	"\x14ResultadoDistraccion\x12\x14\n" +
-	"\x05exito\x18\x01 \x01(\bR\x05exito\x12\x16\n" +
-	"\x06motivo\x18\x02 \x01(\tR\x06motivo\"y\n" +
-	"\tInfoGolpe\x12-\n" +
-	"\x12probabilidad_exito\x18\x01 \x01(\x02R\x11probabilidadExito\x12\x14\n" +
-	"\x05botin\x18\x02 \x01(\x05R\x05botin\x12'\n" +
-	"\x0friesgo_policial\x18\x03 \x01(\x02R\x0eriesgoPolicial\"\x9e\x01\n" +
-	"\x0eResultadoGolpe\x12\x14\n" +
-	"\x05exito\x18\x01 \x01(\bR\x05exito\x12\x14\n" +
-	"\x05botin\x18\x02 \x01(\x05R\x05botin\x12\x16\n" +
-	"\x06motivo\x18\x03 \x01(\tR\x06motivo\x12\x1f\n" +
-	"\vbotin_extra\x18\x04 \x01(\x05R\n" +
-	"botinExtra\x12'\n" +
-	"\x0festrellas_final\x18\x05 \x01(\x05R\x0eestrellasFinal\"K\n" +
+	"\x15AckConfirmacionOferta\"K\n" +
 	"\tMontoPago\x12(\n" +
 	"\x0fcorrespondencia\x18\x01 \x01(\x05R\x0fcorrespondencia\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"K\n" +
 	"\x13ConfirmarPagoLester\x12\x1a\n" +
 	"\bcorrecto\x18\x01 \x01(\bR\bcorrecto\x12\x18\n" +
-	"\amensaje\x18\x02 \x01(\tR\amensaje\"R\n" +
-	"\x10MontoPagoMiembro\x12(\n" +
-	"\x0fcorrespondencia\x18\x01 \x01(\x05R\x0fcorrespondencia\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"L\n" +
-	"\x14ConfirmarPagoMiembro\x12\x1a\n" +
-	"\bcorrecto\x18\x01 \x01(\bR\bcorrecto\x12\x18\n" +
-	"\amensaje\x18\x02 \x01(\tR\amensaje2\xcd\x02\n" +
+	"\amensaje\x18\x02 \x01(\tR\amensaje\"]\n" +
+	"\x14InicioNotifEstrellas\x12\x1c\n" +
+	"\tpersonaje\x18\x01 \x01(\tR\tpersonaje\x12'\n" +
+	"\x0friesgo_policial\x18\x02 \x01(\x02R\x0eriesgoPolicial\"\x10\n" +
+	"\x0eAckInicioNotif\"K\n" +
+	"\x15DetenerNotifEstrellas\x12\x1c\n" +
+	"\tpersonaje\x18\x01 \x01(\tR\tpersonaje\x12\x14\n" +
+	"\x05exito\x18\x02 \x01(\bR\x05exito\"\x11\n" +
+	"\x0fAckDetenerNotif2\xcd\x02\n" +
 	"\rMichaelLester\x125\n" +
 	"\x0eEntregarOferta\x12\x10.SolicitudOferta\x1a\x11.OfertaDisponible\x12>\n" +
 	"\x0fConfirmarOferta\x12\x13.ConfirmacionOferta\x1a\x16.AckConfirmacionOferta\x12/\n" +
 	"\vPagarLester\x12\n" +
 	".MontoPago\x1a\x14.ConfirmarPagoLester\x12H\n" +
 	"\x1eIniciarNotificacionesEstrellas\x12\x15.InicioNotifEstrellas\x1a\x0f.AckInicioNotif\x12J\n" +
-	"\x1eDetenerNotificacionesEstrellas\x12\x16.DetenerNotifEstrellas\x1a\x10.AckDetenerNotif2\xbf\x01\n" +
-	"\x15MichaelTrevorFranklin\x12>\n" +
-	"\x13InformarDistraccion\x12\x10.InfoDistraccion\x1a\x15.ResultadoDistraccion\x12,\n" +
-	"\rInformarGolpe\x12\n" +
-	".InfoGolpe\x1a\x0f.ResultadoGolpe\x128\n" +
-	"\fPagarMiembro\x12\x11.MontoPagoMiembro\x1a\x15.ConfirmarPagoMiembroB\x0eZ\flester/protob\x06proto3"
+	"\x1eDetenerNotificacionesEstrellas\x12\x16.DetenerNotifEstrellas\x1a\x10.AckDetenerNotifB\x0eZ\flester/protob\x06proto3"
 
 var (
-	file_michael_proto_atraco_proto_rawDescOnce sync.Once
-	file_michael_proto_atraco_proto_rawDescData []byte
+	file_lester_proto_atraco_proto_rawDescOnce sync.Once
+	file_lester_proto_atraco_proto_rawDescData []byte
 )
 
-func file_michael_proto_atraco_proto_rawDescGZIP() []byte {
-	file_michael_proto_atraco_proto_rawDescOnce.Do(func() {
-		file_michael_proto_atraco_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_michael_proto_atraco_proto_rawDesc), len(file_michael_proto_atraco_proto_rawDesc)))
+func file_lester_proto_atraco_proto_rawDescGZIP() []byte {
+	file_lester_proto_atraco_proto_rawDescOnce.Do(func() {
+		file_lester_proto_atraco_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_lester_proto_atraco_proto_rawDesc), len(file_lester_proto_atraco_proto_rawDesc)))
 	})
-	return file_michael_proto_atraco_proto_rawDescData
+	return file_lester_proto_atraco_proto_rawDescData
 }
 
-var file_michael_proto_atraco_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_michael_proto_atraco_proto_goTypes = []any{
+var file_lester_proto_atraco_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_lester_proto_atraco_proto_goTypes = []any{
 	(*SolicitudOferta)(nil),       // 0: SolicitudOferta
 	(*OfertaDisponible)(nil),      // 1: OfertaDisponible
 	(*ConfirmacionOferta)(nil),    // 2: ConfirmacionOferta
 	(*AckConfirmacionOferta)(nil), // 3: AckConfirmacionOferta
-	(*InicioNotifEstrellas)(nil),  // 4: InicioNotifEstrellas
-	(*DetenerNotifEstrellas)(nil), // 5: DetenerNotifEstrellas
-	(*AckInicioNotif)(nil),        // 6: AckInicioNotif
-	(*AckDetenerNotif)(nil),       // 7: AckDetenerNotif
-	(*InfoDistraccion)(nil),       // 8: InfoDistraccion
-	(*ResultadoDistraccion)(nil),  // 9: ResultadoDistraccion
-	(*InfoGolpe)(nil),             // 10: InfoGolpe
-	(*ResultadoGolpe)(nil),        // 11: ResultadoGolpe
-	(*MontoPago)(nil),             // 12: MontoPago
-	(*ConfirmarPagoLester)(nil),   // 13: ConfirmarPagoLester
-	(*MontoPagoMiembro)(nil),      // 14: MontoPagoMiembro
-	(*ConfirmarPagoMiembro)(nil),  // 15: ConfirmarPagoMiembro
+	(*MontoPago)(nil),             // 4: MontoPago
+	(*ConfirmarPagoLester)(nil),   // 5: ConfirmarPagoLester
+	(*InicioNotifEstrellas)(nil),  // 6: InicioNotifEstrellas
+	(*AckInicioNotif)(nil),        // 7: AckInicioNotif
+	(*DetenerNotifEstrellas)(nil), // 8: DetenerNotifEstrellas
+	(*AckDetenerNotif)(nil),       // 9: AckDetenerNotif
 }
-var file_michael_proto_atraco_proto_depIdxs = []int32{
-	0,  // 0: MichaelLester.EntregarOferta:input_type -> SolicitudOferta
-	2,  // 1: MichaelLester.ConfirmarOferta:input_type -> ConfirmacionOferta
-	12, // 2: MichaelLester.PagarLester:input_type -> MontoPago
-	4,  // 3: MichaelLester.IniciarNotificacionesEstrellas:input_type -> InicioNotifEstrellas
-	5,  // 4: MichaelLester.DetenerNotificacionesEstrellas:input_type -> DetenerNotifEstrellas
-	8,  // 5: MichaelTrevorFranklin.InformarDistraccion:input_type -> InfoDistraccion
-	10, // 6: MichaelTrevorFranklin.InformarGolpe:input_type -> InfoGolpe
-	14, // 7: MichaelTrevorFranklin.PagarMiembro:input_type -> MontoPagoMiembro
-	1,  // 8: MichaelLester.EntregarOferta:output_type -> OfertaDisponible
-	3,  // 9: MichaelLester.ConfirmarOferta:output_type -> AckConfirmacionOferta
-	13, // 10: MichaelLester.PagarLester:output_type -> ConfirmarPagoLester
-	6,  // 11: MichaelLester.IniciarNotificacionesEstrellas:output_type -> AckInicioNotif
-	7,  // 12: MichaelLester.DetenerNotificacionesEstrellas:output_type -> AckDetenerNotif
-	9,  // 13: MichaelTrevorFranklin.InformarDistraccion:output_type -> ResultadoDistraccion
-	11, // 14: MichaelTrevorFranklin.InformarGolpe:output_type -> ResultadoGolpe
-	15, // 15: MichaelTrevorFranklin.PagarMiembro:output_type -> ConfirmarPagoMiembro
-	8,  // [8:16] is the sub-list for method output_type
-	0,  // [0:8] is the sub-list for method input_type
-	0,  // [0:0] is the sub-list for extension type_name
-	0,  // [0:0] is the sub-list for extension extendee
-	0,  // [0:0] is the sub-list for field type_name
+var file_lester_proto_atraco_proto_depIdxs = []int32{
+	0, // 0: MichaelLester.EntregarOferta:input_type -> SolicitudOferta
+	2, // 1: MichaelLester.ConfirmarOferta:input_type -> ConfirmacionOferta
+	4, // 2: MichaelLester.PagarLester:input_type -> MontoPago
+	6, // 3: MichaelLester.IniciarNotificacionesEstrellas:input_type -> InicioNotifEstrellas
+	8, // 4: MichaelLester.DetenerNotificacionesEstrellas:input_type -> DetenerNotifEstrellas
+	1, // 5: MichaelLester.EntregarOferta:output_type -> OfertaDisponible
+	3, // 6: MichaelLester.ConfirmarOferta:output_type -> AckConfirmacionOferta
+	5, // 7: MichaelLester.PagarLester:output_type -> ConfirmarPagoLester
+	7, // 8: MichaelLester.IniciarNotificacionesEstrellas:output_type -> AckInicioNotif
+	9, // 9: MichaelLester.DetenerNotificacionesEstrellas:output_type -> AckDetenerNotif
+	5, // [5:10] is the sub-list for method output_type
+	0, // [0:5] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_michael_proto_atraco_proto_init() }
-func file_michael_proto_atraco_proto_init() {
-	if File_michael_proto_atraco_proto != nil {
+func init() { file_lester_proto_atraco_proto_init() }
+func file_lester_proto_atraco_proto_init() {
+	if File_lester_proto_atraco_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_michael_proto_atraco_proto_rawDesc), len(file_michael_proto_atraco_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lester_proto_atraco_proto_rawDesc), len(file_lester_proto_atraco_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   10,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   1,
 		},
-		GoTypes:           file_michael_proto_atraco_proto_goTypes,
-		DependencyIndexes: file_michael_proto_atraco_proto_depIdxs,
-		MessageInfos:      file_michael_proto_atraco_proto_msgTypes,
+		GoTypes:           file_lester_proto_atraco_proto_goTypes,
+		DependencyIndexes: file_lester_proto_atraco_proto_depIdxs,
+		MessageInfos:      file_lester_proto_atraco_proto_msgTypes,
 	}.Build()
-	File_michael_proto_atraco_proto = out.File
-	file_michael_proto_atraco_proto_goTypes = nil
-	file_michael_proto_atraco_proto_depIdxs = nil
+	File_lester_proto_atraco_proto = out.File
+	file_lester_proto_atraco_proto_goTypes = nil
+	file_lester_proto_atraco_proto_depIdxs = nil
 }

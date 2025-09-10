@@ -22,7 +22,7 @@ type server struct {
 }
 
 func (s *server) InformarDistraccion(ctx context.Context, inf *pb.InfoDistraccion) (*pb.ResultadoDistraccion, error) {
-	fmt.Printf("Confirmo inicio de fase 2!\n")
+	fmt.Printf("\nConfirmo inicio de fase 2!\n\n")
 
 	rand.Seed(time.Now().UnixNano())
 	probabilidad_exito := inf.GetProbabilidadExito()
@@ -33,21 +33,25 @@ func (s *server) InformarDistraccion(ctx context.Context, inf *pb.InfoDistraccio
 	exito := true
 	time.Sleep(80 * time.Millisecond)
 
-	for i := 0; i < turnos_necesarios; i++ {
-		if i != mitad_turnos {
-			fmt.Printf("Trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
-			time.Sleep(500 * time.Millisecond)
-		} else {
+	for i := range turnos_necesarios {
+
+		fmt.Printf("Trabajando... (%d turnos restantes)\n", turnos_necesarios-i)
+		time.Sleep(500 * time.Millisecond)
+
+		if i == mitad_turnos {
+
 			probabilidad_fallar = rand.Float32()
 			if probabilidad_fallar < 0.1 {
-				fmt.Println("La mision fracasó debido a que Chop se puso a ladrar y Franklin se distrajo")
+				fmt.Println("La mision fracasó debido a que Chop se puso a ladrar y Franklin se distrajo...")
 				exito = false
 				break
+			} else {
+				fmt.Printf("Informando a Michael que la misión va de maravilla...\n")
 			}
 		}
 	}
 	if exito {
-		fmt.Println("Distracción completada, procedan!")
+		fmt.Println("\nDistracción completada, procedan!\n----------")
 		return &pb.ResultadoDistraccion{Exito: exito}, nil
 	} else {
 		return &pb.ResultadoDistraccion{Exito: exito, Motivo: "Chop se puso a ladrar y Franklin se distrajo"}, nil
@@ -55,8 +59,8 @@ func (s *server) InformarDistraccion(ctx context.Context, inf *pb.InfoDistraccio
 }
 
 func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.ResultadoGolpe, error) {
-	fmt.Printf("Confirmo inicio de fase 3!\n")
-	time.Sleep(time.Second)
+	fmt.Printf("\nConfirmo inicio de fase 3!\n\n")
+	time.Sleep(2 * time.Second)
 
 	go s.consumirEstrellas()
 
@@ -67,7 +71,9 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 	motivo := ""
 	extra := 0
 	chop := false
+	estr := 0
 	for i := range turnos_necesarios {
+
 		if i%5 == 0 {
 			fmt.Printf("[*] CONSULTANDO ESTRELLAS... %d ESTRELLAS DETECTADAS!\n", s.estrellasActuales)
 
@@ -76,10 +82,14 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 				chop = true
 			} else if s.estrellasActuales >= 5 { // Verificar si se perdió
 				exito = false
-				fmt.Printf("%d estrellas?!?!\n", s.estrellasActuales)
+				fmt.Printf("\n%d ESTRELLAS?!?!\n\n", s.estrellasActuales)
 				motivo = "Limite de estrellas alcanzado."
 				break
 			}
+		}
+
+		if i == turnos_necesarios-1 {
+			estr = s.estrellasActuales
 		}
 
 		// Trabajar turnos y recolectar botin extra si habilidad está activa
@@ -89,32 +99,25 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 			extra += 1000
 		}
 
-		// Asegurarse de revisar las estrellas un turno antes de terminar la misión
-		if s.estrellasActuales >= 5 && i == turnos_necesarios-1 {
-			exito = false
-			fmt.Printf("%d estrellas?!?!\n", s.estrellasActuales)
-			motivo = "Limite de estrellas alcanzado."
-			break
-		}
-
 		time.Sleep(500 * time.Millisecond)
 
 	}
 
-	// Verificar que no se hubieran llegado a las 5 estrellas una vez terminados los turnos
-	// if s.estrellasActuales >= 5 {
-	// 	fmt.Printf("Límite de estrellas alcanzado\n")
-	//	exito = false
-	// }
+	// Asegurarse de revisar las estrellas al terminar la misión
+	if estr >= 5 {
+		exito = false
+		fmt.Printf("\n%d ESTRELLAS?!?!\n\n", estr)
+		motivo = "Limite de estrellas alcanzado."
+	}
 
 	if exito {
-		fmt.Println("La fase 3 fue todo un éxito Michael!")
-		fmt.Println(extra)
+		fmt.Printf("\nLa fase 3 fue todo un éxito Michael!\nEste fue el botín que conseguí: %d + %d\n----------\n", inf.GetBotin(), extra)
+
 		return &pb.ResultadoGolpe{
 			Exito:          exito,
 			Botin:          inf.GetBotin(),
 			BotinExtra:     int32(extra),
-			EstrellasFinal: int32(s.estrellasActuales), // Borrable igual
+			EstrellasFinal: int32(estr), // Borrable igual
 		}, nil
 	} else {
 		fmt.Printf("Fase 3 fracasó, lo siento...\nMotivo: %s\n", motivo)
@@ -123,7 +126,7 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 			Botin:          inf.GetBotin(),
 			Motivo:         motivo,
 			BotinExtra:     int32(extra), // Botin extra perdido
-			EstrellasFinal: int32(s.estrellasActuales),
+			EstrellasFinal: int32(estr),
 		}, nil
 	}
 }
@@ -191,10 +194,13 @@ func (s *server) PagarMiembro(ctx context.Context, req *pb.MontoPagoMiembro) (*p
 		check = true
 		msj = "Excelente Michael! El pago es correcto."
 	}
-	time.Sleep(time.Second)
-	fmt.Printf("Total: %d, Recibido: %d, Esperado: %d \n", req.Total, req.Correspondencia, correspondencias)
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
+	fmt.Printf("Total: %d\nEsperado: %d\nRecibido: %d\n\n", req.Total, correspondencias, req.Correspondencia)
+	time.Sleep(2 * time.Second)
 	fmt.Println(msj)
+	if check {
+		fmt.Printf("Un placer trabajar con ustedes muchachos!\n------")
+	}
 	return &pb.ConfirmarPagoMiembro{Correcto: check, Mensaje: msj}, nil
 }
 
@@ -208,7 +214,7 @@ func main() {
 	s := grpc.NewServer()
 	pb.RegisterMichaelTrevorFranklinServer(s, &server{})
 
-	fmt.Printf("\nFranklin en linea!\n")
+	fmt.Printf("\nFranklin en linea!\n\n")
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Error al servir: %v", err)

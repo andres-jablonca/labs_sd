@@ -32,11 +32,9 @@ const (
 //
 // Servicio que manejaran entre Michael y Lester
 type MichaelLesterClient interface {
-	// Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
 	EntregarOferta(ctx context.Context, in *SolicitudOferta, opts ...grpc.CallOption) (*OfertaDisponible, error)
 	ConfirmarOferta(ctx context.Context, in *ConfirmacionOferta, opts ...grpc.CallOption) (*AckConfirmacionOferta, error)
 	PagarLester(ctx context.Context, in *MontoPago, opts ...grpc.CallOption) (*ConfirmarPagoLester, error)
-	// Nuevos métodos para notificaciones
 	IniciarNotificacionesEstrellas(ctx context.Context, in *InicioNotifEstrellas, opts ...grpc.CallOption) (*AckInicioNotif, error)
 	DetenerNotificacionesEstrellas(ctx context.Context, in *DetenerNotifEstrellas, opts ...grpc.CallOption) (*AckDetenerNotif, error)
 }
@@ -105,11 +103,9 @@ func (c *michaelLesterClient) DetenerNotificacionesEstrellas(ctx context.Context
 //
 // Servicio que manejaran entre Michael y Lester
 type MichaelLesterServer interface {
-	// Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
 	EntregarOferta(context.Context, *SolicitudOferta) (*OfertaDisponible, error)
 	ConfirmarOferta(context.Context, *ConfirmacionOferta) (*AckConfirmacionOferta, error)
 	PagarLester(context.Context, *MontoPago) (*ConfirmarPagoLester, error)
-	// Nuevos métodos para notificaciones
 	IniciarNotificacionesEstrellas(context.Context, *InicioNotifEstrellas) (*AckInicioNotif, error)
 	DetenerNotificacionesEstrellas(context.Context, *DetenerNotifEstrellas) (*AckDetenerNotif, error)
 	mustEmbedUnimplementedMichaelLesterServer()

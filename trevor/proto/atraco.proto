@@ -1,50 +1,6 @@
 syntax = "proto3";
 
-option go_package = "lester/proto";
-
-// Servicio que manejaran entre Michael y Lester
-service MichaelLester {
-
-  // Funcion remota 1: recibe una solicitud de oferta y devuelve una oferta disponible
-  rpc EntregarOferta (SolicitudOferta) returns (OfertaDisponible); 
-  rpc ConfirmarOferta (ConfirmacionOferta) returns (AckConfirmacionOferta);
-  rpc PagarLester (MontoPago) returns (ConfirmarPagoLester);
-  
-  // Nuevos métodos para notificaciones
-  rpc IniciarNotificacionesEstrellas (InicioNotifEstrellas) returns (AckInicioNotif);
-  rpc DetenerNotificacionesEstrellas (DetenerNotifEstrellas) returns (AckDetenerNotif);
-}
-
-// Solicitud de oferta que enviara Michael
-message SolicitudOferta {
-}
-
-// Oferta disponible que enviara Lester luego de recibir una solicitud
-message OfertaDisponible {
-  bool disponible = 1;
-  int32 botin_inicial = 2;
-  float probabilidad_franklin = 3;
-  float probabilidad_trevor = 4;
-  float riesgo_policial = 5;
-}
-
-message ConfirmacionOferta {
-  bool aceptada = 1;
-}
-
-message AckConfirmacionOferta {}
-
-message InicioNotifEstrellas {
-  string personaje = 1;
-  float riesgo_policial = 2;
-}
-
-message DetenerNotifEstrellas {
-  string personaje = 1;
-}
-
-message AckInicioNotif {}
-message AckDetenerNotif {}
+option go_package = "trevor/proto";
 
 // Servicio que manejara Michael con Franklin o Trevor
 service MichaelTrevorFranklin {
@@ -53,21 +9,35 @@ service MichaelTrevorFranklin {
   rpc PagarMiembro (MontoPagoMiembro) returns (ConfirmarPagoMiembro);
 }
 
+// ==========================================================
+
+// --- InformarDistraccion() ---
+
+// Michael notifica a Trevor/Franklin para proceder con fase 2
 message InfoDistraccion {
   float probabilidad_exito = 1;
 }
 
+// Trevor/Franklin responden a Michael con el resultado de la fase 2
 message ResultadoDistraccion {
   bool exito = 1;
   string motivo = 2;
 }
 
+// --- InformarDistraccion() ---
+
+// ==========================================================
+
+// --- InformarGolpe() ---
+
+// Michael notifica a Trevor/Franklin para proceder con fase 3
 message InfoGolpe {
   float probabilidad_exito = 1;
   int32 botin = 2;
   float riesgo_policial = 3;
 }
 
+// Trevor/Franklin responden a Michael con el resultado de la fase 3
 message ResultadoGolpe {
   bool exito = 1;
   int32 botin = 2;
@@ -76,22 +46,22 @@ message ResultadoGolpe {
   int32 estrellas_final = 5;
 }
 
-message MontoPago {
-  int32 correspondencia = 1;
-  int32 total = 2;
-}
+// --- InformarGolpe() ---
 
-message ConfirmarPagoLester {
-  bool correcto = 1;
-  string mensaje = 2;
-}
+// ==========================================================
 
+// --- PagarMiembro() ---
+
+// Michael informa el total de la operacion a Trevor y Franklin y les paga su correspondencia
 message MontoPagoMiembro {
   int32 correspondencia = 1;
   int32 total = 2;
 }
 
+// Trevor y Franklin confirman el pago y le responden a Michael
 message ConfirmarPagoMiembro {
   bool correcto = 1;
   string mensaje = 2;
 }
+
+// --- PagarMiembro() ---

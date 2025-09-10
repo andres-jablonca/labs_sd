@@ -129,15 +129,15 @@ func main() {
 
 	// INICIO
 
-	fmt.Println("---\nIniciar fase 1!")
-	time.Sleep(time.Second)
+	fmt.Println("----------\nIniciar fase 1!")
+	time.Sleep(2 * time.Second)
 	client_lester := pb.NewMichaelLesterClient(conn_lester)
 
 	for {
 
 		request_lester := &pb.SolicitudOferta{}
 
-		fmt.Println("---\nSolicitando oferta...")
+		fmt.Printf("----------\nSolicitando oferta...\n\n")
 		time.Sleep(2 * time.Second)
 
 		response, err_lester := client_lester.EntregarOferta(context.Background(), request_lester)
@@ -149,8 +149,8 @@ func main() {
 
 		if response.GetDisponible() && (response.GetBotinInicial() == 0 || response.GetProbabilidadFranklin() == 0.0 || response.GetProbabilidadTrevor() == 0.0 || response.GetRiesgoPolicial() == 0.0) {
 			//---INFORMAR A LESTER QUE SE RECHAZO
-			fmt.Printf("\nOferta INVÁLIDA, se enviará otra solicitud...\n")
-			time.Sleep(time.Second)
+			fmt.Printf("Oferta INVÁLIDA, se enviará otra solicitud...\n")
+			time.Sleep(2 * time.Second)
 			request_lester := &pb.ConfirmacionOferta{Aceptada: false}
 			fmt.Println("\nInformando rechazo de oferta...")
 			time.Sleep(2 * time.Second)
@@ -162,22 +162,22 @@ func main() {
 		} else if response.GetDisponible() {
 
 			fmt.Printf("Oferta recibida:\n\n")
-			time.Sleep(time.Second)
+			time.Sleep(2 * time.Second)
 			fmt.Printf("Botín inicial: %d\n", response.GetBotinInicial())
 			fmt.Printf("Probabilidad de éxito Franklin: %f\n", response.GetProbabilidadFranklin())
 			fmt.Printf("Probabilidad de éxito Trevor: %f\n", response.GetProbabilidadTrevor())
 			fmt.Printf("Riesgo Policial: %f\n", response.GetRiesgoPolicial())
-			time.Sleep(time.Second)
+			time.Sleep(2 * time.Second)
 			if (response.GetProbabilidadFranklin() > 0.5 || response.GetProbabilidadTrevor() > 0.5) && response.GetRiesgoPolicial() < 0.8 {
 				botin = response.GetBotinInicial()
 				prob_franklin = response.GetProbabilidadFranklin()
 				prob_trevor = response.GetProbabilidadTrevor()
 				riesgo = response.GetRiesgoPolicial()
 				fmt.Println("\nOferta ACEPTADA")
-				time.Sleep(time.Second)
+				time.Sleep(2 * time.Second)
 				// --- INFORMAR A LESTER QUE SE ACEPTO
 				request_lester := &pb.ConfirmacionOferta{Aceptada: true}
-				fmt.Println("---\nInformando aceptación de oferta...")
+				fmt.Println("\n\nInformando aceptación de oferta...")
 				time.Sleep(2 * time.Second)
 				_, err_lester := client_lester.ConfirmarOferta(context.Background(), request_lester)
 				if err_lester != nil {
@@ -188,9 +188,9 @@ func main() {
 			} else {
 				//---INFORMAR A LESTER QUE SE RECHAZO
 				fmt.Printf("\nOferta RECHAZADA, se enviará otra solicitud...\n")
-				time.Sleep(time.Second)
+				time.Sleep(2 * time.Second)
 				request_lester := &pb.ConfirmacionOferta{Aceptada: false}
-				fmt.Println("---\nInformando rechazo de oferta...")
+				fmt.Println("----------\nInformando rechazo de oferta...")
 				time.Sleep(2 * time.Second)
 				_, err_lester := client_lester.ConfirmarOferta(context.Background(), request_lester)
 				if err_lester != nil {
@@ -211,9 +211,9 @@ func main() {
 	fmt.Printf("PROBABILIDAD DE EXITO DE TREVOR: %f\n", prob_trevor)
 	fmt.Printf("RIESGO POLICIAL: %f\n", riesgo)
 	fmt.Printf("\n====== OFERTA FINAL ======\n")
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
 	fmt.Printf("\nProceder a fase 2!\n\n")
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
 	franklin := prob_franklin > prob_trevor
 
 	// ------------------ FASE 2 -------------------------
@@ -234,12 +234,12 @@ func main() {
 			return
 		}
 		if exito_segunda_fase.GetExito() {
-			fmt.Printf("\nFase 2 finalizada con éxito!!!\n")
+			fmt.Printf("\nFase 2 finalizada con éxito!!!\n----------\n")
 			exito_fase_2 = true
-			time.Sleep(time.Second)
+			time.Sleep(2 * time.Second)
 		} else {
-			fmt.Printf("\nFase 2 fracasó terriblemente...\n")
-			time.Sleep(time.Second)
+			fmt.Printf("\nFase 2 fracasó terriblemente...\n----------\n\n")
+			time.Sleep(2 * time.Second)
 			motivo_fracaso_fase_2 = exito_segunda_fase.GetMotivo()
 		}
 
@@ -259,13 +259,13 @@ func main() {
 		}
 
 		if exito_segunda_fase.GetExito() {
-			fmt.Printf("\nFase 2 finalizada con éxito!!!\n")
+			fmt.Printf("\nFase 2 finalizada con éxito!!!\n----------\n")
 			exito_fase_2 = true
-			time.Sleep(time.Second)
+			time.Sleep(2 * time.Second)
 		} else {
-			fmt.Printf("\nFase 2 fracasó terriblemente...\n")
+			fmt.Printf("\nFase 2 fracasó terriblemente...\n----------\n\n")
 			motivo_fracaso_fase_2 = exito_segunda_fase.GetMotivo()
-			time.Sleep(time.Second)
+			time.Sleep(2 * time.Second)
 		}
 	}
 
@@ -279,7 +279,7 @@ func main() {
 
 	if !franklin && exito_fase_2 {
 		// Notificar a Lester que inicie notificaciones para Franklin
-		fmt.Println("----------\nSolicitando a Lester que inicie el envío de notificaciones para Franklin...")
+		fmt.Println("Solicitando a Lester que inicie el envío de notificaciones para Franklin...")
 		inicioNotifReq := &pb.InicioNotifEstrellas{
 			Personaje:      "Franklin",
 			RiesgoPolicial: riesgo,
@@ -297,7 +297,7 @@ func main() {
 			RiesgoPolicial:    riesgo,
 		}
 
-		fmt.Println("----------\nInformando a Franklin para proceder a la fase 3...")
+		fmt.Println("\nInformando a Franklin para proceder a la fase 3...")
 		time.Sleep(2 * time.Second)
 		exito_tercera_fase, err_franklin := client_franklin.InformarGolpe(context.Background(), request_franklin)
 
@@ -307,7 +307,7 @@ func main() {
 		}
 
 		// Detener notificaciones
-		detenerNotifReq := &pb.DetenerNotifEstrellas{Personaje: "Franklin"}
+		detenerNotifReq := &pb.DetenerNotifEstrellas{Personaje: "Franklin", Exito: exito_tercera_fase.GetExito()}
 		_, err = client_lester.DetenerNotificacionesEstrellas(context.Background(), detenerNotifReq)
 		if err != nil {
 			fmt.Printf("Error al detener envío de notificaciones: %v\n", err)
@@ -315,28 +315,28 @@ func main() {
 
 		if exito_tercera_fase.GetExito() {
 			exito_fase_3 = true
-			fmt.Printf("\nFase 3 finalizada con éxito!!!\n")
+			fmt.Printf("\nFase 3 finalizada con éxito!!!\n----------\n")
 			botin_extra = int(exito_tercera_fase.GetBotinExtra())
 			botin_fase3 = int(exito_tercera_fase.GetBotin())
 
 			estrellas_final = int(exito_tercera_fase.GetEstrellasFinal())
 			fmt.Printf("Botín recolectado por Franklin: %v\n", botin_fase3)
 			fmt.Printf("Botín extra recolectado por Chop: %v\n", botin_extra)
-			fmt.Printf("Estrellas finales: %v\n", estrellas_final)
-			time.Sleep(time.Second)
+			fmt.Printf("Misión completada con: %v estrellas\n\n", estrellas_final)
+			time.Sleep(2 * time.Second)
 		} else {
-			fmt.Printf("\nFase 3 fracasó terriblemente...\n")
+			fmt.Printf("\nFase 3 fracasó terriblemente...\n\nInformando a Lester\n----------\n")
 			motivo_fracaso_fase_3 = exito_tercera_fase.GetMotivo()
 			botin_extra = int(exito_tercera_fase.GetBotinExtra())
-			estrellas_final = int(exito_tercera_fase.GetEstrellasFinal())
+			//estrellas_final = int(exito_tercera_fase.GetEstrellasFinal())
 			fmt.Printf("Motivo: %s\n", motivo_fracaso_fase_3)
-			fmt.Printf("Estrellas finales: %v\n", estrellas_final)
-			time.Sleep(time.Second)
+			//fmt.Printf("Estrellas finales: %v\n", estrellas_final)
+			time.Sleep(2 * time.Second)
 		}
 
 	} else if franklin && exito_fase_2 {
 		// Notificar a Lester que inicie notificaciones para Trevor
-		fmt.Println("----------\nSolicitando a Lester que inicie el envío de notificaciones para Trevor...")
+		fmt.Println("Solicitando a Lester que inicie el envío de notificaciones para Trevor...")
 		inicioNotifReq := &pb.InicioNotifEstrellas{
 			Personaje:      "Trevor",
 			RiesgoPolicial: riesgo,
@@ -354,7 +354,7 @@ func main() {
 			RiesgoPolicial:    riesgo,
 		}
 
-		fmt.Println("----------\nInformando a Trevor para proceder con la fase 3...")
+		fmt.Println("\nInformando a Trevor para proceder con la fase 3...")
 		time.Sleep(2 * time.Second)
 
 		exito_tercera_fase, err_trevor := client_trevor.InformarGolpe(context.Background(), request_trevor)
@@ -365,7 +365,7 @@ func main() {
 		}
 
 		// Detener notificaciones
-		detenerNotifReq := &pb.DetenerNotifEstrellas{Personaje: "Trevor"}
+		detenerNotifReq := &pb.DetenerNotifEstrellas{Personaje: "Trevor", Exito: exito_tercera_fase.GetExito()}
 		_, err = client_lester.DetenerNotificacionesEstrellas(context.Background(), detenerNotifReq)
 		if err != nil {
 			fmt.Printf("Error al detener envío de notificaciones: %v\n", err)
@@ -373,21 +373,21 @@ func main() {
 
 		if exito_tercera_fase.GetExito() {
 			exito_fase_3 = true
-			fmt.Printf("\nFase 3 finalizada con éxito!!!\n")
+			fmt.Printf("\nFase 3 finalizada con éxito!!!\n----------\n")
 			botin_fase3 = int(exito_tercera_fase.GetBotin())
 			botin_extra = int(exito_tercera_fase.GetBotinExtra())
 			estrellas_final = int(exito_tercera_fase.GetEstrellasFinal())
 			fmt.Printf("Botín recolectado por Trevor: %v\n", botin_fase3)
-			fmt.Printf("Estrellas finales: %v\n", estrellas_final)
-			time.Sleep(time.Second)
+			fmt.Printf("Misión completada con: %v estrellas\n\n", estrellas_final)
+			time.Sleep(2 * time.Second)
 		} else {
-			fmt.Printf("\nFase 3 fracasó terriblemente...\n")
+			fmt.Printf("\nFase 3 fracasó terriblemente...\n\nInformando a Lester...\n----------\n")
 			motivo_fracaso_fase_3 = exito_tercera_fase.GetMotivo()
 			botin_extra = int(exito_tercera_fase.GetBotinExtra())
-			estrellas_final = int(exito_tercera_fase.GetEstrellasFinal())
+			//estrellas_final = int(exito_tercera_fase.GetEstrellasFinal())
 			fmt.Printf("Motivo: %s\n", motivo_fracaso_fase_3)
-			fmt.Printf("Estrellas finales: %v\n", estrellas_final)
-			time.Sleep(time.Second)
+			//fmt.Printf("Estrellas finales: %v\n", estrellas_final)
+			time.Sleep(2 * time.Second)
 		}
 	}
 
@@ -396,13 +396,16 @@ func main() {
 	correspondencias := 0
 	correspondencias_lester := 0
 	resto := 0
+
 	botin_final = botin_fase3 + botin_extra
 	correspondencias = botin_final / 4
 	correspondencias_lester = correspondencias
 	resto = botin_final % 4
 
-	if exito_fase_2 && exito_fase_3 {
+	fmt.Printf("Informando término de la misión...\n")
 
+	if exito_fase_2 && exito_fase_3 {
+		fmt.Printf("----------\n")
 		if resto != 0 {
 			correspondencias_lester = correspondencias + resto
 		}
@@ -415,7 +418,7 @@ func main() {
 			fmt.Printf("Error al llamar al servicio: %v\n", err)
 			return
 		}
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
 
 		client_franklin := pb.NewMichaelTrevorFranklinClient(conn_franklin)
 		fmt.Printf("Pagando a Franklin...\n")
@@ -426,7 +429,7 @@ func main() {
 			fmt.Printf("Error al llamar al servicio: %v\n", err)
 			return
 		}
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
 
 		client_trevor := pb.NewMichaelTrevorFranklinClient(conn_trevor)
 		fmt.Printf("Pagando a Trevor...\n")
@@ -439,19 +442,26 @@ func main() {
 		}
 		time.Sleep(2 * time.Second)
 
-		fmt.Printf("Generando reporte final...\n")
+		if respuesta_franklin.GetCorrecto() && respuesta_trevor.GetCorrecto() && respuesta_lester.GetCorrecto() {
+			fmt.Printf("Fue un placer trabajar con ustedes muchachos!\n")
+		} else {
+			fmt.Printf("Ups...\n")
+		}
+		fmt.Printf("\nGenerando reporte final de la misión...\n----------\n")
 		generar_reporte_exito(botin, botin_final, int32(botin_extra), int32(correspondencias_lester), resto, respuesta_lester.GetMensaje(), int32(correspondencias), respuesta_franklin.GetMensaje(), int32(correspondencias), respuesta_trevor.GetMensaje())
 
 	} else if exito_fase_2 && !exito_fase_3 {
+		fmt.Printf("\n----------\n")
 		time.Sleep(2 * time.Second)
 
-		fmt.Printf("Generando reporte final...\n")
+		fmt.Printf("\nGenerando reporte final de la misión...\n\n----------\n")
 		generar_reporte_fracaso(botin, botin_final, int32(botin_extra), 3, franklin, motivo_fracaso_fase_3)
 
 	} else if !exito_fase_2 && !exito_fase_3 {
+		fmt.Printf("\n----------\n")
 		time.Sleep(2 * time.Second)
 
-		fmt.Printf("Generando reporte final...\n")
+		fmt.Printf("\nGenerando reporte final de la misión...\n\n----------\n")
 		generar_reporte_fracaso(botin, botin_final, int32(botin_extra), 2, franklin, motivo_fracaso_fase_2)
 
 	}
