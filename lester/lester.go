@@ -25,17 +25,16 @@ type OfertaCSV struct {
 	RiesgoPolicial    int32
 }
 
-func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
-	file, err := os.Open(filePath)
+func OfertaAleatoria(nombre_archivo string) (*OfertaCSV, error) {
+	file, err := os.Open(nombre_archivo)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	var filas_validas []OfertaCSV
+	var ofertas []OfertaCSV
 
-	// Saltar la primera línea
 	if scanner.Scan() {
 	}
 
@@ -43,15 +42,15 @@ func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
 		line := scanner.Text()
 		fields := strings.Split(line, ",")
 
-		valid := false
-		for i := 0; i < 4; i++ {
+		filas_validas := false
+		for i := range 4 {
 			if strings.TrimSpace(fields[i]) != "" {
-				valid = true
+				filas_validas = true
 				break
 			}
 		}
 
-		if valid {
+		if filas_validas {
 			botin, _ := strconv.Atoi(strings.TrimSpace(fields[0]))
 			franklin, _ := strconv.Atoi(strings.TrimSpace(fields[1]))
 			trevor, _ := strconv.Atoi(strings.TrimSpace(fields[2]))
@@ -63,7 +62,7 @@ func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
 				ProbExitoTrevor:   int32(trevor),
 				RiesgoPolicial:    int32(riesgo),
 			}
-			filas_validas = append(filas_validas, oferta)
+			ofertas = append(ofertas, oferta)
 		}
 	}
 
@@ -71,13 +70,13 @@ func OfertaAleatoria(filePath string) (*OfertaCSV, error) {
 		return nil, err
 	}
 
-	if len(filas_validas) == 0 {
+	if len(ofertas) == 0 {
 		return nil, fmt.Errorf("no se encontraron filas válidas")
 	}
 
 	rand.Seed(time.Now().UnixNano())
-	random_index := rand.Intn(len(filas_validas))
-	return &filas_validas[random_index], nil
+	random_index := rand.Intn(len(ofertas))
+	return &ofertas[random_index], nil
 }
 
 var (
@@ -105,7 +104,7 @@ func (s *server) EntregarOferta(ctx context.Context, req *pb.SolicitudOferta) (*
 	prob_aceptar := rand.Float32()
 
 	if prob_aceptar < 0.1 {
-		fmt.Printf("No hay ofertas disponibles\n")
+		fmt.Printf("No tengo ofertas disponibles en este momento...\n")
 		time.Sleep(time.Second)
 		return &pb.OfertaDisponible{Disponible: false}, nil
 	} else {
@@ -143,7 +142,7 @@ func (s *server) ConfirmarOferta(ctx context.Context, req *pb.ConfirmacionOferta
 }
 
 func (s *server) IniciarNotificacionesEstrellas(ctx context.Context, req *pb.InicioNotifEstrellas) (*pb.AckInicioNotif, error) {
-	fmt.Printf("Iniciando notificaciones de estrellas para %s\n", req.GetPersonaje())
+	//fmt.Printf("Estaré notificando las estrellas a %s\n", req.GetPersonaje())
 	if !isEnviandoNotifs() {
 		enviandoNotifs = false
 	}
@@ -152,7 +151,7 @@ func (s *server) IniciarNotificacionesEstrellas(ctx context.Context, req *pb.Ini
 }
 
 func (s *server) DetenerNotificacionesEstrellas(ctx context.Context, req *pb.DetenerNotifEstrellas) (*pb.AckDetenerNotif, error) {
-	fmt.Printf("Deteniendo notificaciones de estrellas para %s\n", req.GetPersonaje())
+	//fmt.Printf("Deteniendo envío de notificaciones...\n")
 	if isEnviandoNotifs() {
 		enviandoNotifs = false
 	}
@@ -169,23 +168,25 @@ func enviarNotificacionesEstrellas(personaje string, riesgoPolicial float32) {
 
 	estrellas := 0
 	turno := 0
-	time.Sleep(time.Second)
-	fmt.Printf("Comenzando a enviar notificaciones para %s cada %d turnos\n", personaje, frecuenciaTurnos)
+	time.Sleep(2*time.Second + 880*time.Millisecond)
+	fmt.Printf("\nEstaré notificando las estrellas a %s cada %d turnos\n", personaje, frecuenciaTurnos)
 	estre := -1
 	for {
 		select {
 		case <-stopNotificaciones:
-			fmt.Printf("Deteniendo el envio de notificaciones\n")
+			fmt.Printf("Deteniendo envio de notificaciones...\n")
 			return
 		default:
 			turno++
-			time.Sleep(520 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 
 			if turno%frecuenciaTurnos == 0 {
 				estrellas++
 				estre++
-				if estrellas >= 5 {
+				if estrellas >= 5 && personaje == "Franklin" {
 					fmt.Printf("Turno %d: Estrellas: 5, ten cuidado!\n", turno)
+				} else if estrellas >= 7 && personaje == "Trevor" {
+					fmt.Printf("Turno %d: Estrellas: 7, ten cuidado!\n", turno)
 				}
 				fmt.Printf("Turno %d: Aumento de estrellas: %d -> %d, ten cuidado!\n", turno, estre, estrellas)
 
@@ -236,8 +237,9 @@ func (s *server) PagarLester(ctx context.Context, req *pb.MontoPago) (*pb.Confir
 		check = true
 		msj = "Un placer hacer negocios."
 	}
-
+	time.Sleep(time.Second)
 	fmt.Printf("Total: %d, Recibido: %d, Esperado: %d \n", total, pagoRecibido, pagoEsperadoLester)
+	time.Sleep(time.Second)
 	fmt.Println(msj)
 
 	return &pb.ConfirmarPagoLester{Correcto: check, Mensaje: msj}, nil
@@ -245,7 +247,7 @@ func (s *server) PagarLester(ctx context.Context, req *pb.MontoPago) (*pb.Confir
 
 func conectarRabbitMQ() {
 	var err error
-	for i := 0; i < 15; i++ {
+	for i := range 15 {
 		connRabbitMQ, err = amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 		if err == nil {
 			chRabbitMQ, err = connRabbitMQ.Channel()

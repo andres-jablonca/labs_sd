@@ -181,8 +181,9 @@ func (s *server) PagarMiembro(ctx context.Context, req *pb.MontoPagoMiembro) (*p
 		check = true
 		msj = "Justo lo que esperaba!"
 	}
-
+	time.Sleep(time.Second)
 	fmt.Printf("Total: %d, Recibido: %d, Esperado: %d \n", req.Total, req.Correspondencia, correspondencias)
+	time.Sleep(time.Second)
 	fmt.Println(msj)
 	return &pb.ConfirmarPagoMiembro{Correcto: check, Mensaje: msj}, nil
 }

@@ -109,6 +109,7 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 
 	if exito {
 		fmt.Println("La fase 3 fue todo un éxito Michael!")
+		fmt.Println(extra)
 		return &pb.ResultadoGolpe{
 			Exito:          exito,
 			Botin:          inf.GetBotin(),
@@ -190,8 +191,9 @@ func (s *server) PagarMiembro(ctx context.Context, req *pb.MontoPagoMiembro) (*p
 		check = true
 		msj = "Excelente Michael! El pago es correcto."
 	}
-
+	time.Sleep(time.Second)
 	fmt.Printf("Total: %d, Recibido: %d, Esperado: %d \n", req.Total, req.Correspondencia, correspondencias)
+	time.Sleep(time.Second)
 	fmt.Println(msj)
 	return &pb.ConfirmarPagoMiembro{Correcto: check, Mensaje: msj}, nil
 }

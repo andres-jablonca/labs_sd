@@ -11,7 +11,7 @@ docker-trevor:
 
 docker-michael:
 	@docker compose up --build michael
-	@docker cp Michael:/app/reporte.txt ./reporte.txt
+	@docker cp Michael:/app/reporte.txt ./reporte.txt 2>/dev/null && echo "Reporte generado exitosamente"
 
 docker-down:
 	@docker compose down
