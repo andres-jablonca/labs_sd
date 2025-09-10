@@ -17,7 +17,7 @@ func generar_reporte_exito(botin_inicial int32, botin_final int, botin_extra int
 	pago_lester int32, resto int, msj_lester string,
 	pago_franklin int32, msj_franklin string,
 	pago_trevor int32, msj_trevor string) {
-	file, err := os.Create("reporte.txt")
+	file, err := os.Create("Reporte.txt")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -61,7 +61,7 @@ func generar_reporte_fracaso(botin_inicial int32, botin_final int, botin_extra i
 		quien = "Trevor"
 	}
 
-	file, err := os.Create("reporte.txt")
+	file, err := os.Create("Reporte.txt")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
