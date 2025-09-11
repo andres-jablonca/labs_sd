@@ -13,6 +13,8 @@ services:
     build:
       context: ./lester
     container_name: Lester
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@10.35.168.43:5672/
     ports:
       - "50051:50051"
     depends_on:

@@ -106,7 +106,7 @@ func main() {
 
 	// ESTABLECER CONEXIONES
 
-	conn_lester, err_lester := grpc.Dial("lester:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn_lester, err_lester := grpc.Dial("10.35.168.43:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err_lester != nil {
 		fmt.Printf("No se pudo conectar: %v\n", err_lester)
 		return
