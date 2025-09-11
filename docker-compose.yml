@@ -1,25 +1,4 @@
 services:
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: RabbitMQ
-    ports:
-      - "5673:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-
-  lester:
-    build:
-      context: ./lester
-    container_name: Lester
-    environment:
-      - RABBITMQ_URL=amqp://guest:guest@10.35.168.43:5672/
-    ports:
-      - "50051:50051"
-    depends_on:
-      - rabbitmq
-
   franklin:
     build:
       context: ./franklin
@@ -28,23 +7,3 @@ services:
       - "50052:50051"
     depends_on:
       - rabbitmq
-
-  trevor:
-    build:
-      context: ./trevor 
-    container_name: Trevor
-    ports:
-      - "50053:50051"
-    depends_on:
-      - rabbitmq
-
-
-  michael:
-    build:
-      context: ./michael 
-    container_name: Michael
-    depends_on:
-      - lester
-      - franklin
-      - trevor
-    
