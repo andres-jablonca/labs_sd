@@ -257,7 +257,7 @@ func (s *server) PagarLester(ctx context.Context, req *pb.MontoPago) (*pb.Confir
 func conectarRabbitMQ() {
 	var err error
 	for i := range 15 {
-		connRabbitMQ, err = amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+		connRabbitMQ, err = amqp.Dial("amqp://guest:guest@10.35.168.43:5672/")
 		if err == nil {
 			chRabbitMQ, err = connRabbitMQ.Channel()
 			if err == nil {
@@ -277,7 +277,7 @@ func main() {
 	defer connRabbitMQ.Close()
 	defer chRabbitMQ.Close()
 
-	lis, err := net.Listen("tcp", "0.0.0.0:50051")
+	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("Error al escuchar: %v", err)
 	}
