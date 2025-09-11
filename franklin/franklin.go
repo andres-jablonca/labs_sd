@@ -132,7 +132,7 @@ func (s *server) InformarGolpe(ctx context.Context, inf *pb.InfoGolpe) (*pb.Resu
 }
 
 func (s *server) consumirEstrellas() {
-	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+	conn, err := amqp.Dial("amqp://guest:guest@10.35.168.43:5672/")
 	if err != nil {
 		fmt.Printf("No se pudo conectar a RabbitMQ: %v", err)
 		return
