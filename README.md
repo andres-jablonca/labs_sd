@@ -14,6 +14,8 @@
 
 ## Instrucciones de compilación y ejecución
 
+### Acceder a Maquina Virtual y luego a /lab_sd_{entidad} (entidad:= lester,michael,franklin,trevor)
+
 ### Instalar go, proto y plugins
 
 ### Actualizar archivos go.sum
