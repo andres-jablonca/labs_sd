@@ -1,8 +1,16 @@
-# Laboratorio 1 Sistemas Distribuidos Grupo XX
+# Laboratorio 1 Sistemas Distribuidos Grupo 9
 ### Integrantes:
 * Andrés Jablonca 202173578-K
 * Walter Sanhueza
 * Matías Pérez
+
+### Tener en cuenta que la tarea completa se subió al repositorio correspondiente, sin embargo, por simplicidad sólo se subió una entidad a cada máquina virtual.
+### * dist033: Lester
+### * dist034: Michael
+### * dist035: Franklin
+### * dist036: Trevor
+
+## DIST034 (IP: 10.35.168.44) - ENTIDAD: Michael
 
 ## Instrucciones de compilación y ejecución
 
