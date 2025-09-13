@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+option go_package = "./proto";
+
+// Servicio que manejara Michael con Franklin o Trevor
+service MichaelTrevorFranklin {
+  rpc InformarDistraccion (InfoDistraccion) returns (ResultadoDistraccion);
+  rpc InformarGolpe (InfoGolpe) returns (ResultadoGolpe);
+  rpc PagarMiembro (MontoPagoMiembro) returns (ConfirmarPagoMiembro);
+}
+
+// ==========================================================
+
+// --- InformarDistraccion() ---
+
+// Michael notifica a Trevor/Franklin para proceder con fase 2
+message InfoDistraccion {
+  float probabilidad_exito = 1;
+}
+
+// Trevor/Franklin responden a Michael con el resultado de la fase 2
+message ResultadoDistraccion {
+  bool exito = 1;
+  string motivo = 2;
+}
+
+// --- InformarDistraccion() ---
+
+// ==========================================================
+
+// --- InformarGolpe() ---
+
+// Michael notifica a Trevor/Franklin para proceder con fase 3
+message InfoGolpe {
+  float probabilidad_exito = 1;
+  int32 botin = 2;
+  float riesgo_policial = 3;
+}
+
+// Trevor/Franklin responden a Michael con el resultado de la fase 3
+message ResultadoGolpe {
+  bool exito = 1;
+  int32 botin = 2;
+  string motivo = 3;
+  int32 botin_extra = 4;
+  int32 estrellas_final = 5;
+}
+
+// --- InformarGolpe() ---
+
+// ==========================================================
+
+// --- PagarMiembro() ---
+
+// Michael informa el total de la operacion a Trevor y Franklin y les paga su correspondencia
+message MontoPagoMiembro {
+  int32 correspondencia = 1;
+  int32 total = 2;
+}
+
+// Trevor y Franklin confirman el pago y le responden a Michael
+message ConfirmarPagoMiembro {
+  bool correcto = 1;
+  string mensaje = 2;
+}
+
+// --- PagarMiembro() ---

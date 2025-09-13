@@ -1,0 +1,18 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: RabbitMQ
+    ports:
+      - "5673:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  lester:
+    build: .
+    container_name: Lester
+    ports:
+      - "50051:50051"
+    depends_on:
+      - rabbitmq

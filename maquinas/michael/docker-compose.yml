@@ -1,0 +1,5 @@
+services:
+  michael:
+    build:
+      context: .
+    container_name: Michael

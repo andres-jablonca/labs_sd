@@ -1,0 +1,7 @@
+services:
+    franklin:
+      build:
+        context: .
+      container_name: Franklin
+      ports:
+        - "50052:50051"

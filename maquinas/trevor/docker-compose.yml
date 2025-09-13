@@ -1,0 +1,7 @@
+services:
+  trevor:
+    build:
+      context: .
+    container_name: Trevor
+    ports:
+      - "50053:50051"

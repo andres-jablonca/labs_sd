@@ -6,8 +6,8 @@ services:
       - "5673:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+    
 
   lester:
     build:
@@ -17,6 +17,7 @@ services:
       - "50051:50051"
     depends_on:
       - rabbitmq
+    
 
   franklin:
     build:
@@ -26,6 +27,7 @@ services:
       - "50052:50051"
     depends_on:
       - rabbitmq
+    
 
   trevor:
     build:
@@ -35,6 +37,7 @@ services:
       - "50053:50051"
     depends_on:
       - rabbitmq
+    
 
 
   michael:
@@ -45,4 +48,5 @@ services:
       - lester
       - franklin
       - trevor
+    
     
