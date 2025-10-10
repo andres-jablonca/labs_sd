@@ -6,15 +6,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"os"
 	"strconv"
-	"strings" // Usado para strings.ToLower()
+	"strings"
 	"time"
 
-	pb "lab2/proto" 
-	
+	pb "lab2/proto"
+
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,7 +21,7 @@ import (
 
 // --- Constantes y Variables Globales ---
 
-const brokerAddress = "localhost:50051"
+const brokerAddress = "broker:50051"
 
 var (
 	entityID   = flag.String("id", "Riploy", "ID único de la entidad.")
@@ -38,7 +37,7 @@ type ProductBase struct {
 // --- Funciones de Fase 1: Registro ---
 
 func registerWithBroker(client pb.EntityManagementClient) {
-	log.Printf("[%s] Starting registration with Broker...", *entityID)
+	fmt.Printf("Coordinando el registro con el Broker...\n")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
@@ -51,10 +50,11 @@ func registerWithBroker(client pb.EntityManagementClient) {
 
 	resp, err := client.RegisterEntity(ctx, req)
 	if err != nil {
-		log.Fatalf("[%s] ❌ Could not connect or register with broker: %v", *entityID, err)
+		fmt.Printf("❌ No se logró conectar con el broker: %v\n", err)
+		os.Exit(1)
 	}
 
-	log.Printf("[%s] Broker Response: Success=%t, Message=%s", *entityID, resp.Success, resp.Message)
+	fmt.Printf("Respuesta del Broker: Éxito=%t, Mensaje=%s\n", resp.Success, resp.Message)
 
 	if !resp.Success {
 		os.Exit(1)
@@ -66,25 +66,23 @@ func registerWithBroker(client pb.EntityManagementClient) {
 // loadCatalog lee el archivo CSV del catálogo.
 func loadCatalog(filename string) []ProductBase {
 	catalog := []ProductBase{}
-	log.Printf("[%s] Loading catalog from %s...", *entityID, filename)
-	
+	fmt.Printf("Cargando catalogo desde %s...\n", filename)
+
 	file, err := os.Open(filename)
 	if err != nil {
-		// Este error ahora debería ser raro si la ruta es correcta
-		log.Fatalf("[%s] FATAL: Cannot open catalog file %s. Error: %v", *entityID, filename, err)
+		fmt.Printf("No se pudo abrir el archivo del catalogo %s. Error: %v\n", filename, err)
+		os.Exit(1)
 	}
 	defer file.Close()
 
 	reader := csv.NewReader(file)
-	// ⚠️ CORRECCIÓN 2: El archivo tiene 6 campos, no 3. 
-    // Lo configuramos para que espere el número correcto, o nos devuelva un error si es inconsistente.
-	reader.FieldsPerRecord = 6 
-	
-	// Saltar la cabecera (Warning en log, no fatal)
-	_, err = reader.Read() 
-    if err != nil && err != io.EOF {
-        log.Printf("[%s] Warning reading catalog header: %v", *entityID, err)
-    }
+	reader.FieldsPerRecord = 6
+
+	// Saltar la cabecera
+	_, err = reader.Read()
+	if err != nil && err != io.EOF {
+		fmt.Printf("Warning leyendo el header del catalogo: %v\n", err)
+	}
 
 	for {
 		record, err := reader.Read()
@@ -92,21 +90,16 @@ func loadCatalog(filename string) []ProductBase {
 			break
 		}
 		if err != nil {
-            // Este error de 'wrong number of fields' ya no debería ocurrir si FieldsPerRecord = 6
-			log.Fatalf("[%s] Error reading CSV record: %v", *entityID, err)
+			fmt.Printf("Error leyendo contenido del CSV: %v\n", err)
+			os.Exit(1)
 		}
-        
-        // Los campos relevantes en el array 'record' son (usando tu estructura):
-        // [2]: categoria
-        // [3]: producto
-        // [4]: precio_base
 
-        category := record[2]
-        productName := record[3]
+		category := record[2]
+		productName := record[3]
 
 		price, err := strconv.ParseInt(record[4], 10, 64)
 		if err != nil {
-			log.Printf("[%s] Invalid base price '%s' for product '%s'. Skipping.", *entityID, record[4], productName)
+			fmt.Printf("Precio base inválido '%s' para el producto '%s'. Skipeando.\n", record[4], productName)
 			continue
 		}
 
@@ -116,12 +109,13 @@ func loadCatalog(filename string) []ProductBase {
 			BasePrice: price,
 		})
 	}
-    
-    if len(catalog) == 0 {
-        log.Fatalf("[%s] FATAL: Catalog is empty after reading. Cannot proceed.", *entityID)
-    }
 
-	log.Printf("[%s] Loaded %d products from catalog.", *entityID, len(catalog))
+	if len(catalog) == 0 {
+		fmt.Printf("Catalogo vacío. No se puede seguir.\n")
+		os.Exit(1)
+	}
+
+	fmt.Printf("Se cargaron %d productos desde el catalogo.\n", len(catalog))
 	return catalog
 }
 
@@ -132,7 +126,7 @@ func generateOffer(base ProductBase, tienda string) *pb.Offer {
 	newPrice := int64(float64(base.BasePrice) * (1.0 - discount))
 
 	// Stock estrictamente mayor que cero (entre 1 y 100)
-	stock := rand.Int31n(100) + 1 
+	stock := rand.Int31n(100) + 1
 
 	// Identificador único (UUIDv4)
 	offerID := uuid.New().String()
@@ -155,16 +149,17 @@ func generateOffer(base ProductBase, tienda string) *pb.Offer {
 func startOfferProduction(catalog []ProductBase) {
 	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("[%s] Failed to connect to broker for production: %v", *entityID, err)
+		fmt.Printf("Fallo al conectar con broker para producción de ofertas: %v\n", err)
+		os.Exit(1)
 	}
 	defer conn.Close()
 
 	client := pb.NewOfferSubmissionClient(conn)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	log.Printf("[%s] Starting continuous offer production...", *entityID)
-	
-    for {
+	fmt.Printf("Iniciando producción de ofertas...\n")
+
+	for {
 		base := catalog[r.Intn(len(catalog))]
 		offer := generateOffer(base, *entityID)
 
@@ -174,20 +169,20 @@ func startOfferProduction(catalog []ProductBase) {
 		cancel()
 
 		if err != nil {
-			log.Printf("[%s] ❌ Error sending offer %s (Broker down?): %v", *entityID, offer.OfertaId, err)
+			fmt.Printf("❌ Error enviando oferta %s (Broker caído?): %v\n", offer.OfertaId, err)
 		} else if resp.Accepted {
-			log.Printf("[%s] ✅ Offer %s sent and ACCEPTED (P: %d, S: %d)", *entityID, offer.OfertaId, offer.Precio, offer.Stock)
+			fmt.Printf("✅ Oferta %s enviada y ACEPTADA (P: %d, S: %d)\n", offer.OfertaId, offer.Precio, offer.Stock)
 		} else {
-			log.Printf("[%s] ⚠️ Offer %s REJECTED by Broker: %s", *entityID, offer.OfertaId, resp.Message)
+			fmt.Printf("⚠️ Oferta %s RECHAZADA por Broker: %s\n", offer.OfertaId, resp.Message)
 		}
 
 		// Frecuencia de emisión: 1-2 segundos
-		delay := time.Duration(r.Intn(1000)+1000) * time.Millisecond
+		delay := 5 * time.Second
 		time.Sleep(delay)
 	}
 }
 
-// --- Función Principal (Corregida) ---
+// --- Función Principal ---
 
 func main() {
 	flag.Parse()
@@ -196,25 +191,24 @@ func main() {
 	// 1. Registro (Fase 1)
 	connReg, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("[%s] Did not connect to broker for registration: %v", *entityID, err)
+		fmt.Printf("No se logró conectar con broker para el registro: %v\n", err)
+		os.Exit(1)
 	}
 	defer connReg.Close()
 
 	clientReg := pb.NewEntityManagementClient(connReg)
 	registerWithBroker(clientReg)
-    
+
 	// 2. Carga del Catálogo y Producción de Ofertas (Fase 2)
-	
-    // ⚠️ CORRECCIÓN 1: Convierte el EntityID a minúsculas para buscar el archivo, 
-    // ya que los nombres de archivo CSV están en minúsculas.
-	lowerCaseID := strings.ToLower(*entityID) 
+	lowerCaseID := strings.ToLower(*entityID)
 	catalogFile := fmt.Sprintf("Productor/catalogos/%s_catalogo.csv", lowerCaseID)
-    
+
 	catalog := loadCatalog(catalogFile)
 
 	if len(catalog) > 0 {
-		startOfferProduction(catalog) 
+		startOfferProduction(catalog)
 	} else {
-		log.Fatalf("[%s] Could not start production: Catalog is empty.", *entityID)
+		fmt.Printf("No se pudo iniciar producción: Catalogo está vacío.\n")
+		os.Exit(1)
 	}
 }

@@ -1,0 +1,73 @@
+services:
+  # --- BROKER CENTRAL ---
+  broker:
+    build: 
+      context: .
+      dockerfile: Broker/Dockerfile
+    container_name: Broker
+    ports:
+      - "50051:50051"
+   
+
+  # --- NODOS DE BASE DE DATOS ---
+  db1:
+    build:
+      context: .
+      dockerfile: Databases/Dockerfile
+    container_name: DB1
+    command: ["./dbnodo", "-id=DB1", "-port=:50061"]
+    ports:
+      - "50061:50061"
+
+  db2:
+    build:
+      context: .
+      dockerfile: Databases/Dockerfile
+    container_name: DB2
+    command: ["./dbnodo", "-id=DB2", "-port=:50062"]
+    ports:
+      - "50062:50062"
+
+  db3:
+    build:
+      context: .
+      dockerfile: Databases/Dockerfile
+    container_name: DB3
+    command: ["./dbnodo", "-id=DB3", "-port=:50063"]
+    ports:
+      - "50063:50063"
+
+  # --- PRODUCTORES ---
+  riploy:
+    build:
+      context: .
+      dockerfile: Productores/Dockerfile
+    container_name: Riploy
+    command: ["./productor", "-id=Riploy", "-port=:50052"]
+    ports:
+      - "50052:50052"
+    depends_on:
+      - broker
+
+  falabellox:
+    build:
+      context: .
+      dockerfile: Productores/Dockerfile
+    container_name: Falabellox
+    command: ["./productor", "-id=Falabellox", "-port=:50053"]
+    ports:
+      - "50053:50053"
+    depends_on:
+      - broker
+
+  parisio:
+    build:
+      context: .
+      dockerfile: Productores/Dockerfile
+    container_name: Parisio
+    command: ["./productor", "-id=Parisio", "-port=:50054"]
+    ports:
+      - "50054:50054"
+    depends_on:
+      - broker
+

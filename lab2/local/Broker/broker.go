@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
 
-	pb "lab2/proto" // Asegúrate que esta ruta coincida con tu go.mod
+	pb "lab2/proto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -19,7 +18,6 @@ const (
 	brokerPort = ":50051"
 	N          = 3 // Número total de réplicas
 	W          = 2 // Número de confirmaciones de escritura requeridas
-	// R = 2 // Número de lecturas requeridas (no usado en esta fase)
 )
 
 // Estructura para registrar cualquier entidad (Productor, DB Node, Consumidor)
@@ -60,7 +58,7 @@ func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationR
 	if _, ok := s.entities[entityID]; ok {
 		return &pb.RegistrationResponse{
 			Success: false,
-			Message: fmt.Sprintf("Entity %s already registered.", entityID),
+			Message: fmt.Sprintf("Entidad %s ya se encuentra registrada.\n", entityID),
 		}, nil
 	}
 
@@ -75,11 +73,11 @@ func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationR
 		s.dbNodes[entityID] = entity
 	}
 
-	log.Printf("[Registration] ✅ Successfully registered %s (%s). Total registered: %d", entityID, entity.Type, len(s.entities))
+	fmt.Printf("[Registro] ✅ %s registrad@ correctamente (%s). Total de registrados: %d\n", entityID, entity.Type, len(s.entities))
 
 	return &pb.RegistrationResponse{
 		Success: true,
-		Message: "Registration successful. Welcome to the CyberDay system.",
+		Message: "Registro exitoso. Bienvenido al CyberDay!.\n",
 	}, nil
 }
 
@@ -88,14 +86,14 @@ func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationR
 // -------------------------------------------------------------------------
 
 func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.OfferSubmissionResponse, error) {
-	log.Printf("[Offer] Received %s from %s. Starting distributed write (N=%d, W=%d)...", offer.GetOfertaId(), offer.GetTienda(), N, W)
+	fmt.Printf("[Oferta %s recibida por parte de %s. Iniciando escritura distribuida (N=%d, W=%d)...\n", offer.GetOfertaId(), offer.GetTienda(), N, W)
 
 	// VALIDACIÓN: Verificar que el número de nodos activos cumpla N
 	if len(s.dbNodes) < N {
-		log.Printf("[Offer] 🛑 Offer %s REJECTED. Only %d/%d DB Nodes are active. Cannot guarantee N=%d.", offer.GetOfertaId(), len(s.dbNodes), N, N)
+		fmt.Printf("[Oferta] 🛑 Oferta %s RECHAZADA. Sólo %d/%d nodos de DB se encuentran activos. No se puede garantizar N=%d.\n", offer.GetOfertaId(), len(s.dbNodes), N, N)
 		return &pb.OfferSubmissionResponse{
 			Accepted: false,
-			Message:  fmt.Sprintf("Cannot guarantee N=%d replicas. Only %d DB Nodes are active.", N, len(s.dbNodes)),
+			Message:  fmt.Sprintf("No se puede garantizar N=%d replicas. Sólo hay %d nodos de DB activos.\n", N, len(s.dbNodes)),
 		}, nil
 	}
 
@@ -112,24 +110,23 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 			// Conexión al Nodo DB
 			conn, err := grpc.Dial(node.Address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithTimeout(time.Second*3))
 			if err != nil {
-				log.Printf("[Write] ❌ Error connecting to %s: %v", node.ID, err)
+				fmt.Printf("[Escritura] ❌ Error conectando con %s: %v\n", node.ID, err)
 				return
 			}
 			defer conn.Close()
 
-			// pb.NewDBNodeClient ya estará definido si se actualizó el .proto
 			dbClient := pb.NewDBNodeClient(conn)
 
-			// Llamada a la función de escritura del Nodo DB (StoreOffer debe estar en DB_nodo/main.go)
+			// Llamada a la función de escritura del Nodo DB
 			resp, err := dbClient.StoreOffer(ctx, offer)
 
 			if err != nil || !resp.GetSuccess() {
-				log.Printf("[Write] ❌ %s failed to store offer %s. Error: %v", node.ID, offer.GetOfertaId(), err)
+				fmt.Printf("[Escritura] ❌ %s falló en almacenar la oferta %s. Error: %v\n", node.ID, offer.GetOfertaId(), err)
 				return
 			}
 
 			// Escritura exitosa
-			log.Printf("[Write] ✅ %s confirmed storage of %s.", node.ID, offer.GetOfertaId())
+			fmt.Printf("[Escritura] ✅ %s confirma el almacenamiento de la oferta %s.\n", node.ID, offer.GetOfertaId())
 
 			countMu.Lock()
 			confirmedWrites++
@@ -142,22 +139,22 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 
 	// 3. Evaluar Condición W=2
 	if confirmedWrites >= W {
-		log.Printf("[Offer] ✅ Offer %s ACCEPTED. W=%d confirmation achieved. (Fase 4: Notificación a Consumidores)", offer.GetOfertaId(), confirmedWrites)
+		fmt.Printf("[Oferta] ✅ Oferta %s ACEPTADA. W=%d confirmación de escritura exitosa. (Fase 4: Notificación a Consumidores)\n", offer.GetOfertaId(), confirmedWrites)
 
 		// 4. Filtrar y Notificar a Consumidores (Lógica de Fase 4 aquí)
 		// ...
 
 		return &pb.OfferSubmissionResponse{
 			Accepted: true,
-			Message:  "Offer accepted and distributed successfully.",
+			Message:  "Oferta aceptada y distribuida con éxito.\n",
 		}, nil
 	}
 
 	// Falla si no se cumple W=2
-	log.Printf("[Offer] ❌ Offer %s REJECTED. Only %d/%d confirmed writes achieved. (W=%d required).", offer.GetOfertaId(), confirmedWrites, 2, W)
+	fmt.Printf("[Oferta] ❌ Oferta %s RECHAZADA. Sólo se confirmaron %d/%d escrituras. (W=%d requerido).\n", offer.GetOfertaId(), confirmedWrites, 2, W)
 	return &pb.OfferSubmissionResponse{
 		Accepted: false,
-		Message:  fmt.Sprintf("Write failed: only %d confirmed writes achieved (W=%d required).", confirmedWrites, W),
+		Message:  fmt.Sprintf("Escritura fallida: sólo se confirmaron %d escrituras (W=%d requerido).\n", confirmedWrites, W),
 	}, nil
 }
 
@@ -168,7 +165,8 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 func main() {
 	lis, err := net.Listen("tcp", brokerPort)
 	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+		fmt.Printf("Fallo al escuchar en: %v\n", err)
+		return
 	}
 
 	s := grpc.NewServer()
@@ -180,8 +178,9 @@ func main() {
 	// 2. Registrar el servicio OfferSubmission (Fase 2)
 	pb.RegisterOfferSubmissionServer(s, brokerServer)
 
-	log.Printf("Broker Central listening for registrations on %s...", brokerPort)
+	fmt.Printf("Broker central escuchando y esperando registros en %s...\n", brokerPort)
 	if err := s.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
+		fmt.Printf("Fallo al servir: %v\n", err)
+		return
 	}
 }
