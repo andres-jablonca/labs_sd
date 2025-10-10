@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+// Set the package name and Go import path
+option go_package = "./;cyberday"; 
+
+package cyberday;
+
+// -------------------------------------------------------------------------
+// --- 1. Data Messages ---
+// -------------------------------------------------------------------------
+
+// Structure of an Offer (needed for all communication)
+message Offer {
+    string oferta_id = 1;
+    string tienda = 2;       // Riploy, Falabellox, Parisio
+    string categoria = 3;    // E.g., Electronica, Moda, Hogar
+    string producto = 4;
+    int64 precio = 5;
+    int32 stock = 6;
+    string fecha = 7;        // Timestamp
+}
+
+// -------------------------------------------------------------------------
+// --- 2. Phase 1: Registration Messages ---
+// -------------------------------------------------------------------------
+
+// Request message for any entity (Producer, DB Node, Consumer) to register
+message RegistrationRequest {
+    string entity_id = 1;    // Unique identifier (e.g., "Riploy", "DB1", "C-E1")
+    string entity_type = 2;    // Type (e.g., "Producer", "DBNode", "Consumer")
+    string address = 3;      // The gRPC address where this entity can be reached
+}
+
+// Response from the Broker confirming or denying registration
+message RegistrationResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// -------------------------------------------------------------------------
+// --- 3. Phase 2: Offer Submission Messages ---
+// -------------------------------------------------------------------------
+
+// Respuesta del Broker al Productor después de SendOffer (reemplaza OfferResponse)
+message OfferSubmissionResponse {
+    bool accepted = 1; // True if W=2 was achieved
+    string message = 2;
+}
+
+// -------------------------------------------------------------------------
+// --- 4. Phase 3: DB Node Communication Messages (Broker <-> DB Node) ---
+// -------------------------------------------------------------------------
+
+// Response que el Nodo DB envía al Broker después de intentar guardar la oferta.
+message StoreOfferResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// -------------------------------------------------------------------------
+// --- 5. gRPC Service Definitions ---
+// -------------------------------------------------------------------------
+
+// Service for all entities to register with the Broker (Fase 1)
+service EntityManagement {
+    rpc RegisterEntity (RegistrationRequest) returns (RegistrationResponse);
+}
+
+// Service for Producers to send offers to the Broker (Fase 2)
+service OfferSubmission {
+    rpc SendOffer (Offer) returns (OfferSubmissionResponse); 
+}
+
+// Service for the Broker to write data to the DB Nodes (Fase 3)
+service DBNode {
+    rpc StoreOffer (Offer) returns (StoreOfferResponse);
+}
