@@ -70,4 +70,45 @@ services:
       - "50054:50054"
     depends_on:
       - broker
+  
+  consumer-group-1:
+    build:
+      context: .
+      dockerfile: Consumidores/Dockerfile
+    container_name: Consumer-Group-1
+    command: ["/app/start-group1.sh"]
+    ports:
+      - "50071:50071"
+      - "50072:50072" 
+      - "50073:50073"
+      - "50074:50074"
+    depends_on:
+      - broker
 
+  consumer-group-2:
+    build:
+      context: .
+      dockerfile: Consumidores/Dockerfile
+    container_name: Consumer-Group-2
+    command: ["/app/start-group2.sh"]
+    ports:
+      - "50075:50075"
+      - "50076:50076"
+      - "50077:50077"
+      - "50078:50078"
+    depends_on:
+      - broker
+
+  consumer-group-3:
+    build:
+      context: .
+      dockerfile: Consumidores/Dockerfile
+    container_name: Consumer-Group-3
+    command: ["/app/start-group3.sh"]
+    ports:
+      - "50079:50079"
+      - "50080:50080"
+      - "50081:50081"
+      - "50082:50082"
+    depends_on:
+      - broker

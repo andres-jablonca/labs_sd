@@ -21,17 +21,17 @@ docker-falabellox:
 docker-parisio:
 	docker compose up --build parisio
 
+docker-c1:
+	docker compose up --build consumer-group-1
+
+docker-c2:
+	docker compose up --build consumer-group-2
+	
+docker-c3:
+	docker compose up --build consumer-group-3
+	
 docker-down:
 	docker compose down
-
-docker-lester: 
-	@docker compose up --build lester 
-
-docker-franklin:
-	@docker compose up --build franklin
-
-docker-trevor:
-	@docker compose up --build trevor
 
 docker-michael:
 	@docker compose up --build michael
@@ -39,9 +39,6 @@ docker-michael:
 
 ver-reporte:
 	@cat Reporte.txt
-
-docker-off:
-	docker compose down
 
 proto:
 	@protoc --go_out=. --go-grpc_out=. ./franklin/proto/atraco.proto

@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Copiar archivos del nodo de base de datos
 COPY Productores/productor.go ./Productores/
+COPY Productores/catalogos/ ./Productores/catalogos/
 COPY proto/ ./proto/
 COPY go.mod .
 COPY go.sum .

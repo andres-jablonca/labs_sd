@@ -201,7 +201,7 @@ func main() {
 
 	// 2. Carga del Catálogo y Producción de Ofertas (Fase 2)
 	lowerCaseID := strings.ToLower(*entityID)
-	catalogFile := fmt.Sprintf("Productor/catalogos/%s_catalogo.csv", lowerCaseID)
+	catalogFile := fmt.Sprintf("Productores/catalogos/%s_catalogo.csv", lowerCaseID)
 
 	catalog := loadCatalog(catalogFile)
 
