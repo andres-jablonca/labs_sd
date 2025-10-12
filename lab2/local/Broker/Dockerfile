@@ -3,7 +3,7 @@ FROM golang:1.25-alpine
 WORKDIR /app
 
 # Copiar archivos del broker
-COPY Broker/broker.go ./Broker/
+COPY Broker/ ./Broker/
 COPY proto/ ./proto/
 COPY go.mod .
 COPY go.sum .

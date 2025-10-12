@@ -41,13 +41,7 @@ ver-reporte:
 	@cat Reporte.txt
 
 proto:
-	@protoc --go_out=. --go-grpc_out=. ./franklin/proto/atraco.proto
-	@protoc --go_out=. --go-grpc_out=. ./trevor/proto/atraco.proto
-	@protoc --go_out=. --go-grpc_out=. ./lester/proto/atraco.proto
-	@protoc --go_out=. --go-grpc_out=. ./michael/proto/atraco.proto
+	protoc --go_out=./proto --go-grpc_out=./proto proto/cyberday.proto
 
 tidy:
-	@cd lester && go mod tidy
-	@cd michael && go mod tidy
-	@cd franklin && go mod tidy
-	@cd trevor && go mod tidy
+	go mod tidy

@@ -16,7 +16,6 @@ import (
 const brokerAddress = "broker:50051"
 
 var (
-	// Change these for each of the 12 consumers
 	entityID   = flag.String("id", "C1-1", "ID único del consumidor.")
 	entityPort = flag.String("port", ":50071", "Puerto local del servidor gRPC del Consumidor.")
 )
@@ -49,7 +48,6 @@ func registerWithBroker(client pb.EntityManagementClient) {
 func main() {
 	flag.Parse()
 
-	// 1. Connect to the Broker
 	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Printf("[%s] No se logró conexión con broker: %v\n", *entityID, err)
@@ -57,10 +55,8 @@ func main() {
 	}
 	defer conn.Close()
 
-	// Create the client for the EntityManagement service
 	client := pb.NewEntityManagementClient(conn)
 
-	// 2. Perform Registration (Phase 1)
 	registerWithBroker(client)
 
 	fmt.Printf("[%s] Registro completo. Listo para recibir notificaciones.\n", *entityID)
