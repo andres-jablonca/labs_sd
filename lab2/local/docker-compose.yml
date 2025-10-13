@@ -6,7 +6,7 @@ services:
       dockerfile: Broker/Dockerfile
     container_name: Broker
     ports:
-      - "50051:50051"
+      - "50095:50095"
    
 
   # --- NODOS DE BASE DE DATOS ---

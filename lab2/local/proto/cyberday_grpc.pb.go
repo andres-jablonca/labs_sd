@@ -335,3 +335,215 @@ var DBNode_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/cyberday.proto",
 }
+
+const (
+	Broker_PostOffer_FullMethodName = "/cyberday.Broker/PostOffer"
+)
+
+// BrokerClient is the client API for Broker service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// 💡 AGREGADO: Servicio principal que implementa el Broker (incluye PostOffer).
+type BrokerClient interface {
+	PostOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*BrokerResponse, error)
+}
+
+type brokerClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewBrokerClient(cc grpc.ClientConnInterface) BrokerClient {
+	return &brokerClient{cc}
+}
+
+func (c *brokerClient) PostOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*BrokerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BrokerResponse)
+	err := c.cc.Invoke(ctx, Broker_PostOffer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// BrokerServer is the server API for Broker service.
+// All implementations must embed UnimplementedBrokerServer
+// for forward compatibility.
+//
+// 💡 AGREGADO: Servicio principal que implementa el Broker (incluye PostOffer).
+type BrokerServer interface {
+	PostOffer(context.Context, *Offer) (*BrokerResponse, error)
+	mustEmbedUnimplementedBrokerServer()
+}
+
+// UnimplementedBrokerServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedBrokerServer struct{}
+
+func (UnimplementedBrokerServer) PostOffer(context.Context, *Offer) (*BrokerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostOffer not implemented")
+}
+func (UnimplementedBrokerServer) mustEmbedUnimplementedBrokerServer() {}
+func (UnimplementedBrokerServer) testEmbeddedByValue()                {}
+
+// UnsafeBrokerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to BrokerServer will
+// result in compilation errors.
+type UnsafeBrokerServer interface {
+	mustEmbedUnimplementedBrokerServer()
+}
+
+func RegisterBrokerServer(s grpc.ServiceRegistrar, srv BrokerServer) {
+	// If the following call pancis, it indicates UnimplementedBrokerServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Broker_ServiceDesc, srv)
+}
+
+func _Broker_PostOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Offer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BrokerServer).PostOffer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Broker_PostOffer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerServer).PostOffer(ctx, req.(*Offer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Broker_ServiceDesc is the grpc.ServiceDesc for Broker service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Broker_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "cyberday.Broker",
+	HandlerType: (*BrokerServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "PostOffer",
+			Handler:    _Broker_PostOffer_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/cyberday.proto",
+}
+
+const (
+	Consumer_ReceiveOffer_FullMethodName = "/cyberday.Consumer/ReceiveOffer"
+)
+
+// ConsumerClient is the client API for Consumer service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// 💡 NUEVO: Service for the Broker to notify Consumers (Fase 4)
+type ConsumerClient interface {
+	ReceiveOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*ConsumerResponse, error)
+}
+
+type consumerClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewConsumerClient(cc grpc.ClientConnInterface) ConsumerClient {
+	return &consumerClient{cc}
+}
+
+func (c *consumerClient) ReceiveOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*ConsumerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConsumerResponse)
+	err := c.cc.Invoke(ctx, Consumer_ReceiveOffer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ConsumerServer is the server API for Consumer service.
+// All implementations must embed UnimplementedConsumerServer
+// for forward compatibility.
+//
+// 💡 NUEVO: Service for the Broker to notify Consumers (Fase 4)
+type ConsumerServer interface {
+	ReceiveOffer(context.Context, *Offer) (*ConsumerResponse, error)
+	mustEmbedUnimplementedConsumerServer()
+}
+
+// UnimplementedConsumerServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedConsumerServer struct{}
+
+func (UnimplementedConsumerServer) ReceiveOffer(context.Context, *Offer) (*ConsumerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReceiveOffer not implemented")
+}
+func (UnimplementedConsumerServer) mustEmbedUnimplementedConsumerServer() {}
+func (UnimplementedConsumerServer) testEmbeddedByValue()                  {}
+
+// UnsafeConsumerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ConsumerServer will
+// result in compilation errors.
+type UnsafeConsumerServer interface {
+	mustEmbedUnimplementedConsumerServer()
+}
+
+func RegisterConsumerServer(s grpc.ServiceRegistrar, srv ConsumerServer) {
+	// If the following call pancis, it indicates UnimplementedConsumerServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Consumer_ServiceDesc, srv)
+}
+
+func _Consumer_ReceiveOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Offer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsumerServer).ReceiveOffer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Consumer_ReceiveOffer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsumerServer).ReceiveOffer(ctx, req.(*Offer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Consumer_ServiceDesc is the grpc.ServiceDesc for Consumer service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Consumer_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "cyberday.Consumer",
+	HandlerType: (*ConsumerServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ReceiveOffer",
+			Handler:    _Consumer_ReceiveOffer_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/cyberday.proto",
+}

@@ -1,78 +1,82 @@
 package main
 
 import (
-	"context"
-	"flag"
-	"fmt"
-	"net"
-	"os"
-	"sync"
-	"time"
+    "context"
+    "flag"
+    "fmt"
+    "net"
+    "os"
+    "strings" // ⚠️ Importar strings
+    "sync"
+    "time"
 
-	pb "lab2/proto"
+    pb "lab2/proto"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/credentials/insecure"
 )
 
 // -------------------------------------------------------------------------
 // --- 1. Variables Globales y Estructuras (Usa flags, no constantes fijas)
 // -------------------------------------------------------------------------
 
-const brokerAddress = "broker:50051"
+// Dirección del Broker usando su nombre de servicio Docker: "broker"
+const brokerAddress = "broker:50095" 
 
 var (
-	// ⚠️ CORRECCIÓN 1: Definimos las banderas para que el ID y el Puerto se lean de la línea de comandos.
-	dbNodeID   = flag.String("id", "DB1", "ID único del nodo DB (e.g., DB1, DB2, DB3).")
-	dbNodePort = flag.String("port", ":50061", "Puerto local del servidor gRPC del Nodo DB.")
+    dbNodeID   = flag.String("id", "DB1", "ID único del nodo DB (e.g., DB1, DB2, DB3).")
+    dbNodePort = flag.String("port", ":50061", "Puerto local del servidor gRPC del Nodo DB.")
 )
 
 // DBNodeServer implementa el servicio DBNode que el Broker llama (Fase 3).
 type DBNodeServer struct {
-	pb.UnimplementedEntityManagementServer
-	pb.UnimplementedDBNodeServer // Necesario para evitar el error 'Unimplemented'
+    pb.UnimplementedEntityManagementServer
+    pb.UnimplementedDBNodeServer 
 
-	entityID string
-
-	// Almacenamiento replicado para la Fase 3
-	data map[string]*pb.Offer
-	mu   sync.Mutex
+    entityID string
+    data map[string]*pb.Offer
+    mu   sync.Mutex
 }
 
 func NewDBNodeServer(id string) *DBNodeServer {
-	return &DBNodeServer{
-		entityID: id,
-		data:     make(map[string]*pb.Offer),
-	}
+    return &DBNodeServer{
+        entityID: id,
+        data:     make(map[string]*pb.Offer),
+    }
 }
 
 // -------------------------------------------------------------------------
-// --- 2. Fase 1: Registro (Modificado para usar el ID de la bandera)
+// --- 2. Fase 1: Registro (CORREGIDO para usar la dirección de Docker Compose)
 // -------------------------------------------------------------------------
 
 func registerWithBroker(client pb.EntityManagementClient, server *DBNodeServer) {
-	fmt.Printf("Coordinando el registro con el Broker...\n")
+    fmt.Printf("Coordinando el registro con el Broker...\n")
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+    ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+    defer cancel()
+    
+    // ⚠️ CORRECCIÓN CLAVE: Usar el ID de la entidad en minúsculas
+    // para que coincida con el nombre del servicio Docker (ej: DB1 -> db1).
+    dockerServiceName := strings.ToLower(server.entityID) 
+    addressToRegister := dockerServiceName + *dbNodePort // ej: "db1:50061"
 
-	req := &pb.RegistrationRequest{
-		EntityId:   server.entityID, // ⚠️ Usa el ID de la estructura
-		EntityType: "DBNode",
-		Address:    "localhost" + *dbNodePort, // ⚠️ Usa el puerto de la bandera
-	}
+    req := &pb.RegistrationRequest{
+        EntityId:   server.entityID, 
+        EntityType: "DBNode",
+        Address:    addressToRegister, // ⬅️ Usamos la dirección de red interna de Docker
+    }
 
-	resp, err := client.RegisterEntity(ctx, req)
-	if err != nil {
-		fmt.Printf("❌ No se logró conectar con el broker: %v\n", err)
-		os.Exit(1)
-	}
+    resp, err := client.RegisterEntity(ctx, req)
+    if err != nil {
+        fmt.Printf("❌ No se logró conectar con el broker: %v\n", err)
+        os.Exit(1)
+    }
 
-	fmt.Printf("Respuesta del Broker: Éxito=%t, Mensaje=%s\n", resp.Success, resp.Message)
+    fmt.Printf("Respuesta del Broker: Éxito=%t, Mensaje=%s\n", resp.Success, resp.Message)
 
-	if !resp.Success {
-		os.Exit(1)
-	}
+    if !resp.Success {
+        os.Exit(1)
+    }
 }
 
 // -------------------------------------------------------------------------
@@ -81,23 +85,22 @@ func registerWithBroker(client pb.EntityManagementClient, server *DBNodeServer) 
 
 // StoreOffer implementa el método que el Broker llama para guardar la oferta.
 func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.StoreOfferResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+    s.mu.Lock()
+    defer s.mu.Unlock()
 
-	// Lógica de guardado: Almacena la oferta usando su ID único como clave
-	s.data[offer.GetOfertaId()] = offer
+    // Lógica de guardado
+    s.data[offer.GetOfertaId()] = offer
 
-	// Simulación de escritura exitosa
-	fmt.Printf("✅ Oferta almacenada con éxito %s (P: %d, S: %d). Ítems totales: %d\n",
-		offer.GetOfertaId(),
-		offer.GetPrecio(),
-		offer.GetStock(),
-		len(s.data))
+    fmt.Printf("✅ Oferta almacenada con éxito %s (P: %d, S: %d). Ítems totales: %d\n",
+        offer.GetOfertaId(),
+        offer.GetPrecio(),
+        offer.GetStock(),
+        len(s.data))
 
-	return &pb.StoreOfferResponse{
-		Success: true,
-		Message: fmt.Sprintf("Oferta %s almacenada con éxito en %s.\n", offer.GetOfertaId(), s.entityID),
-	}, nil
+    return &pb.StoreOfferResponse{
+        Success: true,
+        Message: fmt.Sprintf("Oferta %s almacenada con éxito en %s.\n", offer.GetOfertaId(), s.entityID),
+    }, nil
 }
 
 // -------------------------------------------------------------------------
@@ -105,41 +108,37 @@ func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.Sto
 // -------------------------------------------------------------------------
 
 func main() {
-	// 1. Lee los valores de las banderas (-id, -port)
-	flag.Parse()
+    flag.Parse()
+    dbServer := NewDBNodeServer(*dbNodeID)
 
-	// Crea la instancia del servidor DBNode, pasando el ID real
-	dbServer := NewDBNodeServer(*dbNodeID)
+    // Conexión y Registro con el Broker (Fase 1)
+    conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    if err != nil {
+        fmt.Printf("No se logró conexión con broker: %v\n", err)
+        os.Exit(1)
+    }
+    defer conn.Close()
 
-	// 2. Conexión y Registro con el Broker (Fase 1)
-	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		fmt.Printf("No se logró conexión con broker: %v\n", err)
-		os.Exit(1)
-	}
-	defer conn.Close()
+    client := pb.NewEntityManagementClient(conn)
+    registerWithBroker(client, dbServer)
 
-	client := pb.NewEntityManagementClient(conn)
-	registerWithBroker(client, dbServer)
+    fmt.Printf("Registro completo. Empezando a escuchar en %s...\n", *dbNodePort)
 
-	fmt.Printf("Registro completo. Empezando a escuchar en %s...\n", *dbNodePort)
+    // Inicia el servidor gRPC del Nodo DB 
+    lis, err := net.Listen("tcp", *dbNodePort)
+    if err != nil {
+        fmt.Printf("Fallo al escuchar en %s: %v\n", *dbNodePort, err)
+        os.Exit(1)
+    }
 
-	// 3. Inicia el servidor gRPC del Nodo DB (Para recibir StoreOffer del Broker)
-	lis, err := net.Listen("tcp", *dbNodePort)
-	if err != nil {
-		fmt.Printf("Fallo al escuchar en %s: %v\n", *dbNodePort, err)
-		os.Exit(1)
-	}
+    s := grpc.NewServer()
 
-	s := grpc.NewServer()
+    pb.RegisterEntityManagementServer(s, dbServer)
+    pb.RegisterDBNodeServer(s, dbServer)
 
-	// Registrar ambos servicios en el Nodo DB
-	pb.RegisterEntityManagementServer(s, dbServer) // Aunque no lo necesite, es buena práctica registrar la estructura
-	pb.RegisterDBNodeServer(s, dbServer)           // ⚠️ Necesario para la Fase 3
-
-	fmt.Printf("Listo para almacenar ofertas en %s...\n", *dbNodePort)
-	if err := s.Serve(lis); err != nil {
-		fmt.Printf("Fallo al servir: %v\n", err)
-		os.Exit(1)
-	}
+    fmt.Printf("Listo para almacenar ofertas en %s...\n", *dbNodePort)
+    if err := s.Serve(lis); err != nil {
+        fmt.Printf("Fallo al servir: %v\n", err)
+        os.Exit(1)
+    }
 }

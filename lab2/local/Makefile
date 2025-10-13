@@ -45,3 +45,15 @@ proto:
 
 tidy:
 	go mod tidy
+
+docker-mv1:
+	docker compose up --build db1 db2 db3 
+
+docker-mv2:
+	docker compose up --build consumer-group-3 consumer-group-2 consumer-group-1
+
+docker-mv3:
+	docker compose up --build parisio riploy falabellox
+
+docker-mv4:
+	docker compose up --build broker 

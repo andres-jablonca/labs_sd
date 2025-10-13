@@ -8,6 +8,10 @@ COPY proto/ ./proto/
 COPY go.mod .
 COPY go.sum .
 
+# 💡 CORRECCIÓN: Copiar el archivo de preferencias de consumidores
+# Asumimos que consumidores.csv está en el directorio raíz de la construcción de Docker.
+
+
 # Descargar dependencias
 RUN go mod tidy
 
@@ -15,6 +19,6 @@ RUN go mod tidy
 RUN cd Broker && go build -o /app/broker broker.go
 
 # Exponer puerto
-EXPOSE 50051
+EXPOSE 50095
 
 CMD ["./broker"]
