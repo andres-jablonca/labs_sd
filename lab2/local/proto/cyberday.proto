@@ -38,6 +38,15 @@ message RegistrationResponse {
     string message = 2;
 }
 
+message ConfirmRequest {
+
+}
+
+// Response from the Broker confirming or denying registration
+message ConfirmResponse {
+    bool ready = 1;
+}
+
 // -------------------------------------------------------------------------
 // --- 3. Phase 2: Offer Submission Messages (Producer to Broker) ---
 // -------------------------------------------------------------------------
@@ -46,6 +55,7 @@ message RegistrationResponse {
 message OfferSubmissionResponse {
     bool accepted = 1; // True if W=2 was achieved
     string message = 2;
+    bool termino = 3;
 }
 
 // 💡 AGREGADO: Respuesta del Broker después de procesar la oferta (para PostOffer).
@@ -79,6 +89,10 @@ service EntityManagement {
     rpc RegisterEntity (RegistrationRequest) returns (RegistrationResponse);
 }
 
+service ConfirmarInicio {
+    rpc Confirmacion (ConfirmRequest) returns (ConfirmResponse);
+}
+
 // Service for Producers to send offers to the Broker (Fase 2)
 service OfferSubmission {
     rpc SendOffer (Offer) returns (OfferSubmissionResponse);
@@ -87,6 +101,15 @@ service OfferSubmission {
 // Service for the Broker to write data to the DB Nodes (Fase 3)
 service DBNode {
     rpc StoreOffer (Offer) returns (StoreOfferResponse);
+    rpc GetOfferHistory (RecoveryRequest) returns (RecoveryResponse);
+}
+
+message RecoveryRequest {
+    string requesting_node_id = 1; 
+}
+
+message RecoveryResponse {
+    repeated Offer offers = 1; // Devuelve todas las ofertas
 }
 
 // 💡 AGREGADO: Servicio principal que implementa el Broker (incluye PostOffer).

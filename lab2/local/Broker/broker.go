@@ -27,6 +27,13 @@ const (
 	consumerPreferencesFile = "Broker/consumidores.csv"
 )
 
+var contador_registrados int64 = 0
+var ofertas_parisio int64 = 0
+var ofertas_riploy int64 = 0
+var ofertas_falabellox int64 = 0
+var terminacionMu sync.Mutex
+var sistemaTerminado bool = false // 💡 NUEVA BANDERA DE ESTADO
+
 // -------------------------------------------------------------------------
 // ESTRUCTURAS DE DATOS
 // -------------------------------------------------------------------------
@@ -50,11 +57,12 @@ type ConsumerPreference struct {
 type BrokerServer struct {
 	pb.UnimplementedEntityManagementServer
 	pb.UnimplementedOfferSubmissionServer
+	pb.UnimplementedConfirmarInicioServer
 	// Asumimos pb.UnimplementedBrokerServer si estás usando OfferSubmissionServer como BrokerServer
 
 	entities      map[string]Entity
-	dbNodes       map[string]Entity               // Subconjunto de Nodos DB
-	consumers     map[string]Entity               // FASE 4: Mapa para almacenar los consumidores registrados
+	dbNodes       map[string]Entity             // Subconjunto de Nodos DB
+	consumers     map[string]Entity             // FASE 4: Mapa para almacenar los consumidores registrados
 	consumerPrefs map[string]ConsumerPreference // 💡 NUEVO: Almacena las preferencias cargadas del CSV
 	mu            sync.Mutex
 }
@@ -223,7 +231,7 @@ func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationR
 	}
 
 	fmt.Printf("[Registro] ✅ %s registrad@ correctamente (%s) en %s. Total de registrados: %d\n", entityID, entity.Type, entity.Address, len(s.entities))
-
+	contador_registrados++
 	return &pb.RegistrationResponse{
 		Success: true,
 		Message: "Registro exitoso. Bienvenido al CyberDay!.\n",
@@ -307,11 +315,33 @@ func (s *BrokerServer) notifyConsumers(offer *pb.Offer) {
 	fmt.Printf("[Notificación] Distribución completada para oferta %s. Notificaciones exitosas: %d\n", offer.GetOfertaId(), notificationsSent)
 }
 
+func (s *BrokerServer) Confirmacion(ctx context.Context, offer *pb.ConfirmRequest) (*pb.ConfirmResponse, error) {
+	if contador_registrados < 18 {
+		return &pb.ConfirmResponse{
+			Ready: false,
+		}, nil
+	}
+	return &pb.ConfirmResponse{
+		Ready: true,
+	}, nil
+}
+
 // -------------------------------------------------------------------------
 // FASE 2 & 3: Recepción y Escritura Distribuida (OfferSubmissionServer)
 // -------------------------------------------------------------------------
 
 func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.OfferSubmissionResponse, error) {
+	terminacionMu.Lock() // Bloquea acceso a variables de terminación
+	if sistemaTerminado {
+		terminacionMu.Unlock()
+		return &pb.OfferSubmissionResponse{
+			Accepted: false, // No se acepta porque el Cyberday finalizó
+			Message:  "El Cyberday ha finalizado. No se aceptan más ofertas.",
+			Termino:  true,
+		}, nil
+	}
+	terminacionMu.Unlock() // Libera el mutex si no hemos terminado aún
+
 	fmt.Printf("[Oferta %s recibida por parte de %s. Iniciando escritura distribuida (N=%d, W=%d)...\n", offer.GetOfertaId(), offer.GetTienda(), N, W)
 
 	// VALIDACIÓN: Verificar que el número de nodos activos cumpla N
@@ -367,17 +397,57 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 
 	// Esperar a que terminen todas las llamadas
 	wg.Wait()
-
-	// 3. Evaluar Condición W=2
 	if confirmedWrites >= W {
 		fmt.Printf("[Oferta] ✅ Oferta %s ACEPTADA. W=%d confirmación de escritura exitosa. (Fase 4: Notificación a Consumidores)\n", offer.GetOfertaId(), confirmedWrites)
 
 		// 💡 FASE 4: Llamada asíncrona a la función de notificación.
 		go s.notifyConsumers(offer)
 
+		// --- Bloque de Conteo y Verificación ---
+		// Bloqueamos para actualizar los contadores y verificar la condición de parada
+		terminacionMu.Lock()
+		defer terminacionMu.Unlock()
+
+		if offer.GetTienda() == "Parisio" {
+			ofertas_parisio++
+		} else if offer.GetTienda() == "Falabellox" {
+			ofertas_falabellox++
+		} else if offer.GetTienda() == "Riploy" {
+			ofertas_riploy++
+		}
+
+		if ofertas_falabellox >= 3 && ofertas_parisio >= 3 && ofertas_riploy >= 3 {
+			fmt.Println("\n=======================================================")
+			fmt.Println("🛑 CONDICIÓN DE PARADA ALCANZADA: ¡3 ofertas por cada tienda!")
+			fmt.Println("=======================================================")
+
+			// 💡 ESTABLECER EL ESTADO GLOBAL DE TERMINACIÓN
+			sistemaTerminado = true
+
+			return &pb.OfferSubmissionResponse{
+				Accepted: true,
+				Message:  "Oferta aceptada y distribuida con éxito. Finalizado.",
+				Termino:  true,
+			}, nil
+		}
+		// El mutex se libera con el 'defer terminacionMu.Unlock()'
+
 		return &pb.OfferSubmissionResponse{
 			Accepted: true,
 			Message:  "Oferta aceptada y distribuida con éxito.\n",
+			Termino:  false,
+		}, nil
+	}
+
+	// --- Lógica de Falla (W < 2) ---
+	// También debe chequear si ha terminado el sistema
+	terminacionMu.Lock()
+	defer terminacionMu.Unlock()
+	if sistemaTerminado {
+		return &pb.OfferSubmissionResponse{
+			Accepted: false,
+			Message:  "El Cyberday ha finalizado. No se aceptan más ofertas.",
+			Termino:  true,
 		}, nil
 	}
 
@@ -386,6 +456,7 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 	return &pb.OfferSubmissionResponse{
 		Accepted: false,
 		Message:  fmt.Sprintf("Escritura fallida: sólo se confirmaron %d escrituras (W=%d requerido).\n", confirmedWrites, W),
+		Termino:  false,
 	}, nil
 }
 
@@ -411,6 +482,7 @@ func main() {
 
 	// 1. Registrar el servicio EntityManagement (Fase 1)
 	pb.RegisterEntityManagementServer(s, brokerServer)
+	pb.RegisterConfirmarInicioServer(s, brokerServer)
 
 	// 2. Registrar el servicio OfferSubmission (Fase 2)
 	pb.RegisterOfferSubmissionServer(s, brokerServer)

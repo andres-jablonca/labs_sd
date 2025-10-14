@@ -125,6 +125,108 @@ var EntityManagement_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	ConfirmarInicio_Confirmacion_FullMethodName = "/cyberday.ConfirmarInicio/Confirmacion"
+)
+
+// ConfirmarInicioClient is the client API for ConfirmarInicio service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ConfirmarInicioClient interface {
+	Confirmacion(ctx context.Context, in *ConfirmRequest, opts ...grpc.CallOption) (*ConfirmResponse, error)
+}
+
+type confirmarInicioClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewConfirmarInicioClient(cc grpc.ClientConnInterface) ConfirmarInicioClient {
+	return &confirmarInicioClient{cc}
+}
+
+func (c *confirmarInicioClient) Confirmacion(ctx context.Context, in *ConfirmRequest, opts ...grpc.CallOption) (*ConfirmResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConfirmResponse)
+	err := c.cc.Invoke(ctx, ConfirmarInicio_Confirmacion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ConfirmarInicioServer is the server API for ConfirmarInicio service.
+// All implementations must embed UnimplementedConfirmarInicioServer
+// for forward compatibility.
+type ConfirmarInicioServer interface {
+	Confirmacion(context.Context, *ConfirmRequest) (*ConfirmResponse, error)
+	mustEmbedUnimplementedConfirmarInicioServer()
+}
+
+// UnimplementedConfirmarInicioServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedConfirmarInicioServer struct{}
+
+func (UnimplementedConfirmarInicioServer) Confirmacion(context.Context, *ConfirmRequest) (*ConfirmResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Confirmacion not implemented")
+}
+func (UnimplementedConfirmarInicioServer) mustEmbedUnimplementedConfirmarInicioServer() {}
+func (UnimplementedConfirmarInicioServer) testEmbeddedByValue()                         {}
+
+// UnsafeConfirmarInicioServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ConfirmarInicioServer will
+// result in compilation errors.
+type UnsafeConfirmarInicioServer interface {
+	mustEmbedUnimplementedConfirmarInicioServer()
+}
+
+func RegisterConfirmarInicioServer(s grpc.ServiceRegistrar, srv ConfirmarInicioServer) {
+	// If the following call pancis, it indicates UnimplementedConfirmarInicioServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ConfirmarInicio_ServiceDesc, srv)
+}
+
+func _ConfirmarInicio_Confirmacion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfirmarInicioServer).Confirmacion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConfirmarInicio_Confirmacion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfirmarInicioServer).Confirmacion(ctx, req.(*ConfirmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ConfirmarInicio_ServiceDesc is the grpc.ServiceDesc for ConfirmarInicio service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ConfirmarInicio_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "cyberday.ConfirmarInicio",
+	HandlerType: (*ConfirmarInicioServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Confirmacion",
+			Handler:    _ConfirmarInicio_Confirmacion_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/cyberday.proto",
+}
+
+const (
 	OfferSubmission_SendOffer_FullMethodName = "/cyberday.OfferSubmission/SendOffer"
 )
 
@@ -231,7 +333,8 @@ var OfferSubmission_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	DBNode_StoreOffer_FullMethodName = "/cyberday.DBNode/StoreOffer"
+	DBNode_StoreOffer_FullMethodName      = "/cyberday.DBNode/StoreOffer"
+	DBNode_GetOfferHistory_FullMethodName = "/cyberday.DBNode/GetOfferHistory"
 )
 
 // DBNodeClient is the client API for DBNode service.
@@ -241,6 +344,7 @@ const (
 // Service for the Broker to write data to the DB Nodes (Fase 3)
 type DBNodeClient interface {
 	StoreOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*StoreOfferResponse, error)
+	GetOfferHistory(ctx context.Context, in *RecoveryRequest, opts ...grpc.CallOption) (*RecoveryResponse, error)
 }
 
 type dBNodeClient struct {
@@ -261,6 +365,16 @@ func (c *dBNodeClient) StoreOffer(ctx context.Context, in *Offer, opts ...grpc.C
 	return out, nil
 }
 
+func (c *dBNodeClient) GetOfferHistory(ctx context.Context, in *RecoveryRequest, opts ...grpc.CallOption) (*RecoveryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecoveryResponse)
+	err := c.cc.Invoke(ctx, DBNode_GetOfferHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DBNodeServer is the server API for DBNode service.
 // All implementations must embed UnimplementedDBNodeServer
 // for forward compatibility.
@@ -268,6 +382,7 @@ func (c *dBNodeClient) StoreOffer(ctx context.Context, in *Offer, opts ...grpc.C
 // Service for the Broker to write data to the DB Nodes (Fase 3)
 type DBNodeServer interface {
 	StoreOffer(context.Context, *Offer) (*StoreOfferResponse, error)
+	GetOfferHistory(context.Context, *RecoveryRequest) (*RecoveryResponse, error)
 	mustEmbedUnimplementedDBNodeServer()
 }
 
@@ -280,6 +395,9 @@ type UnimplementedDBNodeServer struct{}
 
 func (UnimplementedDBNodeServer) StoreOffer(context.Context, *Offer) (*StoreOfferResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreOffer not implemented")
+}
+func (UnimplementedDBNodeServer) GetOfferHistory(context.Context, *RecoveryRequest) (*RecoveryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOfferHistory not implemented")
 }
 func (UnimplementedDBNodeServer) mustEmbedUnimplementedDBNodeServer() {}
 func (UnimplementedDBNodeServer) testEmbeddedByValue()                {}
@@ -320,6 +438,24 @@ func _DBNode_StoreOffer_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DBNode_GetOfferHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecoveryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DBNodeServer).GetOfferHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DBNode_GetOfferHistory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DBNodeServer).GetOfferHistory(ctx, req.(*RecoveryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DBNode_ServiceDesc is the grpc.ServiceDesc for DBNode service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -330,6 +466,10 @@ var DBNode_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StoreOffer",
 			Handler:    _DBNode_StoreOffer_Handler,
+		},
+		{
+			MethodName: "GetOfferHistory",
+			Handler:    _DBNode_GetOfferHistory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

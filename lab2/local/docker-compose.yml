@@ -84,6 +84,8 @@ services:
       - "50074:50074"
     depends_on:
       - broker
+    volumes:
+    - ./csv_clientes:/app/output 
 
   consumer-group-2:
     build:
@@ -98,6 +100,8 @@ services:
       - "50078:50078"
     depends_on:
       - broker
+    volumes:
+    - ./csv_clientes:/app/output 
 
   consumer-group-3:
     build:
@@ -112,3 +116,6 @@ services:
       - "50082:50082"
     depends_on:
       - broker
+    volumes:
+    - ./csv_clientes:/app/output 
+

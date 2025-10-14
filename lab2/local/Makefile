@@ -34,8 +34,8 @@ docker-down:
 	docker compose down
 
 docker-michael:
-	@docker compose up --build michael
-	@docker cp Michael:/app/Reporte.txt ./Reporte.txt 2>/dev/null && echo "Reporte final generado exitosamente"
+	@docker compose up --build mv2
+	@docker cp mv2:/app/ ./ 2>/dev/null && echo "Reporte final generado exitosamente"
 
 ver-reporte:
 	@cat Reporte.txt
@@ -47,13 +47,14 @@ tidy:
 	go mod tidy
 
 docker-mv1:
-	docker compose up --build db1 db2 db3 
+	docker compose up --build db1 consumer-group-1 riploy
 
 docker-mv2:
-	docker compose up --build consumer-group-3 consumer-group-2 consumer-group-1
+	docker compose up --build db2 consumer-group-2 falabellox
+	docker cp mv2:/app/ ./ 2>/dev/null
 
 docker-mv3:
-	docker compose up --build parisio riploy falabellox
+	docker compose up --build parisio db3 consumer-group-3
 
 docker-mv4:
 	docker compose up --build broker 
