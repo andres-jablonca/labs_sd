@@ -50,20 +50,19 @@ type ConsumerPreference struct {
 	ID         string
 	Categories map[string]bool // Mapa para búsqueda rápida (separa por ;)
 	Stores     map[string]bool // Mapa para búsqueda rápida (separa por ;)
-	MaxPrice   int64           // 💡 CORRECCIÓN: Usa int64 para coincidir con el tipo del offer.precio
+	MaxPrice   int64           // Usa int64 para coincidir con el tipo del offer.precio
 }
 
-// BrokerServer implementa los dos servicios gRPC requeridos
+// BrokerServer implementa los servicios gRPC requeridos
 type BrokerServer struct {
 	pb.UnimplementedEntityManagementServer
 	pb.UnimplementedOfferSubmissionServer
 	pb.UnimplementedConfirmarInicioServer
-	// Asumimos pb.UnimplementedBrokerServer si estás usando OfferSubmissionServer como BrokerServer
 
 	entities      map[string]Entity
 	dbNodes       map[string]Entity             // Subconjunto de Nodos DB
 	consumers     map[string]Entity             // FASE 4: Mapa para almacenar los consumidores registrados
-	consumerPrefs map[string]ConsumerPreference // 💡 NUEVO: Almacena las preferencias cargadas del CSV
+	consumerPrefs map[string]ConsumerPreference // Almacena las preferencias cargadas del CSV
 	mu            sync.Mutex
 }
 
@@ -73,7 +72,7 @@ func NewBrokerServer() *BrokerServer {
 		entities:      make(map[string]Entity),
 		dbNodes:       make(map[string]Entity),
 		consumers:     make(map[string]Entity),
-		consumerPrefs: make(map[string]ConsumerPreference), // 💡 Inicializar el mapa de preferencias
+		consumerPrefs: make(map[string]ConsumerPreference), // Inicializar el mapa de preferencias
 	}
 }
 
@@ -219,7 +218,7 @@ func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationR
 	if req.GetEntityType() == "DBNode" {
 		s.dbNodes[entityID] = entity
 	} else if req.GetEntityType() == "Consumer" {
-		// 💡 FASE 4: Solo registramos consumidores si tienen preferencias cargadas.
+		// FASE 4: Solo registramos consumidores si tienen preferencias cargadas.
 		if _, ok := s.consumerPrefs[entityID]; !ok {
 			fmt.Printf("[Registro] 🛑 Consumidor %s RECHAZADO. No encontrado en consumidores.csv.\n", entityID)
 			return &pb.RegistrationResponse{
@@ -283,6 +282,7 @@ func (s *BrokerServer) notifyConsumers(offer *pb.Offer) {
 			// 1. Conexión al Consumidor
 			conn, err := grpc.Dial(consumer.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
+				// Este error maneja la desconexión abrupta (Fase 5 - consumidor)
 				fmt.Printf("[Notificación] ❌ Consumidor %s falló en recibir oferta (conexión/caída): %v\n", consumer.ID, err)
 				return
 			}
@@ -327,6 +327,51 @@ func (s *BrokerServer) Confirmacion(ctx context.Context, offer *pb.ConfirmReques
 }
 
 // -------------------------------------------------------------------------
+// FASE 5: Simulación de Fallos
+// -------------------------------------------------------------------------
+
+// simulateDBFailure envía una señal RPC a un nodo DB para que simule un fallo temporal.
+func (s *BrokerServer) simulateDBFailure(nodeID string, duration time.Duration) {
+	s.mu.Lock()
+	node, ok := s.dbNodes[nodeID]
+	s.mu.Unlock()
+
+	if !ok {
+		fmt.Printf("[CONTROL] 🛑 No se encontró el Nodo DB %s para simular el fallo.\n", nodeID)
+		return
+	}
+
+	// Conexión al Nodo DB
+	conn, err := grpc.Dial(node.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Printf("[CONTROL] ❌ Error conectando a %s para enviar señal de fallo: %v\n", node.ID, err)
+		return
+	}
+	defer conn.Close()
+
+	// 💡 Cliente del nuevo servicio DBControl
+	dbClient := pb.NewDBControlClient(conn)
+
+	// Contexto con timeout
+	failCtx, failCancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer failCancel()
+
+	req := &pb.FailureRequest{
+		DurationSeconds: int32(duration.Seconds()),
+	}
+
+	// Llamada a la función de fallo del Nodo DB
+	resp, err := dbClient.SimulateFailure(failCtx, req)
+
+	if err != nil || !resp.GetSuccess() {
+		fmt.Printf("[CONTROL] ❌ Falló RPC a %s para simular fallo. Error: %v\n", node.ID, err)
+		return
+	}
+
+	fmt.Printf("[CONTROL] ✅ Señal de FALLO enviada exitosamente a %s: %s\n", node.ID, resp.GetMessage())
+}
+
+// -------------------------------------------------------------------------
 // FASE 2 & 3: Recepción y Escritura Distribuida (OfferSubmissionServer)
 // -------------------------------------------------------------------------
 
@@ -341,6 +386,17 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 		}, nil
 	}
 	terminacionMu.Unlock() // Libera el mutex si no hemos terminado aún
+
+	// 💡 FASE 5: LÓGICA DE ACTIVACIÓN DE FALLO (Ejemplo: Caída de DB2 después de 3 ofertas totales)
+	// Esta lógica asegura que la simulación de fallo se dispare solo una vez.
+	terminacionMu.Lock()
+	total_ofertas := ofertas_parisio + ofertas_falabellox + ofertas_riploy
+
+	if total_ofertas == 3 {
+		// Activamos la caída de DB2 por 15 segundos en una goroutine separada
+		go s.simulateDBFailure("DB2", time.Second*15)
+	}
+	terminacionMu.Unlock()
 
 	fmt.Printf("[Oferta %s recibida por parte de %s. Iniciando escritura distribuida (N=%d, W=%d)...\n", offer.GetOfertaId(), offer.GetTienda(), N, W)
 
@@ -370,6 +426,7 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 
 			conn, err := grpc.Dial(node.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
+				// Este error puede capturar el fallo del nodo DB si se cae totalmente (Fase 5)
 				fmt.Printf("[Escritura] ❌ Error conectando con %s: %v\n", node.ID, err)
 				return
 			}
@@ -381,7 +438,7 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 			resp, err := dbClient.StoreOffer(dbCtx, offer)
 
 			if err != nil || !resp.GetSuccess() {
-				// Imprime el error específico de la llamada gRPC si está disponible
+				// Imprime el error específico (incluyendo timeout si el nodo está en modo de fallo)
 				fmt.Printf("[Escritura] ❌ %s falló en almacenar la oferta %s. Error: %v\n", node.ID, offer.GetOfertaId(), err)
 				return
 			}
@@ -400,11 +457,10 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 	if confirmedWrites >= W {
 		fmt.Printf("[Oferta] ✅ Oferta %s ACEPTADA. W=%d confirmación de escritura exitosa. (Fase 4: Notificación a Consumidores)\n", offer.GetOfertaId(), confirmedWrites)
 
-		// 💡 FASE 4: Llamada asíncrona a la función de notificación.
+		// FASE 4: Llamada asíncrona a la función de notificación.
 		go s.notifyConsumers(offer)
 
 		// --- Bloque de Conteo y Verificación ---
-		// Bloqueamos para actualizar los contadores y verificar la condición de parada
 		terminacionMu.Lock()
 		defer terminacionMu.Unlock()
 
@@ -416,12 +472,12 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 			ofertas_riploy++
 		}
 
-		if ofertas_falabellox >= 3 && ofertas_parisio >= 3 && ofertas_riploy >= 3 {
+		if ofertas_falabellox >= 20 && ofertas_parisio >= 20 && ofertas_riploy >= 20 {
 			fmt.Println("\n=======================================================")
 			fmt.Println("🛑 CONDICIÓN DE PARADA ALCANZADA: ¡3 ofertas por cada tienda!")
 			fmt.Println("=======================================================")
 
-			// 💡 ESTABLECER EL ESTADO GLOBAL DE TERMINACIÓN
+			// ESTABLECER EL ESTADO GLOBAL DE TERMINACIÓN
 			sistemaTerminado = true
 
 			return &pb.OfferSubmissionResponse{
@@ -430,7 +486,6 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 				Termino:  true,
 			}, nil
 		}
-		// El mutex se libera con el 'defer terminacionMu.Unlock()'
 
 		return &pb.OfferSubmissionResponse{
 			Accepted: true,
@@ -440,7 +495,6 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 	}
 
 	// --- Lógica de Falla (W < 2) ---
-	// También debe chequear si ha terminado el sistema
 	terminacionMu.Lock()
 	defer terminacionMu.Unlock()
 	if sistemaTerminado {
@@ -474,7 +528,7 @@ func main() {
 	s := grpc.NewServer()
 	brokerServer := NewBrokerServer()
 
-	// 💡 FASE 4: Cargar preferencias antes de empezar a servir
+	// FASE 4: Cargar preferencias antes de empezar a servir
 	if err := brokerServer.loadConsumerPreferences(); err != nil {
 		fmt.Printf("🛑 Error fatal al cargar preferencias de consumidores: %v\n", err)
 		return

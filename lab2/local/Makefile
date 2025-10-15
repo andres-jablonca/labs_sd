@@ -51,7 +51,7 @@ docker-mv1:
 
 docker-mv2:
 	docker compose up --build db2 consumer-group-2 falabellox
-	docker cp mv2:/app/ ./ 2>/dev/null
+
 
 docker-mv3:
 	docker compose up --build parisio db3 consumer-group-3

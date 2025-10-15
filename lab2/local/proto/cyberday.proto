@@ -12,12 +12,12 @@ package cyberday;
 // Structure of an Offer (needed for all communication)
 message Offer {
     string oferta_id = 1;
-    string tienda = 2;      // Riploy, Falabellox, Parisio
-    string categoria = 3;    // E.g., Electronica, Moda, Hogar
+    string tienda = 2; // Riploy, Falabellox, Parisio
+    string categoria = 3; // E.g., Electronica, Moda, Hogar
     string producto = 4;
     int64 precio = 5;
     int32 stock = 6;
-    string fecha = 7;        // Timestamp
+    string fecha = 7; // Timestamp
     float descuento = 8;
 }
 
@@ -27,9 +27,9 @@ message Offer {
 
 // Request message for any entity (Producer, DB Node, Consumer) to register
 message RegistrationRequest {
-    string entity_id = 1;    // Unique identifier (e.g., "Riploy", "DB1", "C-E1")
-    string entity_type = 2;    // Type (e.g., "Producer", "DBNode", "Consumer")
-    string address = 3;      // The gRPC address where this entity can be reached
+    string entity_id = 1; // Unique identifier (e.g., "Riploy", "DB1", "C-E1")
+    string entity_type = 2; // Type (e.g., "Producer", "DBNode", "Consumer")
+    string address = 3; // The gRPC address where this entity can be reached
 }
 
 // Response from the Broker confirming or denying registration
@@ -51,37 +51,56 @@ message ConfirmResponse {
 // --- 3. Phase 2: Offer Submission Messages (Producer to Broker) ---
 // -------------------------------------------------------------------------
 
-// Respuesta del Broker al Productor después de SendOffer
+// Respuesta del Broker al Productor despues de SendOffer
 message OfferSubmissionResponse {
     bool accepted = 1; // True if W=2 was achieved
     string message = 2;
     bool termino = 3;
 }
 
-// 💡 AGREGADO: Respuesta del Broker después de procesar la oferta (para PostOffer).
-message BrokerResponse {
-  bool success = 1;
-  string message = 2;
-}
-
 // -------------------------------------------------------------------------
 // --- 4. Phase 3 & 4: DB Node and Consumer Communication Messages ---
 // -------------------------------------------------------------------------
 
-// Response que el Nodo DB envía al Broker después de intentar guardar la oferta.
+// Response que el Nodo DB envia al Broker despues de intentar guardar la oferta.
 message StoreOfferResponse {
     bool success = 1;
     string message = 2;
 }
 
-// 💡 NUEVO: Respuesta que el Consumidor envía al Broker después de recibir la oferta.
+// FASE 4: Respuesta que el Consumidor envia al Broker despues de recibir la oferta.
 message ConsumerResponse {
     bool success = 1;
     string message = 2;
 }
 
+// Mensaje para solicitar historial de ofertas a un peer DB Node
+message RecoveryRequest {
+    string requesting_node_id = 1;
+}
+
+// Respuesta que contiene el historial de ofertas
+message RecoveryResponse {
+    repeated Offer offers = 1; // Devuelve todas las ofertas
+}
+
 // -------------------------------------------------------------------------
-// --- 5. gRPC Service Definitions ---
+// --- 5. FASE 5: Control de Fallos ---
+// -------------------------------------------------------------------------
+
+// Request para simular un fallo en el Nodo DB
+message FailureRequest {
+    int32 duration_seconds = 1; // Duracion del fallo
+}
+
+// Response del Nodo DB al Broker sobre el control de fallo
+message FailureResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// -------------------------------------------------------------------------
+// --- 6. gRPC Service Definitions ---
 // -------------------------------------------------------------------------
 
 // Service for all entities to register with the Broker (Fase 1)
@@ -89,6 +108,7 @@ service EntityManagement {
     rpc RegisterEntity (RegistrationRequest) returns (RegistrationResponse);
 }
 
+// Service para que los Productores confirmen el inicio
 service ConfirmarInicio {
     rpc Confirmacion (ConfirmRequest) returns (ConfirmResponse);
 }
@@ -98,26 +118,18 @@ service OfferSubmission {
     rpc SendOffer (Offer) returns (OfferSubmissionResponse);
 }
 
-// Service for the Broker to write data to the DB Nodes (Fase 3)
+// Service for the Broker to write data to the DB Nodes and manage recovery (Fase 3)
 service DBNode {
     rpc StoreOffer (Offer) returns (StoreOfferResponse);
     rpc GetOfferHistory (RecoveryRequest) returns (RecoveryResponse);
 }
 
-message RecoveryRequest {
-    string requesting_node_id = 1; 
-}
-
-message RecoveryResponse {
-    repeated Offer offers = 1; // Devuelve todas las ofertas
-}
-
-// 💡 AGREGADO: Servicio principal que implementa el Broker (incluye PostOffer).
-service Broker {
-  rpc PostOffer (Offer) returns (BrokerResponse);
-}
-
-// 💡 NUEVO: Service for the Broker to notify Consumers (Fase 4)
+// NUEVO: Service for the Broker to notify Consumers (Fase 4)
 service Consumer {
     rpc ReceiveOffer (Offer) returns (ConsumerResponse);
+}
+
+// NUEVO: Service for the Broker to control the DB Nodes (Fase 5)
+service DBControl {
+    rpc SimulateFailure (FailureRequest) returns (FailureResponse);
 }

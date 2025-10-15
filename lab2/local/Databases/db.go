@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings" // ⚠️ Importar strings
+	"strings"
 	"sync"
 	"time"
 
@@ -17,7 +17,7 @@ import (
 )
 
 // -------------------------------------------------------------------------
-// --- 1. Variables Globales y Estructuras (Usa flags, no constantes fijas)
+// --- 1. Variables Globales y Estructuras
 // -------------------------------------------------------------------------
 
 // Dirección del Broker usando su nombre de servicio Docker: "broker"
@@ -28,10 +28,17 @@ var (
 	dbNodePort = flag.String("port", ":50061", "Puerto local del servidor gRPC del Nodo DB.")
 )
 
-// DBNodeServer implementa el servicio DBNode que el Broker llama (Fase 3).
+// FASE 5: Variables de estado para la simulación de fallos
+var (
+	isFailing = false
+	failureMu sync.Mutex
+)
+
+// DBNodeServer implementa los servicios requeridos (incluyendo el de control para la FASE 5).
 type DBNodeServer struct {
 	pb.UnimplementedEntityManagementServer
 	pb.UnimplementedDBNodeServer
+	pb.UnimplementedDBControlServer // 💡 FASE 5: Servicio para recibir órdenes de fallo
 
 	entityID string
 	data     map[string]*pb.Offer
@@ -45,7 +52,9 @@ func NewDBNodeServer(id string) *DBNodeServer {
 	}
 }
 
-// dbtnodo.go (Función del Servidor DB)
+// -------------------------------------------------------------------------
+// --- Recuperación y Resincronización
+// -------------------------------------------------------------------------
 
 // GetOfferHistory devuelve todas las ofertas almacenadas localmente.
 func (s *DBNodeServer) GetOfferHistory(ctx context.Context, req *pb.RecoveryRequest) (*pb.RecoveryResponse, error) {
@@ -54,7 +63,7 @@ func (s *DBNodeServer) GetOfferHistory(ctx context.Context, req *pb.RecoveryRequ
 
 	var offersToSend []*pb.Offer
 
-	// 💡 Itera sobre el mapa s.data y copia todas las ofertas a la respuesta.
+	// Itera sobre el mapa s.data y copia todas las ofertas a la respuesta.
 	for _, offer := range s.data {
 		offersToSend = append(offersToSend, offer)
 	}
@@ -66,10 +75,7 @@ func (s *DBNodeServer) GetOfferHistory(ctx context.Context, req *pb.RecoveryRequ
 	}, nil
 }
 
-// dbtnodo.go (Función de Resincronización al inicio)
-
-// dbtnodo.go (Función de Resincronización al inicio)
-
+// Función de Resincronización al inicio (sin cambios)
 func performResync(myID string, peerAddresses []string, s *DBNodeServer) {
 	fmt.Printf("[%s] Iniciando resincronización...\n", myID)
 
@@ -77,16 +83,11 @@ func performResync(myID string, peerAddresses []string, s *DBNodeServer) {
 	for _, peerAddress := range peerAddresses {
 		fmt.Printf("[%s] Intentando conectar con peer %s...\n", myID, peerAddress)
 
-		// 💡 CORRECCIÓN: Conexión y manejo de cierre local.
 		conn, err := grpc.Dial(peerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			fmt.Printf("[%s] ❌ Fallo al conectar con peer %s: %v. Probando otro.\n", myID, peerAddress, err)
 			continue
 		}
-		// Cerrar la conexión ANTES de continuar con el bucle o al finalizar la función.
-		// Lo cerraremos al final del intento exitoso o fallido con un go-to (más limpio)
-		// o simplemente al final de la función (el defer original estaba bien si se ejecutaba solo una vez).
-		// En este caso, usaremos el cierre al final del bloque de intento:
 
 		client := pb.NewDBNodeClient(conn)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
@@ -95,7 +96,7 @@ func performResync(myID string, peerAddresses []string, s *DBNodeServer) {
 		// 1. Solicitar historial
 		resp, err := client.GetOfferHistory(ctx, req)
 		cancel()
-		conn.Close() // 💡 Cerrar la conexión inmediatamente después del uso.
+		conn.Close() // Cerrar la conexión inmediatamente después del uso.
 
 		if err != nil {
 			fmt.Printf("[%s] ❌ Error solicitando historial a %s: %v. Probando otro.\n", myID, peerAddress, err)
@@ -120,7 +121,7 @@ func performResync(myID string, peerAddresses []string, s *DBNodeServer) {
 }
 
 // -------------------------------------------------------------------------
-// --- 2. Fase 1: Registro (CORREGIDO para usar la dirección de Docker Compose)
+// --- 2. Fase 1: Registro
 // -------------------------------------------------------------------------
 
 func registerWithBroker(client pb.EntityManagementClient, server *DBNodeServer) {
@@ -129,15 +130,14 @@ func registerWithBroker(client pb.EntityManagementClient, server *DBNodeServer) 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	// ⚠️ CORRECCIÓN CLAVE: Usar el ID de la entidad en minúsculas
-	// para que coincida con el nombre del servicio Docker (ej: DB1 -> db1).
+	// Usar el ID de la entidad en minúsculas para coincidir con el nombre del servicio Docker (ej: DB1 -> db1).
 	dockerServiceName := strings.ToLower(server.entityID)
 	addressToRegister := dockerServiceName + *dbNodePort // ej: "db1:50061"
 
 	req := &pb.RegistrationRequest{
 		EntityId:   server.entityID,
 		EntityType: "DBNode",
-		Address:    addressToRegister, // ⬅️ Usamos la dirección de red interna de Docker
+		Address:    addressToRegister,
 	}
 
 	resp, err := client.RegisterEntity(ctx, req)
@@ -154,11 +154,25 @@ func registerWithBroker(client pb.EntityManagementClient, server *DBNodeServer) 
 }
 
 // -------------------------------------------------------------------------
-// --- 3. Fase 3: Almacenamiento (StoreOffer)
+// --- 3. FASE 3: Almacenamiento (StoreOffer)
 // -------------------------------------------------------------------------
 
 // StoreOffer implementa el método que el Broker llama para guardar la oferta.
 func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.StoreOfferResponse, error) {
+	// 💡 FASE 5: Chequeo de estado de fallo
+	failureMu.Lock()
+	if isFailing {
+		failureMu.Unlock()
+		fmt.Printf("[FALLO] ❌ Oferta %s recibida pero ignorada (Nodo en fallo).\n", offer.GetOfertaId())
+
+		// Simular un fallo/timeout forzando que la respuesta demore más que el timeout del Broker (3s).
+		// Esperamos 4 segundos para garantizar el timeout en el Broker.
+		time.Sleep(time.Second * 4) 
+		// Devolver error gRPC.
+		return nil, fmt.Errorf("simulated failure: node is down for %s", s.entityID) 
+	}
+	failureMu.Unlock()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -178,7 +192,43 @@ func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.Sto
 }
 
 // -------------------------------------------------------------------------
-// --- 4. Función Principal (Con servidor gRPC para recibir peticiones)
+// --- 5. FASE 5: Control de Fallos (SimulateFailure)
+// -------------------------------------------------------------------------
+
+// SimulateFailure implementa el método que el Broker llama para forzar una caída temporal.
+func (s *DBNodeServer) SimulateFailure(ctx context.Context, req *pb.FailureRequest) (*pb.FailureResponse, error) {
+	duration := time.Duration(req.GetDurationSeconds()) * time.Second
+
+	failureMu.Lock()
+	if isFailing {
+		failureMu.Unlock()
+		return &pb.FailureResponse{
+			Success: false,
+			Message: "Ya en estado de fallo. Ignorando nueva solicitud.",
+		}, nil
+	}
+	isFailing = true
+	failureMu.Unlock()
+
+	fmt.Printf("[FALLO] 🛑 Simulación de fallo INICIADA: Dejando de responder escrituras por %s...\n", duration)
+
+	// Gorutina que esperará la duración del fallo y restaurará el estado
+	go func() {
+		time.Sleep(duration)
+		failureMu.Lock()
+		isFailing = false
+		failureMu.Unlock()
+		fmt.Printf("[FALLO] ✅ Simulación de fallo FINALIZADA. Respondiendo escrituras nuevamente.\n")
+	}()
+
+	return &pb.FailureResponse{
+		Success: true,
+		Message: fmt.Sprintf("Fallo de %s activado.\n", duration),
+	}, nil
+}
+
+// -------------------------------------------------------------------------
+// --- 4. Función Principal
 // -------------------------------------------------------------------------
 
 func main() {
@@ -209,6 +259,7 @@ func main() {
 
 	pb.RegisterEntityManagementServer(s, dbServer)
 	pb.RegisterDBNodeServer(s, dbServer)
+	pb.RegisterDBControlServer(s, dbServer) // 💡 FASE 5: Registrar el nuevo servicio de control
 
 	fmt.Printf("Listo para almacenar ofertas en %s...\n", *dbNodePort)
 	if err := s.Serve(lis); err != nil {

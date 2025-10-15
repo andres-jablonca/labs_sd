@@ -131,6 +131,8 @@ const (
 // ConfirmarInicioClient is the client API for ConfirmarInicio service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// Service para que los Productores confirmen el inicio
 type ConfirmarInicioClient interface {
 	Confirmacion(ctx context.Context, in *ConfirmRequest, opts ...grpc.CallOption) (*ConfirmResponse, error)
 }
@@ -156,6 +158,8 @@ func (c *confirmarInicioClient) Confirmacion(ctx context.Context, in *ConfirmReq
 // ConfirmarInicioServer is the server API for ConfirmarInicio service.
 // All implementations must embed UnimplementedConfirmarInicioServer
 // for forward compatibility.
+//
+// Service para que los Productores confirmen el inicio
 type ConfirmarInicioServer interface {
 	Confirmacion(context.Context, *ConfirmRequest) (*ConfirmResponse, error)
 	mustEmbedUnimplementedConfirmarInicioServer()
@@ -341,7 +345,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Service for the Broker to write data to the DB Nodes (Fase 3)
+// Service for the Broker to write data to the DB Nodes and manage recovery (Fase 3)
 type DBNodeClient interface {
 	StoreOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*StoreOfferResponse, error)
 	GetOfferHistory(ctx context.Context, in *RecoveryRequest, opts ...grpc.CallOption) (*RecoveryResponse, error)
@@ -379,7 +383,7 @@ func (c *dBNodeClient) GetOfferHistory(ctx context.Context, in *RecoveryRequest,
 // All implementations must embed UnimplementedDBNodeServer
 // for forward compatibility.
 //
-// Service for the Broker to write data to the DB Nodes (Fase 3)
+// Service for the Broker to write data to the DB Nodes and manage recovery (Fase 3)
 type DBNodeServer interface {
 	StoreOffer(context.Context, *Offer) (*StoreOfferResponse, error)
 	GetOfferHistory(context.Context, *RecoveryRequest) (*RecoveryResponse, error)
@@ -477,112 +481,6 @@ var DBNode_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Broker_PostOffer_FullMethodName = "/cyberday.Broker/PostOffer"
-)
-
-// BrokerClient is the client API for Broker service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// 💡 AGREGADO: Servicio principal que implementa el Broker (incluye PostOffer).
-type BrokerClient interface {
-	PostOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*BrokerResponse, error)
-}
-
-type brokerClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewBrokerClient(cc grpc.ClientConnInterface) BrokerClient {
-	return &brokerClient{cc}
-}
-
-func (c *brokerClient) PostOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*BrokerResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(BrokerResponse)
-	err := c.cc.Invoke(ctx, Broker_PostOffer_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// BrokerServer is the server API for Broker service.
-// All implementations must embed UnimplementedBrokerServer
-// for forward compatibility.
-//
-// 💡 AGREGADO: Servicio principal que implementa el Broker (incluye PostOffer).
-type BrokerServer interface {
-	PostOffer(context.Context, *Offer) (*BrokerResponse, error)
-	mustEmbedUnimplementedBrokerServer()
-}
-
-// UnimplementedBrokerServer must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedBrokerServer struct{}
-
-func (UnimplementedBrokerServer) PostOffer(context.Context, *Offer) (*BrokerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PostOffer not implemented")
-}
-func (UnimplementedBrokerServer) mustEmbedUnimplementedBrokerServer() {}
-func (UnimplementedBrokerServer) testEmbeddedByValue()                {}
-
-// UnsafeBrokerServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to BrokerServer will
-// result in compilation errors.
-type UnsafeBrokerServer interface {
-	mustEmbedUnimplementedBrokerServer()
-}
-
-func RegisterBrokerServer(s grpc.ServiceRegistrar, srv BrokerServer) {
-	// If the following call pancis, it indicates UnimplementedBrokerServer was
-	// embedded by pointer and is nil.  This will cause panics if an
-	// unimplemented method is ever invoked, so we test this at initialization
-	// time to prevent it from happening at runtime later due to I/O.
-	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
-		t.testEmbeddedByValue()
-	}
-	s.RegisterService(&Broker_ServiceDesc, srv)
-}
-
-func _Broker_PostOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Offer)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BrokerServer).PostOffer(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Broker_PostOffer_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BrokerServer).PostOffer(ctx, req.(*Offer))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// Broker_ServiceDesc is the grpc.ServiceDesc for Broker service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var Broker_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cyberday.Broker",
-	HandlerType: (*BrokerServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "PostOffer",
-			Handler:    _Broker_PostOffer_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/cyberday.proto",
-}
-
-const (
 	Consumer_ReceiveOffer_FullMethodName = "/cyberday.Consumer/ReceiveOffer"
 )
 
@@ -590,7 +488,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// 💡 NUEVO: Service for the Broker to notify Consumers (Fase 4)
+// NUEVO: Service for the Broker to notify Consumers (Fase 4)
 type ConsumerClient interface {
 	ReceiveOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*ConsumerResponse, error)
 }
@@ -617,7 +515,7 @@ func (c *consumerClient) ReceiveOffer(ctx context.Context, in *Offer, opts ...gr
 // All implementations must embed UnimplementedConsumerServer
 // for forward compatibility.
 //
-// 💡 NUEVO: Service for the Broker to notify Consumers (Fase 4)
+// NUEVO: Service for the Broker to notify Consumers (Fase 4)
 type ConsumerServer interface {
 	ReceiveOffer(context.Context, *Offer) (*ConsumerResponse, error)
 	mustEmbedUnimplementedConsumerServer()
@@ -682,6 +580,112 @@ var Consumer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReceiveOffer",
 			Handler:    _Consumer_ReceiveOffer_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/cyberday.proto",
+}
+
+const (
+	DBControl_SimulateFailure_FullMethodName = "/cyberday.DBControl/SimulateFailure"
+)
+
+// DBControlClient is the client API for DBControl service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// NUEVO: Service for the Broker to control the DB Nodes (Fase 5)
+type DBControlClient interface {
+	SimulateFailure(ctx context.Context, in *FailureRequest, opts ...grpc.CallOption) (*FailureResponse, error)
+}
+
+type dBControlClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewDBControlClient(cc grpc.ClientConnInterface) DBControlClient {
+	return &dBControlClient{cc}
+}
+
+func (c *dBControlClient) SimulateFailure(ctx context.Context, in *FailureRequest, opts ...grpc.CallOption) (*FailureResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FailureResponse)
+	err := c.cc.Invoke(ctx, DBControl_SimulateFailure_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// DBControlServer is the server API for DBControl service.
+// All implementations must embed UnimplementedDBControlServer
+// for forward compatibility.
+//
+// NUEVO: Service for the Broker to control the DB Nodes (Fase 5)
+type DBControlServer interface {
+	SimulateFailure(context.Context, *FailureRequest) (*FailureResponse, error)
+	mustEmbedUnimplementedDBControlServer()
+}
+
+// UnimplementedDBControlServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedDBControlServer struct{}
+
+func (UnimplementedDBControlServer) SimulateFailure(context.Context, *FailureRequest) (*FailureResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SimulateFailure not implemented")
+}
+func (UnimplementedDBControlServer) mustEmbedUnimplementedDBControlServer() {}
+func (UnimplementedDBControlServer) testEmbeddedByValue()                   {}
+
+// UnsafeDBControlServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to DBControlServer will
+// result in compilation errors.
+type UnsafeDBControlServer interface {
+	mustEmbedUnimplementedDBControlServer()
+}
+
+func RegisterDBControlServer(s grpc.ServiceRegistrar, srv DBControlServer) {
+	// If the following call pancis, it indicates UnimplementedDBControlServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&DBControl_ServiceDesc, srv)
+}
+
+func _DBControl_SimulateFailure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FailureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DBControlServer).SimulateFailure(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DBControl_SimulateFailure_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DBControlServer).SimulateFailure(ctx, req.(*FailureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// DBControl_ServiceDesc is the grpc.ServiceDesc for DBControl service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var DBControl_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "cyberday.DBControl",
+	HandlerType: (*DBControlServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SimulateFailure",
+			Handler:    _DBControl_SimulateFailure_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
