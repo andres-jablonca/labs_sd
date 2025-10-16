@@ -63,36 +63,6 @@ func (s *ConsumerServer) writeOfferToCSV(fileName string, offer *pb.Offer) error
 	return nil
 }
 
-// NOTA: La estructura ConsumerServer debe ser modificada si usas el ID en el struct.
-// Si no, debes pasar el ID del consumidor a esta función. Dado que usas s.entityID,
-// la función debe ser un método de ConsumerServer o recibir el ID como argumento.
-// Hemos asumido que es un método (s.writeOfferToCSV).
-func initCSVFile(fileName string) error {
-	// Abrir el archivo en modo append (crear si no existe)
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		return fmt.Errorf("error al abrir el archivo CSV para inicialización: %v", err)
-	}
-	defer file.Close()
-
-	// Comprobar si el archivo está vacío para escribir la cabecera
-	stat, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("error al obtener estadísticas del archivo: %v", err)
-	}
-
-	if stat.Size() == 0 {
-		writer := csv.NewWriter(file)
-		header := []string{"Producto", "Precio", "Tienda", "Categoria"}
-		if err := writer.Write(header); err != nil {
-			return fmt.Errorf("error al escribir la cabecera del CSV: %v", err)
-		}
-		writer.Flush()
-	}
-
-	return nil
-}
-
 var (
 	entityID   = flag.String("id", "C1-1", "ID único del consumidor.")
 	entityPort = flag.String("port", ":50071", "Puerto local del servidor gRPC del Consumidor.")

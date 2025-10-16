@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"strings"
@@ -13,7 +14,9 @@ import (
 	pb "lab2/proto"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 // -------------------------------------------------------------------------
@@ -22,6 +25,14 @@ import (
 
 // Dirección del Broker usando su nombre de servicio Docker: "broker"
 const brokerAddress = "broker:50095"
+
+// 💡 CONSTANTES DE FALLO AUTÓNOMO
+const (
+	FailureCheckInterval = 10 * time.Second // Revisar si fallar cada 15 segundos
+	FailureProbability   = 0.40             // 20% de probabilidad de caer en cada chequeo
+	MinFailureDuration   = 5 * time.Second  // Duración mínima del fallo
+	MaxFailureDuration   = 15 * time.Second // Duración máxima del fallo
+)
 
 var (
 	dbNodeID   = flag.String("id", "DB1", "ID único del nodo DB (e.g., DB1, DB2, DB3).")
@@ -90,12 +101,10 @@ func performResync(myID string, peerAddresses []string, s *DBNodeServer) {
 		}
 
 		client := pb.NewDBNodeClient(conn)
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 		req := &pb.RecoveryRequest{RequestingNodeId: myID}
 
 		// 1. Solicitar historial
-		resp, err := client.GetOfferHistory(ctx, req)
-		cancel()
+		resp, err := client.GetOfferHistory(context.Background(), req)
 		conn.Close() // Cerrar la conexión inmediatamente después del uso.
 
 		if err != nil {
@@ -109,7 +118,6 @@ func performResync(myID string, peerAddresses []string, s *DBNodeServer) {
 		for _, offer := range resp.GetOffers() {
 			// Re-almacenar en su mapa s.data
 			s.data[offer.GetOfertaId()] = offer
-			offersRecovered++
 		}
 		s.mu.Unlock()
 
@@ -163,13 +171,11 @@ func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.Sto
 	failureMu.Lock()
 	if isFailing {
 		failureMu.Unlock()
-		fmt.Printf("[FALLO] ❌ Oferta %s recibida pero ignorada (Nodo en fallo).\n", offer.GetOfertaId())
-
-		// Simular un fallo/timeout forzando que la respuesta demore más que el timeout del Broker (3s).
-		// Esperamos 4 segundos para garantizar el timeout en el Broker.
-		time.Sleep(time.Second * 4) 
-		// Devolver error gRPC.
-		return nil, fmt.Errorf("simulated failure: node is down for %s", s.entityID) 
+		// Retornar un error de gRPC específico para que el Broker sepa que el nodo está inaccesible temporalmente.
+		return &pb.StoreOfferResponse{
+			Success: false,
+			Message: fmt.Sprintf("❌ %s está en estado de fallo y no acepta escrituras.", s.entityID),
+		}, status.Error(codes.Unavailable, "Nodo DB no disponible")
 	}
 	failureMu.Unlock()
 
@@ -195,36 +201,72 @@ func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.Sto
 // --- 5. FASE 5: Control de Fallos (SimulateFailure)
 // -------------------------------------------------------------------------
 
-// SimulateFailure implementa el método que el Broker llama para forzar una caída temporal.
-func (s *DBNodeServer) SimulateFailure(ctx context.Context, req *pb.FailureRequest) (*pb.FailureResponse, error) {
-	duration := time.Duration(req.GetDurationSeconds()) * time.Second
+// startFailureDaemon corre un bucle que decide probabilísticamente si iniciar un fallo.
+func (s *DBNodeServer) startFailureDaemon() {
+	fmt.Printf("[%s] 🛠️ Daemon de fallos iniciado. Probabilidad: %.0f%% cada %s.\n",
+		s.entityID, FailureProbability*100, FailureCheckInterval.String())
 
-	failureMu.Lock()
-	if isFailing {
+	for {
+		time.Sleep(FailureCheckInterval)
+
+		// 1. Evitar iniciar un nuevo fallo si ya está en curso
+		failureMu.Lock()
+		if isFailing {
+			failureMu.Unlock()
+			continue
+		}
 		failureMu.Unlock()
-		return &pb.FailureResponse{
-			Success: false,
-			Message: "Ya en estado de fallo. Ignorando nueva solicitud.",
-		}, nil
+
+		// 2. Comprobar la probabilidad
+		if rand.Float64() < FailureProbability {
+			// Calcular duración aleatoria entre Min y Max
+			durationSeconds := rand.Intn(int(MaxFailureDuration.Seconds()-MinFailureDuration.Seconds())) + int(MinFailureDuration.Seconds())
+			duration := time.Duration(durationSeconds) * time.Second
+
+			// Iniciar el fallo en una nueva goroutine para no bloquear el daemon
+			go s.simulateFailure(duration)
+		}
 	}
+}
+
+// simulateFailure bloquea las escrituras por la duración especificada.
+func (s *DBNodeServer) simulateFailure(duration time.Duration) {
+	// 1. Establecer el estado de fallo
+	failureMu.Lock()
 	isFailing = true
+	fmt.Printf("[%s] 🛑 FALLO AUTÓNOMO INICIADO: Bloqueando escrituras por %s...\n", s.entityID, duration)
 	failureMu.Unlock()
 
-	fmt.Printf("[FALLO] 🛑 Simulación de fallo INICIADA: Dejando de responder escrituras por %s...\n", duration)
+	// 2. Dormir por la duración del fallo
+	time.Sleep(duration)
 
-	// Gorutina que esperará la duración del fallo y restaurará el estado
-	go func() {
-		time.Sleep(duration)
-		failureMu.Lock()
-		isFailing = false
-		failureMu.Unlock()
-		fmt.Printf("[FALLO] ✅ Simulación de fallo FINALIZADA. Respondiendo escrituras nuevamente.\n")
-	}()
+	// 3. Restaurar el estado
+	failureMu.Lock()
+	isFailing = false
+	failureMu.Unlock()
 
-	return &pb.FailureResponse{
-		Success: true,
-		Message: fmt.Sprintf("Fallo de %s activado.\n", duration),
-	}, nil
+	// 4. Solicitar resincronización con un peer (si es posible)
+	peerAddresses := []string{}
+	if s.entityID != "DB1" {
+		peerAddresses = append(peerAddresses, "db1:50061")
+	}
+	if s.entityID != "DB2" {
+		peerAddresses = append(peerAddresses, "db2:50062")
+	}
+	if s.entityID != "DB3" {
+		peerAddresses = append(peerAddresses, "db3:50063")
+	}
+
+	if len(peerAddresses) > 0 {
+		performResync(s.entityID, peerAddresses, s)
+	} else {
+		fmt.Printf("[%s] ⚠️ No hay peers disponibles para resincronización.\n", s.entityID)
+	}
+
+	// 5. Confirmación de restauración
+
+	fmt.Printf("[%s] ✅ FALLO AUTÓNOMO FINALIZADO. Respondiendo escrituras nuevamente.\n", s.entityID)
+
 }
 
 // -------------------------------------------------------------------------
@@ -234,6 +276,12 @@ func (s *DBNodeServer) SimulateFailure(ctx context.Context, req *pb.FailureReque
 func main() {
 	flag.Parse()
 	dbServer := NewDBNodeServer(*dbNodeID)
+
+	// 💡 NUEVO: Sembrar el generador de números aleatorios
+	rand.Seed(time.Now().UnixNano())
+
+	// 💡 NUEVO: Iniciar el daemon de fallos en una goroutine
+	go dbServer.startFailureDaemon()
 
 	// Conexión y Registro con el Broker (Fase 1)
 	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -259,11 +307,11 @@ func main() {
 
 	pb.RegisterEntityManagementServer(s, dbServer)
 	pb.RegisterDBNodeServer(s, dbServer)
-	pb.RegisterDBControlServer(s, dbServer) // 💡 FASE 5: Registrar el nuevo servicio de control
 
 	fmt.Printf("Listo para almacenar ofertas en %s...\n", *dbNodePort)
 	if err := s.Serve(lis); err != nil {
 		fmt.Printf("Fallo al servir: %v\n", err)
 		os.Exit(1)
 	}
+
 }

@@ -387,17 +387,6 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 	}
 	terminacionMu.Unlock() // Libera el mutex si no hemos terminado aún
 
-	// 💡 FASE 5: LÓGICA DE ACTIVACIÓN DE FALLO (Ejemplo: Caída de DB2 después de 3 ofertas totales)
-	// Esta lógica asegura que la simulación de fallo se dispare solo una vez.
-	terminacionMu.Lock()
-	total_ofertas := ofertas_parisio + ofertas_falabellox + ofertas_riploy
-
-	if total_ofertas == 3 {
-		// Activamos la caída de DB2 por 15 segundos en una goroutine separada
-		go s.simulateDBFailure("DB2", time.Second*15)
-	}
-	terminacionMu.Unlock()
-
 	fmt.Printf("[Oferta %s recibida por parte de %s. Iniciando escritura distribuida (N=%d, W=%d)...\n", offer.GetOfertaId(), offer.GetTienda(), N, W)
 
 	// VALIDACIÓN: Verificar que el número de nodos activos cumpla N
