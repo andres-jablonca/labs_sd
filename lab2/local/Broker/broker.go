@@ -34,6 +34,14 @@ var ofertas_falabellox int64 = 0
 var terminacionMu sync.Mutex
 var sistemaTerminado bool = false // 💡 NUEVA BANDERA DE ESTADO
 
+var (
+	aceptadas_totales   int64 = 0
+	escrituras_totales  int64 = 0
+	escrituras_exitosas int64 = 0
+	nodos_caidos        int64 = 0
+	consumidores_caidos int64 = 0
+)
+
 // -------------------------------------------------------------------------
 // ESTRUCTURAS DE DATOS
 // -------------------------------------------------------------------------
@@ -266,7 +274,6 @@ func (s *BrokerServer) notifyConsumers(offer *pb.Offer) {
 		}
 
 		if !s.isRelevant(offer, prefs) {
-			fmt.Printf("⏭️ Consumidor %s no está interesado en la oferta %s (no cumple filtro).\n", consumer.ID, offer.GetOfertaId())
 			continue
 		}
 
@@ -324,51 +331,6 @@ func (s *BrokerServer) Confirmacion(ctx context.Context, offer *pb.ConfirmReques
 	return &pb.ConfirmResponse{
 		Ready: true,
 	}, nil
-}
-
-// -------------------------------------------------------------------------
-// FASE 5: Simulación de Fallos
-// -------------------------------------------------------------------------
-
-// simulateDBFailure envía una señal RPC a un nodo DB para que simule un fallo temporal.
-func (s *BrokerServer) simulateDBFailure(nodeID string, duration time.Duration) {
-	s.mu.Lock()
-	node, ok := s.dbNodes[nodeID]
-	s.mu.Unlock()
-
-	if !ok {
-		fmt.Printf("[CONTROL] 🛑 No se encontró el Nodo DB %s para simular el fallo.\n", nodeID)
-		return
-	}
-
-	// Conexión al Nodo DB
-	conn, err := grpc.Dial(node.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		fmt.Printf("[CONTROL] ❌ Error conectando a %s para enviar señal de fallo: %v\n", node.ID, err)
-		return
-	}
-	defer conn.Close()
-
-	// 💡 Cliente del nuevo servicio DBControl
-	dbClient := pb.NewDBControlClient(conn)
-
-	// Contexto con timeout
-	failCtx, failCancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer failCancel()
-
-	req := &pb.FailureRequest{
-		DurationSeconds: int32(duration.Seconds()),
-	}
-
-	// Llamada a la función de fallo del Nodo DB
-	resp, err := dbClient.SimulateFailure(failCtx, req)
-
-	if err != nil || !resp.GetSuccess() {
-		fmt.Printf("[CONTROL] ❌ Falló RPC a %s para simular fallo. Error: %v\n", node.ID, err)
-		return
-	}
-
-	fmt.Printf("[CONTROL] ✅ Señal de FALLO enviada exitosamente a %s: %s\n", node.ID, resp.GetMessage())
 }
 
 // -------------------------------------------------------------------------
@@ -461,9 +423,9 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 			ofertas_riploy++
 		}
 
-		if ofertas_falabellox >= 20 && ofertas_parisio >= 20 && ofertas_riploy >= 20 {
+		if ofertas_falabellox >= 15 && ofertas_parisio >= 15 && ofertas_riploy >= 15 {
 			fmt.Println("\n=======================================================")
-			fmt.Println("🛑 CONDICIÓN DE PARADA ALCANZADA: ¡3 ofertas por cada tienda!")
+			fmt.Println("🛑 Límite de ofertas alcanzado! Finalizando CyberDay...")
 			fmt.Println("=======================================================")
 
 			// ESTABLECER EL ESTADO GLOBAL DE TERMINACIÓN

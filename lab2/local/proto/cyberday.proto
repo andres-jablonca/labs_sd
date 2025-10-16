@@ -129,7 +129,3 @@ service Consumer {
     rpc ReceiveOffer (Offer) returns (ConsumerResponse);
 }
 
-// NUEVO: Service for the Broker to control the DB Nodes (Fase 5)
-service DBControl {
-    rpc SimulateFailure (FailureRequest) returns (FailureResponse);
-}

@@ -210,7 +210,7 @@ func startOfferProduction(catalog []ProductBase) {
 			break
 		}
 		// Frecuencia de emisión: 5 segundos
-		delay := 5 * time.Second
+		delay := 6 * time.Second
 		time.Sleep(delay)
 	}
 }

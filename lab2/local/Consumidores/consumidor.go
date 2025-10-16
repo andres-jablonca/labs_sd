@@ -5,9 +5,11 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"math/rand/v2"
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	// Importar para manejar CSV
@@ -23,6 +25,11 @@ import (
 
 const brokerAddress = "broker:50095"
 const outputDir = "/app/output"
+
+var (
+	isFailing bool
+	failMu    sync.Mutex
+)
 
 func getCSVFileName(entityID string) string {
 	// 💡 CAMBIO: Ahora usamos outputDir + el nombre del archivo
@@ -172,6 +179,61 @@ func (s *ConsumerServer) ReceiveOffer(ctx context.Context, offer *pb.Offer) (*pb
 	}, nil
 }
 
+func Resincronizar(myID string, s *ConsumerServer) {
+	// Falta implementar que solicite historico a broker y que broker lo solicite a DBs con R>=2
+	broker_addr := "broker:50095"
+	conn, err := grpc.Dial(broker_addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Printf("[%s] no conecta con %s: %v\n", myID, broker_addr, err)
+	}
+	conn.Close()
+}
+
+const (
+	FailureCheckInterval = 25 * time.Second
+	FailureProbability   = 0.10
+	FailureDuration      = 10 * time.Second
+)
+
+func (s *ConsumerServer) IniciarDaemonDeFallos() {
+	ticker := time.NewTicker(FailureCheckInterval)
+	defer ticker.Stop()
+
+	fmt.Printf("[%s] 🛠️ Daemon de fallos: fallos con una probabilidad de %.0f%% y duración de %s (Cada %s)\n",
+		s.entityID, FailureProbability*100, FailureDuration, FailureCheckInterval)
+
+	for range ticker.C {
+		failMu.Lock()
+		currentlyFailing := isFailing
+		failMu.Unlock()
+		if currentlyFailing {
+			continue
+		}
+
+		if rand.Float64() < FailureProbability {
+			go func() {
+				failMu.Lock()
+				if isFailing {
+					failMu.Unlock()
+					return
+				}
+				isFailing = true
+				failMu.Unlock()
+
+				fmt.Printf("🛑 [%s] CAÍDA INESPERADA... (Duración de %s s)\n", s.entityID, FailureDuration)
+				time.Sleep(FailureDuration)
+
+				failMu.Lock()
+				isFailing = false
+				failMu.Unlock()
+				fmt.Printf("✅ [%s] LEVANTÁNDOSE NUEVAMENTE... SOLICITANDO HISTÓRICO DE OFERTAS... (No implementado aún :v)\n", s.entityID)
+
+				Resincronizar(s.entityID, s)
+			}()
+		}
+	}
+}
+
 // -------------------------------------------------------------------------
 // --- 4. Función Principal (Con servidor gRPC para recibir peticiones) ---
 // -------------------------------------------------------------------------
@@ -204,6 +266,8 @@ func main() {
 
 	// Registrar el servicio Consumer (Fase 4)
 	pb.RegisterConsumerServer(s, consumerServer)
+
+	go consumerServer.IniciarDaemonDeFallos()
 
 	fmt.Printf("[%s] Listo para recibir ofertas en %s...\n", *entityID, *entityPort)
 	if err := s.Serve(lis); err != nil {
