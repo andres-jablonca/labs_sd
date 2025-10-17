@@ -1,3 +1,4 @@
+// broker.go
 package main
 
 import (
@@ -5,6 +6,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
@@ -18,77 +20,87 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Constantes del sistema (N=3, W=2, R=2)
+// -------------------------------------------------------------------------
+// Constantes
+// -------------------------------------------------------------------------
+
 const (
 	brokerPort = ":50095"
-	N          = 3 // Número total de réplicas
-	W          = 2 // Número de confirmaciones de escritura requeridas
+	N          = 3 // réplicas
+	W          = 2 // confirmaciones requeridas
 
 	consumerPreferencesFile = "Broker/consumidores.csv"
 )
 
-var contador_registrados int64 = 0
-var ofertas_parisio int64 = 0
-var ofertas_riploy int64 = 0
-var ofertas_falabellox int64 = 0
-var terminacionMu sync.Mutex
-var sistemaTerminado bool = false // 💡 NUEVA BANDERA DE ESTADO
+// -------------------------------------------------------------------------
+// Métricas (globales simples para imprimir al final)
+// -------------------------------------------------------------------------
 
 var (
-	aceptadas_totales   int64 = 0
-	escrituras_totales  int64 = 0
-	escrituras_exitosas int64 = 0
-	nodos_caidos        int64 = 0
-	consumidores_caidos int64 = 0
+	contador_registrados int64
+	ofertas_parisio      int64
+	ofertas_riploy       int64
+	ofertas_falabellox   int64
+	terminacionMu        sync.Mutex
+	sistemaTerminado     bool
+
+	aceptadas_totales   int64
+	escrituras_totales  int64
+	escrituras_exitosas int64
+
+	nodos_caidos_al_finalizar int64
+
+	caidasPorNodo        = map[string]int{} // fallos al escribir en nodo
+	caidasPorConsumidor  = map[string]int{} // fallos al notificar a consumidor
+	ofertasPorConsumidor = map[string]int{} // notificaciones exitosas
+
+	resyncOKPorConsumidor = map[string]int{}  // Recovery exitoso (R=2) por consumidor
+	confirmCSVConsumidor  = map[string]bool{} // si el consumer confirmó CSV final
 )
 
 // -------------------------------------------------------------------------
-// ESTRUCTURAS DE DATOS
+// ESTRUCTURAS
 // -------------------------------------------------------------------------
 
-// Estructura para registrar cualquier entidad (Productor, DB Node, Consumidor)
 type Entity struct {
 	ID      string
 	Type    string
 	Address string
 }
 
-// Estructura para almacenar las preferencias de filtrado de un consumidor
 type ConsumerPreference struct {
 	ID         string
-	Categories map[string]bool // Mapa para búsqueda rápida (separa por ;)
-	Stores     map[string]bool // Mapa para búsqueda rápida (separa por ;)
-	MaxPrice   int64           // Usa int64 para coincidir con el tipo del offer.precio
+	Categories map[string]bool
+	Stores     map[string]bool
+	MaxPrice   int64
 }
 
-// BrokerServer implementa los servicios gRPC requeridos
 type BrokerServer struct {
 	pb.UnimplementedEntityManagementServer
 	pb.UnimplementedOfferSubmissionServer
 	pb.UnimplementedConfirmarInicioServer
+	pb.UnimplementedRecoveryServer
 
 	entities      map[string]Entity
-	dbNodes       map[string]Entity             // Subconjunto de Nodos DB
-	consumers     map[string]Entity             // FASE 4: Mapa para almacenar los consumidores registrados
-	consumerPrefs map[string]ConsumerPreference // Almacena las preferencias cargadas del CSV
+	dbNodes       map[string]Entity
+	consumers     map[string]Entity
+	consumerPrefs map[string]ConsumerPreference
 	mu            sync.Mutex
 }
 
-// NewBrokerServer inicializa la estructura del Broker
 func NewBrokerServer() *BrokerServer {
 	return &BrokerServer{
 		entities:      make(map[string]Entity),
 		dbNodes:       make(map[string]Entity),
 		consumers:     make(map[string]Entity),
-		consumerPrefs: make(map[string]ConsumerPreference), // Inicializar el mapa de preferencias
+		consumerPrefs: make(map[string]ConsumerPreference),
 	}
 }
 
 // -------------------------------------------------------------------------
-// LÓGICA DE CARGA Y FILTRADO
+// Preferencias y filtrado
 // -------------------------------------------------------------------------
 
-// loadConsumerPreferences lee el archivo CSV y carga las preferencias
 func (s *BrokerServer) loadConsumerPreferences() error {
 	file, err := os.Open(consumerPreferencesFile)
 	if err != nil {
@@ -97,12 +109,11 @@ func (s *BrokerServer) loadConsumerPreferences() error {
 	defer file.Close()
 
 	reader := csv.NewReader(file)
-	// Saltar la cabecera
 	if _, err := reader.Read(); err != nil {
 		if err == io.EOF {
-			return fmt.Errorf("el archivo %s está vacío", consumerPreferencesFile)
+			return fmt.Errorf("archivo %s vacío", consumerPreferencesFile)
 		}
-		return fmt.Errorf("error al leer la cabecera de %s: %w", consumerPreferencesFile, err)
+		return fmt.Errorf("error cabecera %s: %w", consumerPreferencesFile, err)
 	}
 
 	prefsMap := make(map[string]ConsumerPreference)
@@ -113,42 +124,28 @@ func (s *BrokerServer) loadConsumerPreferences() error {
 		if err == io.EOF {
 			break
 		}
-		if err != nil {
-			return fmt.Errorf("error al leer registro del CSV: %w", err)
-		}
-
-		if len(record) < 4 {
-			fmt.Printf("⚠️ Advertencia: Registro incompleto para el consumidor %s, omitiendo.\n", record[0])
+		if err != nil || len(record) < 4 {
 			continue
 		}
 
-		// 1. Parsear ID
 		id := record[0]
 
-		// 2. Parsear Categoría
 		categories := make(map[string]bool)
 		if strings.ToLower(record[1]) != "null" && record[1] != "" {
 			for _, cat := range strings.Split(record[1], ";") {
 				categories[strings.TrimSpace(cat)] = true
 			}
 		}
-
-		// 3. Parsear Tienda
 		stores := make(map[string]bool)
 		if strings.ToLower(record[2]) != "null" && record[2] != "" {
-			for _, store := range strings.Split(record[2], ";") {
-				stores[strings.TrimSpace(store)] = true
+			for _, st := range strings.Split(record[2], ";") {
+				stores[strings.TrimSpace(st)] = true
 			}
 		}
-
-		// 4. Parsear Precio Máximo
-		var maxPrice int64 = -1 // Usamos -1 como indicador de "null" (sin límite)
+		var maxPrice int64 = -1
 		if strings.ToLower(record[3]) != "null" && record[3] != "" {
-			parsedPrice, err := strconv.ParseInt(record[3], 10, 64)
-			if err == nil {
-				maxPrice = parsedPrice
-			} else {
-				fmt.Printf("⚠️ Advertencia: Precio máximo inválido para %s ('%s'), usando sin límite.\n", id, record[3])
+			if p, err := strconv.ParseInt(record[3], 10, 64); err == nil {
+				maxPrice = p
 			}
 		}
 
@@ -165,79 +162,69 @@ func (s *BrokerServer) loadConsumerPreferences() error {
 	s.consumerPrefs = prefsMap
 	s.mu.Unlock()
 
-	fmt.Printf("[Broker] ✅ Preferencias de %d consumidores cargadas correctamente.\n", recordsRead)
+	fmt.Printf("[Broker] ✅ Preferencias de %d consumidores cargadas.\n", recordsRead)
 	return nil
 }
 
-// isRelevant implementa la lógica de filtrado de la oferta para un consumidor específico
 func (s *BrokerServer) isRelevant(offer *pb.Offer, prefs ConsumerPreference) bool {
-	// 1. Filtrar por Tienda
 	if len(prefs.Stores) > 0 {
-		if _, exists := prefs.Stores[offer.GetTienda()]; !exists {
-			// El consumidor especificó tiendas, y la oferta no viene de una de ellas.
+		if _, ok := prefs.Stores[offer.GetTienda()]; !ok {
 			return false
 		}
 	}
-
-	// 2. Filtrar por Categoría
 	if len(prefs.Categories) > 0 {
-		if _, exists := prefs.Categories[offer.GetCategoria()]; !exists {
-			// El consumidor especificó categorías, y la oferta no es de una de ellas.
+		if _, ok := prefs.Categories[offer.GetCategoria()]; !ok {
 			return false
 		}
 	}
-
-	// 3. Filtrar por Precio Máximo
-	if prefs.MaxPrice != -1 { // Si MaxPrice no es el indicador de "null" (-1)
-		// offer.GetPrecio() es int64, prefs.MaxPrice es int64. Tipos coinciden.
-		if offer.GetPrecio() > prefs.MaxPrice {
-			return false
-		}
+	if prefs.MaxPrice != -1 && offer.GetPrecio() > prefs.MaxPrice {
+		return false
 	}
-
-	// La oferta cumple con todos los criterios
 	return true
 }
 
 // -------------------------------------------------------------------------
-// FASE 1: Registro de Entidades (EntityManagementServer)
+// Fase 1: Registro
 // -------------------------------------------------------------------------
 
 func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationRequest) (*pb.RegistrationResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	entityID := req.GetEntityId()
-
-	if _, ok := s.entities[entityID]; ok {
-		return &pb.RegistrationResponse{
-			Success: false,
-			Message: fmt.Sprintf("Entidad %s ya se encuentra registrada.\n", entityID),
-		}, nil
+	id := req.GetEntityId()
+	if _, exists := s.entities[id]; exists {
+		return &pb.RegistrationResponse{Success: false, Message: "Entidad ya registrada\n"}, nil
 	}
 
-	entity := Entity{
-		ID:      entityID,
+	ent := Entity{
+		ID:      id,
 		Type:    req.GetEntityType(),
 		Address: req.GetAddress(),
 	}
-	s.entities[entityID] = entity
+	s.entities[id] = ent
 
-	if req.GetEntityType() == "DBNode" {
-		s.dbNodes[entityID] = entity
-	} else if req.GetEntityType() == "Consumer" {
-		// FASE 4: Solo registramos consumidores si tienen preferencias cargadas.
-		if _, ok := s.consumerPrefs[entityID]; !ok {
-			fmt.Printf("[Registro] 🛑 Consumidor %s RECHAZADO. No encontrado en consumidores.csv.\n", entityID)
+	switch ent.Type {
+	case "DBNode":
+		s.dbNodes[id] = ent
+
+	case "Consumer":
+		if _, ok := s.consumerPrefs[id]; !ok {
+			// revertimos el insert en entities porque este registro no es válido
+			delete(s.entities, id)
+			fmt.Printf("[Registro] 🛑 Consumidor %s RECHAZADO. No encontrado en consumidores.csv.\n", id)
 			return &pb.RegistrationResponse{
 				Success: false,
 				Message: "Registro fallido. Su ID de consumidor no está en la lista de preferencias.\n",
 			}, nil
 		}
-		s.consumers[entityID] = entity
+		s.consumers[id] = ent
+
+	default:
 	}
 
-	fmt.Printf("[Registro] ✅ %s registrad@ correctamente (%s) en %s. Total de registrados: %d\n", entityID, entity.Type, entity.Address, len(s.entities))
+	fmt.Printf("[Registro] ✅ %s registrad@ correctamente (%s) en %s. Total de registrados: %d\n",
+		id, ent.Type, ent.Address, len(s.entities))
+
 	contador_registrados++
 	return &pb.RegistrationResponse{
 		Success: true,
@@ -245,181 +232,152 @@ func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationR
 	}, nil
 }
 
+func (s *BrokerServer) Confirmacion(ctx context.Context, _ *pb.ConfirmRequest) (*pb.ConfirmResponse, error) {
+	if contador_registrados < 18 {
+		return &pb.ConfirmResponse{Ready: false}, nil
+	}
+	return &pb.ConfirmResponse{Ready: true}, nil
+}
+
 // -------------------------------------------------------------------------
-// FASE 4: Notificación a Consumidores con Filtrado
+// Notificación a consumidores (filtrado por preferencias)
 // -------------------------------------------------------------------------
 
-// notifyConsumers maneja la iteración, el filtrado y la llamada gRPC a los consumidores.
 func (s *BrokerServer) notifyConsumers(offer *pb.Offer) {
 	s.mu.Lock()
-	// Copia el mapa de consumidores para evitar bloquear el registro
-	consumersToNotify := make(map[string]Entity, len(s.consumers))
+	cons := make(map[string]Entity, len(s.consumers))
 	for k, v := range s.consumers {
-		consumersToNotify[k] = v
+		cons[k] = v
+	}
+	prefsCopy := make(map[string]ConsumerPreference, len(s.consumerPrefs))
+	for k, v := range s.consumerPrefs {
+		prefsCopy[k] = v
 	}
 	s.mu.Unlock()
 
 	var wg sync.WaitGroup
-	notificationsSent := 0
-	var countMu sync.Mutex
+	var mu sync.Mutex
+	countOK := 0
 
-	fmt.Printf("[Notificación] Iniciando notificación para %d consumidores registrados (Oferta %s)...\n", len(consumersToNotify), offer.GetOfertaId())
-
-	for _, consumer := range consumersToNotify {
-		// 1. Lógica de Filtrado de Suscripción
-		prefs, ok := s.consumerPrefs[consumer.ID]
-		if !ok {
-			fmt.Printf("⚠️ Consumidor %s registrado pero sin preferencias cargadas. Omitiendo.\n", consumer.ID)
+	for _, c := range cons {
+		prefs, ok := prefsCopy[c.ID]
+		if !ok || !s.isRelevant(offer, prefs) {
 			continue
 		}
-
-		if !s.isRelevant(offer, prefs) {
-			continue
-		}
-
-		// Si es relevante, se notifica
 		wg.Add(1)
 		go func(consumer Entity) {
 			defer wg.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+			defer cancel()
 
-			// Contexto con timeout corto para la notificación (tolerancia a la caída)
-			notifyCtx, notifyCancel := context.WithTimeout(context.Background(), time.Second*1)
-			defer notifyCancel()
-
-			// 1. Conexión al Consumidor
 			conn, err := grpc.Dial(consumer.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
-				// Este error maneja la desconexión abrupta (Fase 5 - consumidor)
-				fmt.Printf("[Notificación] ❌ Consumidor %s falló en recibir oferta (conexión/caída): %v\n", consumer.ID, err)
+				mu.Lock()
+				caidasPorConsumidor[consumer.ID]++
+				mu.Unlock()
 				return
 			}
 			defer conn.Close()
 
-			// 2. Cliente del servicio Consumer (basado en cyberday.proto)
-			consumerClient := pb.NewConsumerClient(conn)
-
-			// 3. Llamada al método de lectura (ReceiveOffer)
-			resp, err := consumerClient.ReceiveOffer(notifyCtx, offer)
-
-			if err != nil || !resp.GetSuccess() {
-				msg := "Error de RPC"
-				if resp != nil {
-					msg = resp.GetMessage()
-				}
-				fmt.Printf("[Notificación] ❌ Oferta %s falló en ser confirmada por %s. Error: %s\n", offer.GetOfertaId(), consumer.ID, msg)
+			cli := pb.NewConsumerClient(conn)
+			resp, err := cli.ReceiveOffer(ctx, offer)
+			if err != nil || resp == nil || !resp.GetSuccess() {
+				mu.Lock()
+				caidasPorConsumidor[consumer.ID]++
+				mu.Unlock()
 				return
 			}
 
-			// Notificación exitosa
-			fmt.Printf("[Notificación] ✅ Oferta %s enviada y confirmada por %s.\n", offer.GetOfertaId(), consumer.ID)
-			countMu.Lock()
-			notificationsSent++
-			countMu.Unlock()
-		}(consumer)
+			mu.Lock()
+			ofertasPorConsumidor[consumer.ID]++
+			countOK++
+			mu.Unlock()
+		}(c)
 	}
-
 	wg.Wait()
-	fmt.Printf("[Notificación] Distribución completada para oferta %s. Notificaciones exitosas: %d\n", offer.GetOfertaId(), notificationsSent)
-}
-
-func (s *BrokerServer) Confirmacion(ctx context.Context, offer *pb.ConfirmRequest) (*pb.ConfirmResponse, error) {
-	if contador_registrados < 18 {
-		return &pb.ConfirmResponse{
-			Ready: false,
-		}, nil
-	}
-	return &pb.ConfirmResponse{
-		Ready: true,
-	}, nil
+	fmt.Printf("[Notificación] Oferta %s -> %d confirmaciones\n", offer.GetOfertaId(), countOK)
 }
 
 // -------------------------------------------------------------------------
-// FASE 2 & 3: Recepción y Escritura Distribuida (OfferSubmissionServer)
+// Fase 2 & 3: Escritura distribuida
 // -------------------------------------------------------------------------
 
 func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.OfferSubmissionResponse, error) {
-	terminacionMu.Lock() // Bloquea acceso a variables de terminación
+	terminacionMu.Lock()
 	if sistemaTerminado {
 		terminacionMu.Unlock()
-		return &pb.OfferSubmissionResponse{
-			Accepted: false, // No se acepta porque el Cyberday finalizó
-			Message:  "El Cyberday ha finalizado. No se aceptan más ofertas.",
-			Termino:  true,
-		}, nil
+		return &pb.OfferSubmissionResponse{Accepted: false, Message: "Cyberday finalizado", Termino: true}, nil
 	}
-	terminacionMu.Unlock() // Libera el mutex si no hemos terminado aún
+	terminacionMu.Unlock()
 
-	fmt.Printf("[Oferta %s recibida por parte de %s. Iniciando escritura distribuida (N=%d, W=%d)...\n", offer.GetOfertaId(), offer.GetTienda(), N, W)
+	fmt.Printf("[Oferta %s] Iniciando escritura distribuida (N=%d, W=%d)\n", offer.GetOfertaId(), N, W)
 
-	// VALIDACIÓN: Verificar que el número de nodos activos cumpla N
 	if len(s.dbNodes) < N {
-		fmt.Printf("[Oferta] 🛑 Oferta %s RECHAZADA. Sólo %d/%d nodos de DB se encuentran activos. No se puede garantizar N=%d.\n", offer.GetOfertaId(), len(s.dbNodes), N, N)
 		return &pb.OfferSubmissionResponse{
 			Accepted: false,
-			Message:  fmt.Sprintf("No se puede garantizar N=%d replicas. Sólo hay %d nodos de DB activos.\n", N, len(s.dbNodes)),
+			Message:  fmt.Sprintf("No hay N=%d DBs activas\n", N),
+			Termino:  false,
 		}, nil
 	}
 
 	var wg sync.WaitGroup
-	confirmedWrites := 0
-	var countMu sync.Mutex
+	var mu sync.Mutex
+	confirmed := 0
 
-	// 2. Escritura Concurrente en Nodos DB (N=3)
-	for _, node := range s.dbNodes {
+	s.mu.Lock()
+	nodes := make([]Entity, 0, len(s.dbNodes))
+	for _, n := range s.dbNodes {
+		nodes = append(nodes, n)
+	}
+	s.mu.Unlock()
+
+	escrituras_totales += int64(len(nodes))
+
+	for _, node := range nodes {
 		wg.Add(1)
-		go func(node Entity) {
+		go func(n Entity) {
 			defer wg.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
 
-			// Conexión al Nodo DB
-			// Usamos el contexto pasado del productor, con un timeout max de 3 segundos
-			dbCtx, dbCancel := context.WithTimeout(context.Background(), time.Second*3)
-			defer dbCancel()
-
-			conn, err := grpc.Dial(node.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			conn, err := grpc.Dial(n.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
-				// Este error puede capturar el fallo del nodo DB si se cae totalmente (Fase 5)
-				fmt.Printf("[Escritura] ❌ Error conectando con %s: %v\n", node.ID, err)
+				mu.Lock()
+				caidasPorNodo[n.ID]++
+				mu.Unlock()
 				return
 			}
 			defer conn.Close()
 
-			dbClient := pb.NewDBNodeClient(conn)
-
-			// Llamada a la función de escritura del Nodo DB
-			resp, err := dbClient.StoreOffer(dbCtx, offer)
-
-			if err != nil || !resp.GetSuccess() {
-				// Imprime el error específico (incluyendo timeout si el nodo está en modo de fallo)
-				fmt.Printf("[Escritura] ❌ %s falló en almacenar la oferta %s. Error: %v\n", node.ID, offer.GetOfertaId(), err)
+			cli := pb.NewDBNodeClient(conn)
+			resp, err := cli.StoreOffer(ctx, offer)
+			if err != nil || resp == nil || !resp.GetSuccess() {
+				mu.Lock()
+				caidasPorNodo[n.ID]++
+				mu.Unlock()
 				return
 			}
-
-			// Escritura exitosa
-			fmt.Printf("[Escritura] ✅ %s confirma el almacenamiento de la oferta %s.\n", node.ID, offer.GetOfertaId())
-
-			countMu.Lock()
-			confirmedWrites++
-			countMu.Unlock()
+			mu.Lock()
+			confirmed++
+			mu.Unlock()
 		}(node)
 	}
 
-	// Esperar a que terminen todas las llamadas
 	wg.Wait()
-	if confirmedWrites >= W {
-		fmt.Printf("[Oferta] ✅ Oferta %s ACEPTADA. W=%d confirmación de escritura exitosa. (Fase 4: Notificación a Consumidores)\n", offer.GetOfertaId(), confirmedWrites)
-
-		// FASE 4: Llamada asíncrona a la función de notificación.
+	if confirmed >= W {
+		aceptadas_totales++
+		escrituras_exitosas++
 		go s.notifyConsumers(offer)
 
-		// --- Bloque de Conteo y Verificación ---
 		terminacionMu.Lock()
 		defer terminacionMu.Unlock()
 
-		if offer.GetTienda() == "Parisio" {
+		switch offer.GetTienda() {
+		case "Parisio":
 			ofertas_parisio++
-		} else if offer.GetTienda() == "Falabellox" {
+		case "Falabellox":
 			ofertas_falabellox++
-		} else if offer.GetTienda() == "Riploy" {
+		case "Riploy":
 			ofertas_riploy++
 		}
 
@@ -427,74 +385,293 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 			fmt.Println("\n=======================================================")
 			fmt.Println("🛑 Límite de ofertas alcanzado! Finalizando CyberDay...")
 			fmt.Println("=======================================================")
-
-			// ESTABLECER EL ESTADO GLOBAL DE TERMINACIÓN
 			sistemaTerminado = true
-
-			return &pb.OfferSubmissionResponse{
-				Accepted: true,
-				Message:  "Oferta aceptada y distribuida con éxito. Finalizado.",
-				Termino:  true,
-			}, nil
+			s.notifyFinalizationNoWaitAndPrintMetrics()
+			return &pb.OfferSubmissionResponse{Accepted: true, Message: "Finalizado", Termino: true}, nil
 		}
 
-		return &pb.OfferSubmissionResponse{
-			Accepted: true,
-			Message:  "Oferta aceptada y distribuida con éxito.\n",
-			Termino:  false,
-		}, nil
+		return &pb.OfferSubmissionResponse{Accepted: true, Message: "OK", Termino: false}, nil
 	}
 
-	// --- Lógica de Falla (W < 2) ---
-	terminacionMu.Lock()
-	defer terminacionMu.Unlock()
-	if sistemaTerminado {
-		return &pb.OfferSubmissionResponse{
-			Accepted: false,
-			Message:  "El Cyberday ha finalizado. No se aceptan más ofertas.",
-			Termino:  true,
-		}, nil
-	}
-
-	// Falla si no se cumple W=2
-	fmt.Printf("[Oferta] ❌ Oferta %s RECHAZADA. Sólo se confirmaron %d/%d escrituras. (W=%d requerido).\n", offer.GetOfertaId(), confirmedWrites, W, W)
 	return &pb.OfferSubmissionResponse{
 		Accepted: false,
-		Message:  fmt.Sprintf("Escritura fallida: sólo se confirmaron %d escrituras (W=%d requerido).\n", confirmedWrites, W),
+		Message:  fmt.Sprintf("W no alcanzado: %d/%d", confirmed, W),
 		Termino:  false,
 	}, nil
 }
 
 // -------------------------------------------------------------------------
-// Función Principal
+// Recovery (Consumer -> Broker): R=2 + filtro por preferencias
+// -------------------------------------------------------------------------
+
+func offersEqual(a, b []*pb.Offer) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	m := make(map[string]*pb.Offer, len(a))
+	for _, of := range a {
+		if of == nil || of.GetOfertaId() == "" {
+			continue
+		}
+		m[of.GetOfertaId()] = of
+	}
+	for _, of := range b {
+		if of == nil || of.GetOfertaId() == "" {
+			return false
+		}
+		ref, ok := m[of.GetOfertaId()]
+		if !ok {
+			return false
+		}
+		if ref.GetProducto() != of.GetProducto() ||
+			ref.GetPrecio() != of.GetPrecio() ||
+			ref.GetTienda() != of.GetTienda() ||
+			ref.GetCategoria() != of.GetCategoria() ||
+			ref.GetDescuento() != of.GetDescuento() ||
+			ref.GetStock() != of.GetStock() ||
+			ref.GetFecha() != of.GetFecha() {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *BrokerServer) fetchHistoryFromDB(node Entity, myID string, timeout time.Duration) ([]*pb.Offer, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	conn, err := grpc.Dial(node.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	client := pb.NewDBNodeClient(conn)
+	resp, err := client.GetOfferHistory(ctx, &pb.RecoveryRequest{RequestingNodeId: myID})
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetOffers(), nil
+}
+
+type RecoveryServer struct {
+	pb.UnimplementedRecoveryServer
+	broker *BrokerServer
+}
+
+func (r *RecoveryServer) GetFilteredHistory(ctx context.Context, req *pb.HistoryRequest) (*pb.HistoryResponse, error) {
+	consumerID := req.GetConsumerId()
+	if consumerID == "" {
+		return &pb.HistoryResponse{Offers: nil}, nil
+	}
+
+	r.broker.mu.Lock()
+	nodes := make([]Entity, 0, len(r.broker.dbNodes))
+	for _, n := range r.broker.dbNodes {
+		nodes = append(nodes, n)
+	}
+	prefs, havePrefs := r.broker.consumerPrefs[consumerID]
+	r.broker.mu.Unlock()
+
+	if len(nodes) < 2 {
+		return &pb.HistoryResponse{Offers: nil}, nil
+	}
+
+	type hs struct {
+		arr []*pb.Offer
+		err error
+	}
+	results := make([]hs, len(nodes))
+
+	var wg sync.WaitGroup
+	for i, n := range nodes {
+		wg.Add(1)
+		go func(i int, node Entity) {
+			defer wg.Done()
+			arr, err := r.broker.fetchHistoryFromDB(node, "BROKER", 3*time.Second)
+			results[i] = hs{arr, err}
+		}(i, n)
+	}
+	wg.Wait()
+
+	var chosen []*pb.Offer
+found:
+	for i := 0; i < len(results); i++ {
+		if results[i].err != nil || results[i].arr == nil {
+			continue
+		}
+		for j := i + 1; j < len(results); j++ {
+			if results[j].err != nil || results[j].arr == nil {
+				continue
+			}
+			if offersEqual(results[i].arr, results[j].arr) {
+				chosen = results[i].arr
+				break found
+			}
+		}
+	}
+
+	if chosen == nil {
+		return &pb.HistoryResponse{Offers: nil}, nil
+	}
+
+	// marcar resync exitoso para ese consumidor
+	r.broker.mu.Lock()
+	resyncOKPorConsumidor[consumerID]++
+	r.broker.mu.Unlock()
+
+	if havePrefs {
+		filtered := make([]*pb.Offer, 0, len(chosen))
+		for _, of := range chosen {
+			if of != nil && r.broker.isRelevant(of, prefs) {
+				filtered = append(filtered, of)
+			}
+		}
+		return &pb.HistoryResponse{Offers: filtered}, nil
+	}
+	return &pb.HistoryResponse{Offers: chosen}, nil
+}
+
+// -------------------------------------------------------------------------
+// Finalización: disparo sin esperar + métricas finales
+// -------------------------------------------------------------------------
+
+func (s *BrokerServer) informarFinAConsumer(consumer Entity, timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	conn, err := grpc.Dial(consumer.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Printf("[Fin] ❌ No conecta con consumidor %s: %v\n", consumer.ID, err)
+		return
+	}
+	defer conn.Close()
+
+	c := pb.NewFinalizacionClient(conn)
+	resp, err := c.InformarFinalizacion(ctx, &pb.EndingNotify{Fin: true})
+	if err == nil && resp != nil && resp.GetConsumerconfirm() {
+		s.mu.Lock()
+		confirmCSVConsumidor[consumer.ID] = true
+		s.mu.Unlock()
+		fmt.Printf("[Fin] ✅ Consumidor %s confirmó CSV final\n", consumer.ID)
+	}
+}
+
+func (s *BrokerServer) informarFinADB(node Entity, timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	conn, err := grpc.Dial(node.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Printf("[Fin] ❌ No conecta con DB %s: %v\n", node.ID, err)
+		s.mu.Lock()
+		nodos_caidos_al_finalizar++
+		s.mu.Unlock()
+		return
+	}
+	defer conn.Close()
+
+	c := pb.NewFinalizacionClient(conn)
+	resp, err := c.InformarFinalizacion(ctx, &pb.EndingNotify{Fin: true})
+	if err != nil || resp == nil || !resp.GetBdconfirm() {
+		fmt.Printf("[Fin] ⚠️ DB %s no confirmó finalización\n", node.ID)
+		s.mu.Lock()
+		nodos_caidos_al_finalizar++
+		s.mu.Unlock()
+		return
+	}
+	fmt.Printf("[Fin] ✅ DB %s confirmó finalización\n", node.ID)
+}
+
+func (s *BrokerServer) notifyFinalizationNoWaitAndPrintMetrics() {
+	fmt.Println("[Fin] 🔔 Notificando finalización (sin esperar)…")
+
+	s.mu.Lock()
+	dbs := make([]Entity, 0, len(s.dbNodes))
+	for _, n := range s.dbNodes {
+		dbs = append(dbs, n)
+	}
+	cons := make([]Entity, 0, len(s.consumers))
+	for _, c := range s.consumers {
+		cons = append(cons, c)
+	}
+	s.mu.Unlock()
+
+	for _, db := range dbs {
+		go s.informarFinADB(db, 2*time.Second)
+	}
+	for _, co := range cons {
+		go s.informarFinAConsumer(co, 3*time.Second)
+	}
+
+	// pequeña ventana para respuestas inmediatas sin bloquear
+	time.Sleep(800 * time.Millisecond)
+
+	fmt.Println("\n================= MÉTRICAS FINALES (BROKER) =================")
+	fmt.Printf("aceptadas_totales_por_broker: %d\n", aceptadas_totales)
+	fmt.Printf("escrituras_totales: %d\n", escrituras_totales)
+	fmt.Printf("escrituras_exitosas(w=2): %d\n", escrituras_exitosas)
+
+	fmt.Printf("nodos_caidos_al_finalizar: %d\n", nodos_caidos_al_finalizar)
+
+	fmt.Println("caidas_de_cada_nodo:")
+	for id, n := range caidasPorNodo {
+		fmt.Printf("  %s: %d\n", id, n)
+	}
+
+	fmt.Println("caidas de cada consumidor:")
+	for id, n := range caidasPorConsumidor {
+		fmt.Printf("  %s: %d\n", id, n)
+	}
+
+	fmt.Println("resincronizaciones_exitosas_consumidores:")
+	for id, n := range resyncOKPorConsumidor {
+		fmt.Printf("  %s: %d\n", id, n)
+	}
+
+	fmt.Println("confirmacion si un consumidor logró generar su csv:")
+	for id := range s.consumers {
+		ok := confirmCSVConsumidor[id]
+		fmt.Printf("  %s: %t\n", id, ok)
+	}
+
+	fmt.Println("cantidad de ofertas recibida por cada consumidor:")
+	for id, n := range ofertasPorConsumidor {
+		fmt.Printf("  %s: %d\n", id, n)
+	}
+	fmt.Printf("==============================================================\n")
+}
+
+// -------------------------------------------------------------------------
+// main
 // -------------------------------------------------------------------------
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	lis, err := net.Listen("tcp", brokerPort)
 	if err != nil {
-		fmt.Printf("Fallo al escuchar en: %v\n", err)
+		fmt.Printf("Listen error: %v\n", err)
 		return
 	}
 
 	s := grpc.NewServer()
-	brokerServer := NewBrokerServer()
+	bs := NewBrokerServer()
 
-	// FASE 4: Cargar preferencias antes de empezar a servir
-	if err := brokerServer.loadConsumerPreferences(); err != nil {
-		fmt.Printf("🛑 Error fatal al cargar preferencias de consumidores: %v\n", err)
+	if err := bs.loadConsumerPreferences(); err != nil {
+		fmt.Printf("Preferencias error: %v\n", err)
 		return
 	}
 
-	// 1. Registrar el servicio EntityManagement (Fase 1)
-	pb.RegisterEntityManagementServer(s, brokerServer)
-	pb.RegisterConfirmarInicioServer(s, brokerServer)
+	pb.RegisterEntityManagementServer(s, bs)
+	pb.RegisterConfirmarInicioServer(s, bs)
+	pb.RegisterOfferSubmissionServer(s, bs)
 
-	// 2. Registrar el servicio OfferSubmission (Fase 2)
-	pb.RegisterOfferSubmissionServer(s, brokerServer)
+	recoveryServer := &RecoveryServer{broker: bs}
+	pb.RegisterRecoveryServer(s, recoveryServer)
 
-	fmt.Printf("Broker central escuchando y esperando registros en %s...\n", brokerPort)
+	fmt.Printf("Broker escuchando en %s…\n", brokerPort)
 	if err := s.Serve(lis); err != nil {
-		fmt.Printf("Fallo al servir: %v\n", err)
-		return
+		fmt.Printf("Serve error: %v\n", err)
 	}
 }

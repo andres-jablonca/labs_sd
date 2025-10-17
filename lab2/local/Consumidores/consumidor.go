@@ -1,3 +1,4 @@
+// consumidor.go
 package main
 
 import (
@@ -5,14 +6,14 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
-	"math/rand/v2"
+	"math/rand"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	// Importar para manejar CSV
 	pb "lab2/proto"
 
 	"google.golang.org/grpc"
@@ -20,7 +21,7 @@ import (
 )
 
 // -------------------------------------------------------------------------
-// --- 1. Constantes y Variables Globales ---
+// Constantes / Globals
 // -------------------------------------------------------------------------
 
 const brokerAddress = "broker:50095"
@@ -31,57 +32,23 @@ var (
 	failMu    sync.Mutex
 )
 
-func getCSVFileName(entityID string) string {
-	// 💡 CAMBIO: Ahora usamos outputDir + el nombre del archivo
-	return fmt.Sprintf("%s/registro_ofertas_%s.csv", outputDir, entityID)
-}
-
-// consumidor.go (Añadir o modificar helpers de CSV)
-
-// writeOfferToCSV añade una oferta al archivo CSV del consumidor.
-func (s *ConsumerServer) writeOfferToCSV(fileName string, offer *pb.Offer) error {
-	// 1. Abrir el archivo en modo append (agregar)
-	// Usamos O_APPEND para no sobrescribir el contenido.
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		return fmt.Errorf("error al abrir el archivo CSV: %v", err)
-	}
-	defer file.Close()
-
-	// 2. Crear el escritor CSV
-	writer := csv.NewWriter(file)
-	defer writer.Flush() // Asegura que los datos se escriban al disco al salir de la función.
-
-	// 3. Preparar los datos de la oferta
-	// Estos campos deben coincidir con la cabecera definida en initCSVFile.
-	record := []string{
-		offer.GetProducto(),
-		fmt.Sprintf("%d", offer.GetPrecio()), // Convertir int64 a string
-		offer.GetTienda(),
-		offer.GetCategoria(),
-		// Puedes añadir más campos del proto si los necesitas, como OfertaId, Stock, Descuento, etc.
-	}
-
-	// 4. Escribir el registro
-	if err := writer.Write(record); err != nil {
-		return fmt.Errorf("error al escribir el registro CSV: %v", err)
-	}
-
-	return nil
-}
-
 var (
 	entityID   = flag.String("id", "C1-1", "ID único del consumidor.")
-	entityPort = flag.String("port", ":50071", "Puerto local del servidor gRPC del Consumidor.")
+	entityPort = flag.String("port", ":50071", "Puerto local gRPC del consumidor.")
 )
 
-// ConsumerServer implementa el servicio Consumer que el Broker llama (Fase 4).
+// -------------------------------------------------------------------------
+
 type ConsumerServer struct {
 	pb.UnimplementedConsumerServer
+	pb.UnimplementedFinalizacionServer
+
 	entityID string
+	stopCh   chan struct{}
 }
 
 type Oferta struct {
+	id        string
 	producto  string
 	precio    int64
 	tienda    string
@@ -91,32 +58,71 @@ type Oferta struct {
 var RegistroOfertas []Oferta
 
 func NewConsumerServer(id string) *ConsumerServer {
-	return &ConsumerServer{
-		entityID: id,
+	return &ConsumerServer{entityID: id, stopCh: make(chan struct{})}
+}
+
+func getCSVFileName(entityID string) string {
+	return fmt.Sprintf("%s/registro_ofertas_%s.csv", outputDir, entityID)
+}
+
+// Crear CSV (cabecera) si no existe
+func initCSVIfNeeded(fileName string) error {
+	if _, err := os.Stat(fileName); os.IsNotExist(err) {
+		if err := os.MkdirAll(filepath.Dir(fileName), 0755); err != nil {
+			return err
+		}
+		f, err := os.Create(fileName)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		w := csv.NewWriter(f)
+		defer w.Flush()
+		return w.Write([]string{"producto", "precio", "tienda", "categoria"})
 	}
+	return nil
+}
+
+// Volcar TODAS las ofertas de memoria al CSV (reemplaza archivo)
+func dumpAllToCSV(fileName string, ofertas []Oferta) error {
+	if err := initCSVIfNeeded(fileName); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	w := csv.NewWriter(f)
+	defer w.Flush()
+	_ = w.Write([]string{"producto", "precio", "tienda", "categoria"})
+	for _, o := range ofertas {
+		if err := w.Write([]string{
+			o.producto,
+			fmt.Sprintf("%d", o.precio),
+			o.tienda,
+			o.categoria,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // -------------------------------------------------------------------------
-// --- 2. Fase 1: Registro (CORREGIDO USANDO HOSTNAME) ---
+// Registro con Broker
 // -------------------------------------------------------------------------
 
 func registerWithBroker(client pb.EntityManagementClient) {
 	fmt.Printf("[%s] Coordinando el registro con el Broker...\n", *entityID)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// 💡 CORRECCIÓN CLAVE: Usar la variable de entorno HOSTNAME para obtener el nombre del servicio Docker.
 	dockerServiceName := os.Getenv("HOSTNAME")
 	if dockerServiceName == "" {
-		// Fallback si HOSTNAME no está definido (aunque en Docker Compose siempre debería estarlo)
 		dockerServiceName = strings.ToLower(*entityID)
-		fmt.Printf("[%s] ⚠️ Advertencia: HOSTNAME no definido. Usando ID en minúsculas: %s\n", *entityID, dockerServiceName)
 	}
-
-	// La dirección ahora es el nombre del servicio + el puerto (ej: consumer-group-1:50071)
 	addressToRegister := dockerServiceName + *entityPort
-
 	fmt.Printf("[%s] Registrando con Address: %s\n", *entityID, addressToRegister)
 
 	req := &pb.RegistrationRequest{
@@ -124,74 +130,95 @@ func registerWithBroker(client pb.EntityManagementClient) {
 		EntityType: "Consumer",
 		Address:    addressToRegister,
 	}
-
 	resp, err := client.RegisterEntity(ctx, req)
-	if err != nil {
-		fmt.Printf("[%s] ❌ No se logró conectar con el broker: %v\n", *entityID, err)
+	if err != nil || !resp.GetSuccess() {
+		fmt.Printf("[%s] Registro fallido: %v\n", *entityID, err)
 		os.Exit(1)
 	}
-
-	fmt.Printf("[%s] Respuesta del Broker: %s\n", *entityID, resp.Message)
-
-	if !resp.Success {
-		os.Exit(1)
-	}
+	fmt.Printf("[%s] Respuesta del Broker: %s\n", *entityID, resp.GetMessage())
 }
 
 // -------------------------------------------------------------------------
-// --- 3. Fase 4: Recepción de Ofertas (Implementación gRPC) ---
+// Recepción de Ofertas (solo memoria; CSV se genera al final)
 // -------------------------------------------------------------------------
 
-// ReceiveOffer es llamado por el Broker para notificar una nueva oferta.
 func (s *ConsumerServer) ReceiveOffer(ctx context.Context, offer *pb.Offer) (*pb.ConsumerResponse, error) {
-	fmt.Printf("[%s] 🎉 NUEVA OFERTA: %s (P: %d, T: %s, Cat: %s)\n",
-		s.entityID,
-		offer.GetProducto(),
-		offer.GetPrecio(),
-		offer.GetTienda(),
-		offer.GetCategoria())
-
-	var ofertaaux Oferta
-	ofertaaux.producto = offer.GetProducto()
-	ofertaaux.precio = offer.GetPrecio()
-	ofertaaux.tienda = offer.GetTienda()
-	ofertaaux.categoria = offer.GetCategoria()
-	RegistroOfertas = append(RegistroOfertas, ofertaaux)
-
-	// --- Lógica para escribir en el CSV ---
-
-	// 2. 💡 Lógica de Escritura CSV (Solo si la oferta pasa los filtros)
-	fileName := getCSVFileName(s.entityID)
-	if err := s.writeOfferToCSV(fileName, offer); err != nil {
-		fmt.Printf("🛑 [%s] Error al escribir la oferta %s en CSV: %v\n", s.entityID, offer.GetOfertaId(), err)
-
-		// Aunque la escritura falló, gRPC debe devolver un mensaje para no bloquear al Broker.
-		return &pb.ConsumerResponse{
-			Success: false,
-			Message: fmt.Sprintf("Error interno al escribir en CSV: %v", err),
-		}, nil
+	failMu.Lock()
+	failing := isFailing
+	failMu.Unlock()
+	if failing {
+		return &pb.ConsumerResponse{Success: false, Message: "Consumidor en fallo; descartada"}, nil
 	}
 
-	// Lógica de filtrado (opcional, por ahora solo confirmamos recepción)
-	return &pb.ConsumerResponse{
-		Success: true,
-		Message: fmt.Sprintf("Oferta %s recibida y procesada por %s.\n", offer.GetOfertaId(), s.entityID),
-	}, nil
+	fmt.Printf("[%s] 🎉 NUEVA OFERTA: %s (P: %d, T: %s, Cat: %s)\n",
+		s.entityID, offer.GetProducto(), offer.GetPrecio(), offer.GetTienda(), offer.GetCategoria())
+
+	RegistroOfertas = append(RegistroOfertas, Oferta{
+		id:        offer.GetOfertaId(),
+		producto:  offer.GetProducto(),
+		precio:    offer.GetPrecio(),
+		tienda:    offer.GetTienda(),
+		categoria: offer.GetCategoria(),
+	})
+
+	return &pb.ConsumerResponse{Success: true, Message: "OK memoria"}, nil
 }
+
+// -------------------------------------------------------------------------
+// Resincronización (solo cuando vuelve de caída)
+// -------------------------------------------------------------------------
 
 func Resincronizar(myID string, s *ConsumerServer) {
-	// Falta implementar que solicite historico a broker y que broker lo solicite a DBs con R>=2
-	broker_addr := "broker:50095"
-	conn, err := grpc.Dial(broker_addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf("[%s] no conecta con %s: %v\n", myID, broker_addr, err)
+		fmt.Printf("[%s] no conecta con broker para recovery: %v\n", myID, err)
+		return
 	}
-	conn.Close()
+	defer conn.Close()
+
+	client := pb.NewRecoveryClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := client.GetFilteredHistory(ctx, &pb.HistoryRequest{ConsumerId: myID})
+	if err != nil || resp == nil {
+		fmt.Printf("[%s] GetFilteredHistory falló: %v\n", myID, err)
+		return
+	}
+
+	known := make(map[string]struct{}, len(RegistroOfertas))
+	for _, o := range RegistroOfertas {
+		known[o.id] = struct{}{}
+	}
+
+	added := 0
+	for _, of := range resp.GetOffers() {
+		if of == nil || of.GetOfertaId() == "" {
+			continue
+		}
+		if _, ok := known[of.GetOfertaId()]; ok {
+			continue
+		}
+		RegistroOfertas = append(RegistroOfertas, Oferta{
+			id:        of.GetOfertaId(),
+			producto:  of.GetProducto(),
+			precio:    of.GetPrecio(),
+			tienda:    of.GetTienda(),
+			categoria: of.GetCategoria(),
+		})
+		added++
+	}
+	fmt.Printf("[%s] Resincronización completa: recibidas=%d, nuevas=%d, total=%d\n",
+		myID, len(resp.GetOffers()), added, len(RegistroOfertas))
 }
+
+// -------------------------------------------------------------------------
+// Daemon de fallos (prob. 8% cada 25s, 10s de caída)
+// -------------------------------------------------------------------------
 
 const (
 	FailureCheckInterval = 25 * time.Second
-	FailureProbability   = 0.10
+	FailureProbability   = 0.08
 	FailureDuration      = 10 * time.Second
 )
 
@@ -199,79 +226,111 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 	ticker := time.NewTicker(FailureCheckInterval)
 	defer ticker.Stop()
 
-	fmt.Printf("[%s] 🛠️ Daemon de fallos: fallos con una probabilidad de %.0f%% y duración de %s (Cada %s)\n",
+	fmt.Printf("[%s] 🛠️ Daemon de fallos: prob=%.0f%%, caída=%s, cada=%s\n",
 		s.entityID, FailureProbability*100, FailureDuration, FailureCheckInterval)
 
-	for range ticker.C {
-		failMu.Lock()
-		currentlyFailing := isFailing
-		failMu.Unlock()
-		if currentlyFailing {
-			continue
-		}
+	time.Sleep(time.Duration(rand.Intn(5)+1) * time.Second)
 
-		if rand.Float64() < FailureProbability {
-			go func() {
-				failMu.Lock()
-				if isFailing {
+	for {
+		select {
+		case <-s.stopCh:
+			fmt.Printf("[%s] 📴 Daemon de fallos detenido por finalización\n", s.entityID)
+			return
+		case <-ticker.C:
+			failMu.Lock()
+			down := isFailing
+			failMu.Unlock()
+			if down {
+				continue
+			}
+			if rand.Float64() < FailureProbability {
+				go func() {
+					failMu.Lock()
+					if isFailing {
+						failMu.Unlock()
+						return
+					}
+					isFailing = true
 					failMu.Unlock()
-					return
-				}
-				isFailing = true
-				failMu.Unlock()
 
-				fmt.Printf("🛑 [%s] CAÍDA INESPERADA... (Duración de %s s)\n", s.entityID, FailureDuration)
-				time.Sleep(FailureDuration)
+					fmt.Printf("🛑 [%s] CAÍDA INESPERADA… (%s)\n", s.entityID, FailureDuration)
+					time.Sleep(FailureDuration)
 
-				failMu.Lock()
-				isFailing = false
-				failMu.Unlock()
-				fmt.Printf("✅ [%s] LEVANTÁNDOSE NUEVAMENTE... SOLICITANDO HISTÓRICO DE OFERTAS... (No implementado aún :v)\n", s.entityID)
+					failMu.Lock()
+					isFailing = false
+					failMu.Unlock()
+					fmt.Printf("✅ [%s] LEVANTADO… resincronizando\n", s.entityID)
 
-				Resincronizar(s.entityID, s)
-			}()
+					Resincronizar(s.entityID, s)
+				}()
+			}
 		}
 	}
 }
 
 // -------------------------------------------------------------------------
-// --- 4. Función Principal (Con servidor gRPC para recibir peticiones) ---
+// Finalización (Broker -> Consumer)
+// -------------------------------------------------------------------------
+
+func (s *ConsumerServer) InformarFinalizacion(ctx context.Context, req *pb.EndingNotify) (*pb.EndingConfirm, error) {
+	if !req.GetFin() {
+		return &pb.EndingConfirm{Consumerconfirm: false}, nil
+	}
+
+	// detener daemon y limpiar fallo
+	select {
+	case <-s.stopCh:
+	default:
+		close(s.stopCh)
+	}
+	failMu.Lock()
+	isFailing = false
+	failMu.Unlock()
+
+	// NO resincronizar: solo escribir lo que hay en memoria
+	fn := getCSVFileName(s.entityID)
+	if err := dumpAllToCSV(fn, RegistroOfertas); err != nil {
+		fmt.Printf("[%s] ⚠️ Error al generar CSV final: %v\n", s.entityID, err)
+		return &pb.EndingConfirm{Consumerconfirm: false}, nil
+	}
+	fmt.Printf("[%s] 🧾 CSV final generado con %d ofertas (sin resincronizar)\n", s.entityID, len(RegistroOfertas))
+	return &pb.EndingConfirm{Consumerconfirm: true}, nil
+}
+
+// -------------------------------------------------------------------------
+// main
 // -------------------------------------------------------------------------
 
 func main() {
 	flag.Parse()
-	consumerServer := NewConsumerServer(*entityID)
+	rand.Seed(time.Now().UnixNano())
 
-	// 1. Conexión y Registro con el Broker (Fase 1)
+	consumer := NewConsumerServer(*entityID)
+
 	connReg, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf("[%s] No se logró conexión con broker para el registro: %v\n", *entityID, err)
+		fmt.Printf("[%s] No conecta broker registro: %v\n", *entityID, err)
 		os.Exit(1)
 	}
 	defer connReg.Close()
-
 	clientReg := pb.NewEntityManagementClient(connReg)
 	registerWithBroker(clientReg)
 
-	fmt.Printf("[%s] Registro completo. Empezando a escuchar en %s...\n", *entityID, *entityPort)
-
-	// 2. Inicia el servidor gRPC del Consumidor (para recibir notificaciones del Broker)
 	lis, err := net.Listen("tcp", *entityPort)
 	if err != nil {
-		fmt.Printf("[%s] Fallo al escuchar en %s: %v\n", *entityID, *entityPort, err)
+		fmt.Printf("[%s] Listen %s error: %v\n", *entityID, *entityPort, err)
 		os.Exit(1)
 	}
 
 	s := grpc.NewServer()
+	pb.RegisterConsumerServer(s, consumer)
+	pb.RegisterFinalizacionServer(s, consumer)
 
-	// Registrar el servicio Consumer (Fase 4)
-	pb.RegisterConsumerServer(s, consumerServer)
+	go consumer.IniciarDaemonDeFallos()
 
-	go consumerServer.IniciarDaemonDeFallos()
-
-	fmt.Printf("[%s] Listo para recibir ofertas en %s...\n", *entityID, *entityPort)
+	fmt.Printf("[%s] Listo para recibir ofertas en %s…\n", *entityID, *entityPort)
 	if err := s.Serve(lis); err != nil {
-		fmt.Printf("[%s] Fallo al servir: %v\n", *entityID, err)
+		fmt.Printf("[%s] Serve error: %v\n", *entityID, err)
 		os.Exit(1)
 	}
 }

@@ -219,6 +219,7 @@ func startOfferProduction(catalog []ProductBase) {
 
 func main() {
 	flag.Parse()
+
 	rand.Seed(time.Now().UnixNano())
 
 	// 1. Registro (Fase 1)
