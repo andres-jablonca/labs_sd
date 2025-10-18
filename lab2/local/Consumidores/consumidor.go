@@ -55,14 +55,6 @@ type Oferta struct {
 	categoria string
 }
 
-const (
-	Red    = "\033[31m"
-	Green  = "\033[32m"
-	Yellow = "\033[33m"
-	Blue   = "\033[34m"
-	Reset  = "\033[0m"
-)
-
 var RegistroOfertas []Oferta
 
 func NewConsumerServer(id string) *ConsumerServer {
@@ -126,8 +118,12 @@ func registerWithBroker(client pb.EntityManagementClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	dockerServiceName := strings.ToLower(*entityID)
+	dockerServiceName := os.Getenv("HOSTNAME")
+	if dockerServiceName == "" {
+		dockerServiceName = strings.ToLower(*entityID)
+	}
 	addressToRegister := dockerServiceName + *entityPort
+	fmt.Printf("[%s] Registrando con Address: %s\n", *entityID, addressToRegister)
 
 	req := &pb.RegistrationRequest{
 		EntityId:   *entityID,
@@ -154,7 +150,7 @@ func (s *ConsumerServer) ReceiveOffer(ctx context.Context, offer *pb.Offer) (*pb
 		return &pb.ConsumerResponse{Success: false, Message: "Consumidor en fallo; descartada"}, nil
 	}
 
-	fmt.Printf("[%s] NUEVA OFERTA: %s (Precio: %d, Tienda: %s, Categoría: %s)\n",
+	fmt.Printf("[%s] 🎉 NUEVA OFERTA: %s (P: %d, T: %s, Cat: %s)\n",
 		s.entityID, offer.GetProducto(), offer.GetPrecio(), offer.GetTienda(), offer.GetCategoria())
 
 	RegistroOfertas = append(RegistroOfertas, Oferta{
@@ -175,7 +171,7 @@ func (s *ConsumerServer) ReceiveOffer(ctx context.Context, offer *pb.Offer) (*pb
 func Resincronizar(myID string, s *ConsumerServer) {
 	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf("[%s] no conecta con broker para recuperación de histórico: %v\n", myID, err)
+		fmt.Printf("[%s] no conecta con broker para recovery: %v\n", myID, err)
 		return
 	}
 	defer conn.Close()
@@ -186,7 +182,7 @@ func Resincronizar(myID string, s *ConsumerServer) {
 
 	resp, err := client.GetFilteredHistory(ctx, &pb.HistoryRequest{ConsumerId: myID})
 	if err != nil || resp == nil {
-		fmt.Printf("[%s] Recuperación falló: %v\n", myID, err)
+		fmt.Printf("[%s] GetFilteredHistory falló: %v\n", myID, err)
 		return
 	}
 
@@ -230,7 +226,7 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 	ticker := time.NewTicker(FailureCheckInterval)
 	defer ticker.Stop()
 
-	fmt.Printf("[%s] Daemon de fallos: prob=%.0f%%, caída=%s, cada=%s\n",
+	fmt.Printf("[%s] 🛠️ Daemon de fallos: prob=%.0f%%, caída=%s, cada=%s\n",
 		s.entityID, FailureProbability*100, FailureDuration, FailureCheckInterval)
 
 	time.Sleep(time.Duration(rand.Intn(5)+1) * time.Second)
@@ -238,6 +234,7 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 	for {
 		select {
 		case <-s.stopCh:
+			fmt.Printf("[%s] 📴 Daemon de fallos detenido por finalización\n", s.entityID)
 			return
 		case <-ticker.C:
 			failMu.Lock()
@@ -256,13 +253,13 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 					isFailing = true
 					failMu.Unlock()
 
-					fmt.Printf(Red+"[%s] CAÍDA INESPERADA... (%s)\n"+Reset, s.entityID, FailureDuration)
+					fmt.Printf("🛑 [%s] CAÍDA INESPERADA… (%s)\n", s.entityID, FailureDuration)
 					time.Sleep(FailureDuration)
 
 					failMu.Lock()
 					isFailing = false
 					failMu.Unlock()
-					fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, INCIANDO RESINCRONIZACIÓN...\n"+Reset, s.entityID)
+					fmt.Printf("✅ [%s] LEVANTADO… resincronizando\n", s.entityID)
 
 					Resincronizar(s.entityID, s)
 				}()
@@ -290,12 +287,13 @@ func (s *ConsumerServer) InformarFinalizacion(ctx context.Context, req *pb.Endin
 	isFailing = false
 	failMu.Unlock()
 
+	// NO resincronizar: solo escribir lo que hay en memoria
 	fn := getCSVFileName(s.entityID)
 	if err := dumpAllToCSV(fn, RegistroOfertas); err != nil {
-		fmt.Printf("[%s] Error al generar CSV final: %v\n", s.entityID, err)
+		fmt.Printf("[%s] ⚠️ Error al generar CSV final: %v\n", s.entityID, err)
 		return &pb.EndingConfirm{Consumerconfirm: false}, nil
 	}
-	fmt.Printf("[%s] CSV final generado con %d ofertas\n", s.entityID, len(RegistroOfertas))
+	fmt.Printf("[%s] 🧾 CSV final generado con %d ofertas (sin resincronizar)\n", s.entityID, len(RegistroOfertas))
 	return &pb.EndingConfirm{Consumerconfirm: true}, nil
 }
 

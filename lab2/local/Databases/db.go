@@ -99,16 +99,16 @@ func registerWithBroker(client pb.EntityManagementClient, server *DBNodeServer) 
 
 	resp, err := client.RegisterEntity(ctx, req)
 	if err != nil || !resp.GetSuccess() {
-		fmt.Printf("Registro con broker falló: %v\n", err)
+		fmt.Printf("❌ Registro con broker falló: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Broker respondió: %s\n", resp.GetMessage())
+	fmt.Printf("Broker respondió: success=%t, msg=%s\n", resp.GetSuccess(), resp.GetMessage())
 }
 
 func Resincronizar(myID string, s *DBNodeServer) {
 	addrs := peersFor(myID)
 	for _, addr := range addrs {
-		fmt.Printf("[%s] Resincronizando desde %s...\n", myID, addr)
+		fmt.Printf("[%s] Resincronizando desde %s …\n", myID, addr)
 		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			continue
@@ -135,10 +135,10 @@ func Resincronizar(myID string, s *DBNodeServer) {
 		}
 		total := len(s.data)
 		s.mu.Unlock()
-		fmt.Printf("[%s] Resincrinización desde %s | Ofertas nuevas=%d | Ofertas totales=%d\n", myID, addr, added, total)
+		fmt.Printf("✅ [%s] Sync desde %s | nuevas=%d | total=%d\n", myID, addr, added, total)
 		return
 	}
-	fmt.Printf("[%s] No se pudo resincronizar con ningún nodo\n", myID)
+	fmt.Printf("[%s] ⚠️ No se pudo resincronizar con ningún peer\n", myID)
 }
 
 // -------------------------------------------------------------------------
@@ -155,7 +155,7 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 	ticker := time.NewTicker(FailureCheckInterval)
 	defer ticker.Stop()
 
-	fmt.Printf("[%s] Daemon de fallos: prob=%.0f%%, caída=%s, cada=%s\n",
+	fmt.Printf("[%s] 🛠️ Daemon de fallos: prob=%.0f%%, caída=%s, cada=%s\n",
 		s.entityID, FailureProbability*100, FailureDuration, FailureCheckInterval)
 
 	time.Sleep(time.Duration(rand.Intn(5)+1) * time.Second)
@@ -163,6 +163,7 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 	for {
 		select {
 		case <-s.stopCh:
+			fmt.Printf("[%s] 📴 Daemon de fallos detenido por finalización\n", s.entityID)
 			return
 		case <-ticker.C:
 			failMu.Lock()
@@ -181,13 +182,13 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 					isFailing = true
 					failMu.Unlock()
 
-					fmt.Printf(Red+"[%s] CAÍDA INESPERADA... (%s)\n"+Reset, s.entityID, FailureDuration)
+					fmt.Printf("🛑 [%s] CAÍDA INESPERADA… (%s)\n", s.entityID, FailureDuration)
 					time.Sleep(FailureDuration)
 
 					failMu.Lock()
 					isFailing = false
 					failMu.Unlock()
-					fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, INCIANDO RESINCRONIZACIÓN...\n"+Reset, s.entityID)
+					fmt.Printf("✅ [%s] LEVANTADO… resincronizando\n", s.entityID)
 
 					Resincronizar(s.entityID, s)
 				}()
@@ -218,7 +219,7 @@ func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.Sto
 	total := len(s.data)
 	s.mu.Unlock()
 
-	fmt.Printf("[%s] Almacenando oferta %s | Total de ofertas almacenadas=%d\n", s.entityID, offer.GetOfertaId(), total)
+	fmt.Printf("📝 [%s] StoreOffer %s | total=%d\n", s.entityID, offer.GetOfertaId(), total)
 	return &pb.StoreOfferResponse{Success: true, Message: "ok"}, nil
 }
 
@@ -230,7 +231,7 @@ func (s *DBNodeServer) GetOfferHistory(ctx context.Context, req *pb.RecoveryRequ
 	for _, of := range s.data {
 		out = append(out, of)
 	}
-	fmt.Printf("[%s] Enviando histórico a %s (Incluye %d ofertas)\n", s.entityID, req.GetRequestingNodeId(), len(out))
+	fmt.Printf("📦 [%s] Enviando historial a %s (ofertas=%d)\n", s.entityID, req.GetRequestingNodeId(), len(out))
 	return &pb.RecoveryResponse{Offers: out}, nil
 }
 
