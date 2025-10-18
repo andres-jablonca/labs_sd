@@ -169,7 +169,7 @@ func (s *ConsumerServer) ReceiveOffer(ctx context.Context, offer *pb.Offer) (*pb
 		return &pb.ConsumerResponse{Success: false, Message: "Consumidor en fallo; descartada"}, nil
 	}
 
-	fmt.Printf("[%s] NUEVA OFERTA: %s (P: %d, T: %s, Cat: %s)\n",
+	fmt.Printf("[%s] NUEVA OFERTA RECIBIDA: %s (Precio: %d, Tienda: %s, Categoría: %s)\n",
 		s.entityID, offer.GetProducto(), offer.GetPrecio(), offer.GetTienda(), offer.GetCategoria())
 
 	RegistroOfertas = append(RegistroOfertas, Oferta{
@@ -227,7 +227,7 @@ func Resincronizar(myID string, s *ConsumerServer) {
 		})
 		added++
 	}
-	fmt.Printf("[%s] Resincronización completa: Ofertas recibidas=%d | Ofertas nuevas=%d | Ofertas totales=%d\n",
+	fmt.Printf(Green+"[%s] Resincronización completa: Ofertas recibidas=%d | Ofertas nuevas=%d | Ofertas totales=%d\n"+Reset,
 		myID, len(resp.GetOffers()), added, len(RegistroOfertas))
 }
 
@@ -237,9 +237,37 @@ func Resincronizar(myID string, s *ConsumerServer) {
 
 const (
 	FailureCheckInterval = 25 * time.Second
-	FailureProbability   = 0.08
-	FailureDuration      = 10 * time.Second
+	FailureProbability   = 0.15
+	FailureDuration      = 15 * time.Second
 )
+
+func (s *ConsumerServer) reportarCaidaABroker() {
+	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Printf("[%s] Error conectando al broker para reportar caída: %v\n", s.entityID, err)
+		return
+	}
+	defer conn.Close()
+
+	client := pb.NewCaidaClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	req := &pb.FailNotify{
+		Id:   s.entityID,
+		Type: "Consumer",
+	}
+
+	resp, err := client.InformarCaida(ctx, req)
+	if err != nil {
+		fmt.Printf("[%s] Error reportando caída al broker: %v\n", s.entityID, err)
+		return
+	}
+
+	if resp.GetAck() {
+
+	}
+}
 
 func (s *ConsumerServer) IniciarDaemonDeFallos() {
 	ticker := time.NewTicker(FailureCheckInterval)
@@ -272,6 +300,7 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 					failMu.Unlock()
 
 					fmt.Printf(Red+"[%s] CAÍDA INESPERADA... (%s)\n"+Reset, s.entityID, FailureDuration)
+					s.reportarCaidaABroker()
 					time.Sleep(FailureDuration)
 
 					failMu.Lock()

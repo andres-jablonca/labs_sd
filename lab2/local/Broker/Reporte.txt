@@ -1,0 +1,50 @@
+================= MÉTRICAS FINALES =================
+Escrituras totales (Todas las BD): 60
+Escrituras exitosas (w=2): 60
+Nodos BD caídos al finalizar: 0
+
+Caídas por nodo DB:
+  DB2: 1
+
+Caídas por Consumidor:
+  C3-1: 1
+  C3-3: 1
+  C1-4: 1
+  C2-2: 1
+
+Resincronizaciones exitosas por Consumidor:
+  C2-2: 1
+  C3-3: 1
+  C3-1: 1
+  C1-4: 1
+
+Generaciones de CSV exitosas:
+  C1-4: true
+  C2-4: true
+  C3-4: true
+  C3-2: true
+  C1-2: true
+  C2-3: true
+  C2-2: true
+  C2-1: true
+  C3-3: true
+  C3-1: true
+  C1-3: true
+  C1-1: true
+
+Cantidad de ofertas recibidas por cada Consumidor:
+  C3-2: 53
+  C2-1: 20
+  C2-2: 28
+  C1-3: 20
+  C3-3: 3
+  C1-4: 2
+  C3-1: 1
+
+Ofertas por tienda:
+  Parisio: 20
+  Falabellox: 20
+  Riploy: 20
+
+Total de entidades registradas: 18
+==============================================================

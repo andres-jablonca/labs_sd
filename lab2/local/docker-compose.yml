@@ -7,6 +7,8 @@ services:
     container_name: Broker
     ports:
       - "50095:50095"
+    volumes:
+      - ./Broker/:/app/Broker  
    
 
   # --- NODOS DE BASE DE DATOS ---
@@ -46,8 +48,6 @@ services:
     command: ["./productor", "-id=Riploy", "-port=:50052"]
     ports:
       - "50052:50052"
-    depends_on:
-      - broker
 
   falabellox:
     build:
@@ -57,8 +57,6 @@ services:
     command: ["./productor", "-id=Falabellox", "-port=:50053"]
     ports:
       - "50053:50053"
-    depends_on:
-      - broker
 
   parisio:
     build:
@@ -68,8 +66,6 @@ services:
     command: ["./productor", "-id=Parisio", "-port=:50054"]
     ports:
       - "50054:50054"
-    depends_on:
-      - broker
   
   consumer-group-1:
     build:
@@ -82,8 +78,6 @@ services:
       - "50072:50072" 
       - "50073:50073"
       - "50074:50074"
-    depends_on:
-      - broker
     volumes:
     - ./csv_clientes:/app/output 
 
@@ -98,8 +92,6 @@ services:
       - "50076:50076"
       - "50077:50077"
       - "50078:50078"
-    depends_on:
-      - broker
     volumes:
     - ./csv_clientes:/app/output 
 
@@ -114,8 +106,6 @@ services:
       - "50080:50080"
       - "50081:50081"
       - "50082:50082"
-    depends_on:
-      - broker
     volumes:
     - ./csv_clientes:/app/output 
 

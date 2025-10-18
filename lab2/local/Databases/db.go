@@ -50,6 +50,7 @@ type DBNodeServer struct {
 	pb.UnimplementedEntityManagementServer
 	pb.UnimplementedDBNodeServer
 	pb.UnimplementedFinalizacionServer
+	pb.UnimplementedCaidaServer
 
 	entityID string
 	mu       sync.RWMutex
@@ -135,7 +136,7 @@ func Resincronizar(myID string, s *DBNodeServer) {
 		}
 		total := len(s.data)
 		s.mu.Unlock()
-		fmt.Printf("[%s] Resincronización desde %s | Ofertas nuevas=%d | Ofertas totales=%d\n", myID, addr, added, total)
+		fmt.Printf(Green+"[%s] Resincronización desde %s | Ofertas nuevas=%d | Ofertas totales=%d\n"+Reset, myID, addr, added, total)
 		return
 	}
 	fmt.Printf("[%s] No se pudo resincronizar con ningún nodo\n", myID)
@@ -147,9 +148,36 @@ func Resincronizar(myID string, s *DBNodeServer) {
 
 const (
 	FailureCheckInterval = 25 * time.Second
-	FailureProbability   = 0.10
+	FailureProbability   = 0.15
 	FailureDuration      = 15 * time.Second
 )
+
+func (s *DBNodeServer) reportarCaidaABroker() {
+	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Printf("[%s] Error conectando al broker para reportar caída: %v\n", s.entityID, err)
+		return
+	}
+	defer conn.Close()
+
+	client := pb.NewCaidaClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	req := &pb.FailNotify{
+		Id:   s.entityID,
+		Type: "DBNode",
+	}
+
+	resp, err := client.InformarCaida(ctx, req)
+	if err != nil {
+		fmt.Printf("[%s] Error reportando caída al broker: %v\n", s.entityID, err)
+		return
+	}
+
+	if resp.GetAck() {
+	}
+}
 
 func (s *DBNodeServer) IniciarDaemonDeFallos() {
 	ticker := time.NewTicker(FailureCheckInterval)
@@ -182,6 +210,7 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 					failMu.Unlock()
 
 					fmt.Printf(Red+"[%s] CAÍDA INESPERADA... (%s)\n"+Reset, s.entityID, FailureDuration)
+					s.reportarCaidaABroker()
 					time.Sleep(FailureDuration)
 
 					failMu.Lock()
@@ -218,7 +247,7 @@ func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.Sto
 	total := len(s.data)
 	s.mu.Unlock()
 
-	fmt.Printf("[%s] Oferta almacenada %s | Ofertas totales=%d\n", s.entityID, offer.GetOfertaId(), total)
+	fmt.Printf("[%s] Oferta %s almacenada | Ofertas totales=%d\n", s.entityID, offer.GetOfertaId(), total)
 	return &pb.StoreOfferResponse{Success: true, Message: "ok"}, nil
 }
 
@@ -280,7 +309,6 @@ func main() {
 	pb.RegisterEntityManagementServer(s, dbServer)
 	pb.RegisterDBNodeServer(s, dbServer)
 	pb.RegisterFinalizacionServer(s, dbServer)
-
 	go dbServer.IniciarDaemonDeFallos()
 
 	if err := s.Serve(lis); err != nil {

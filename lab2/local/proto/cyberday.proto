@@ -112,3 +112,15 @@ service Recovery {
 service Finalizacion {
   rpc InformarFinalizacion (EndingNotify) returns (EndingConfirm);
 }
+service Caida {
+  rpc InformarCaida (FailNotify) returns (FailACK);
+}
+
+message FailNotify {
+  string id = 1;
+  string type = 2;
+}
+
+message FailACK {
+  bool ack = 1;
+}

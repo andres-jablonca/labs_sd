@@ -212,9 +212,7 @@ func startOfferProduction(catalog []ProductBase) {
 			fmt.Printf("Error enviando oferta %s (Broker caído?): %v\n", offer.OfertaId, err)
 		} else if resp.Accepted {
 
-			fmt.Printf("Oferta %s de Producto **%s** con descuento de %.0f%% enviada y ACEPTADA (Precio: %d, Stock: %d)\n", offer.OfertaId, offer.Producto, offer.Descuento, offer.Precio, offer.Stock)
-		} else {
-			fmt.Printf("Oferta %s RECHAZADA por Broker: %s\n", offer.OfertaId, resp.Message)
+			fmt.Printf("Oferta %s de Producto **%s** con descuento de %f enviada y ACEPTADA (Precio: %d, Stock: %d)\n", offer.OfertaId, offer.Producto, offer.Descuento, offer.Precio, offer.Stock)
 		}
 
 		if resp.GetTermino() {
