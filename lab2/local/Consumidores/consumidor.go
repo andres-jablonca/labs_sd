@@ -137,8 +137,12 @@ func registerWithBroker(client pb.EntityManagementClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	dockerServiceName := strings.ToLower(*entityID)
+	dockerServiceName := os.Getenv("HOSTNAME")
+	if dockerServiceName == "" {
+		dockerServiceName = strings.ToLower(*entityID)
+	}
 	addressToRegister := dockerServiceName + *entityPort
+	fmt.Printf("[%s] Registrando con Address: %s\n", *entityID, addressToRegister)
 
 	req := &pb.RegistrationRequest{
 		EntityId:   *entityID,
