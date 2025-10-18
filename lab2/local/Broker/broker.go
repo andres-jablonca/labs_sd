@@ -88,6 +88,14 @@ type BrokerServer struct {
 	mu            sync.Mutex
 }
 
+const (
+	Red    = "\033[31m"
+	Green  = "\033[32m"
+	Yellow = "\033[33m"
+	Blue   = "\033[34m"
+	Reset  = "\033[0m"
+)
+
 func NewBrokerServer() *BrokerServer {
 	return &BrokerServer{
 		entities:      make(map[string]Entity),
@@ -113,7 +121,7 @@ func (s *BrokerServer) loadConsumerPreferences() error {
 		if err == io.EOF {
 			return fmt.Errorf("archivo %s vacío", consumerPreferencesFile)
 		}
-		return fmt.Errorf("error cabecera %s: %w", consumerPreferencesFile, err)
+		return fmt.Errorf("error con cabecera %s: %w", consumerPreferencesFile, err)
 	}
 
 	prefsMap := make(map[string]ConsumerPreference)
@@ -162,7 +170,7 @@ func (s *BrokerServer) loadConsumerPreferences() error {
 	s.consumerPrefs = prefsMap
 	s.mu.Unlock()
 
-	fmt.Printf("[Broker] ✅ Preferencias de %d consumidores cargadas.\n", recordsRead)
+	fmt.Printf("Preferencias de %d consumidores cargadas.\n", recordsRead)
 	return nil
 }
 
@@ -211,7 +219,7 @@ func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationR
 		if _, ok := s.consumerPrefs[id]; !ok {
 			// revertimos el insert en entities porque este registro no es válido
 			delete(s.entities, id)
-			fmt.Printf("[Registro] 🛑 Consumidor %s RECHAZADO. No encontrado en consumidores.csv.\n", id)
+			fmt.Printf(Red+"[Registro]"+Reset+" Consumidor %s RECHAZADO. No encontrado en consumidores.csv.\n", id)
 			return &pb.RegistrationResponse{
 				Success: false,
 				Message: "Registro fallido. Su ID de consumidor no está en la lista de preferencias.\n",
@@ -222,7 +230,7 @@ func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationR
 	default:
 	}
 
-	fmt.Printf("[Registro] ✅ %s registrad@ correctamente (%s) en %s. Total de registrados: %d\n",
+	fmt.Printf("[Registro] %s registrad@ correctamente (%s) en %s. Total de registrados: %d\n",
 		id, ent.Type, ent.Address, len(s.entities))
 
 	contador_registrados++
@@ -295,7 +303,7 @@ func (s *BrokerServer) notifyConsumers(offer *pb.Offer) {
 		}(c)
 	}
 	wg.Wait()
-	fmt.Printf("[Notificación] Oferta %s -> %d confirmaciones\n", offer.GetOfertaId(), countOK)
+	fmt.Printf("[Notificación] Oferta %s -> %d confirmaciones\n\n", offer.GetOfertaId(), countOK)
 }
 
 // -------------------------------------------------------------------------
@@ -310,7 +318,7 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 	}
 	terminacionMu.Unlock()
 
-	fmt.Printf("[Oferta %s] Iniciando escritura distribuida (N=%d, W=%d)\n", offer.GetOfertaId(), N, W)
+	fmt.Printf(Yellow+"[Oferta %s]"+Reset+" Iniciando escritura distribuida (N=%d, W=%d)\n", offer.GetOfertaId(), N, W)
 
 	if len(s.dbNodes) < N {
 		return &pb.OfferSubmissionResponse{
@@ -381,9 +389,9 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 			ofertas_riploy++
 		}
 
-		if ofertas_falabellox >= 15 && ofertas_parisio >= 15 && ofertas_riploy >= 15 {
+		if ofertas_falabellox >= 20 && ofertas_parisio >= 20 && ofertas_riploy >= 20 {
 			fmt.Println("\n=======================================================")
-			fmt.Println("🛑 Límite de ofertas alcanzado! Finalizando CyberDay...")
+			fmt.Println("Límite de ofertas alcanzado! Finalizando CyberDay...")
 			fmt.Println("=======================================================")
 			sistemaTerminado = true
 			s.notifyFinalizationNoWaitAndPrintMetrics()
@@ -542,7 +550,7 @@ func (s *BrokerServer) informarFinAConsumer(consumer Entity, timeout time.Durati
 
 	conn, err := grpc.Dial(consumer.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf("[Fin] ❌ No conecta con consumidor %s: %v\n", consumer.ID, err)
+		fmt.Printf("[Fin] No conecta con consumidor %s: %v\n", consumer.ID, err)
 		return
 	}
 	defer conn.Close()
@@ -553,7 +561,7 @@ func (s *BrokerServer) informarFinAConsumer(consumer Entity, timeout time.Durati
 		s.mu.Lock()
 		confirmCSVConsumidor[consumer.ID] = true
 		s.mu.Unlock()
-		fmt.Printf("[Fin] ✅ Consumidor %s confirmó CSV final\n", consumer.ID)
+		fmt.Printf("[Fin] Consumidor %s confirmó CSV final\n", consumer.ID)
 	}
 }
 
@@ -563,7 +571,7 @@ func (s *BrokerServer) informarFinADB(node Entity, timeout time.Duration) {
 
 	conn, err := grpc.Dial(node.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf("[Fin] ❌ No conecta con DB %s: %v\n", node.ID, err)
+		fmt.Printf("[Fin] No conecta con DB %s: %v\n", node.ID, err)
 		s.mu.Lock()
 		nodos_caidos_al_finalizar++
 		s.mu.Unlock()
@@ -574,17 +582,17 @@ func (s *BrokerServer) informarFinADB(node Entity, timeout time.Duration) {
 	c := pb.NewFinalizacionClient(conn)
 	resp, err := c.InformarFinalizacion(ctx, &pb.EndingNotify{Fin: true})
 	if err != nil || resp == nil || !resp.GetBdconfirm() {
-		fmt.Printf("[Fin] ⚠️ DB %s no confirmó finalización\n", node.ID)
+		fmt.Printf("[Fin] DB %s no confirmó finalización\n", node.ID)
 		s.mu.Lock()
 		nodos_caidos_al_finalizar++
 		s.mu.Unlock()
 		return
 	}
-	fmt.Printf("[Fin] ✅ DB %s confirmó finalización\n", node.ID)
+	fmt.Printf("[Fin] DB %s confirmó finalización\n", node.ID)
 }
 
 func (s *BrokerServer) notifyFinalizationNoWaitAndPrintMetrics() {
-	fmt.Println("[Fin] 🔔 Notificando finalización (sin esperar)…")
+	fmt.Println("[Fin] Notificando finalización (sin esperar)…")
 
 	s.mu.Lock()
 	dbs := make([]Entity, 0, len(s.dbNodes))
@@ -608,34 +616,34 @@ func (s *BrokerServer) notifyFinalizationNoWaitAndPrintMetrics() {
 	time.Sleep(800 * time.Millisecond)
 
 	fmt.Println("\n================= MÉTRICAS FINALES (BROKER) =================")
-	fmt.Printf("aceptadas_totales_por_broker: %d\n", aceptadas_totales)
-	fmt.Printf("escrituras_totales: %d\n", escrituras_totales)
-	fmt.Printf("escrituras_exitosas(w=2): %d\n", escrituras_exitosas)
+	fmt.Printf("Ofertas totales aceptadas por Broker: %d\n", aceptadas_totales)
+	fmt.Printf("Escrituras totales (Todas las BD): %d\n", escrituras_totales)
+	fmt.Printf("Escrituras exitosas (w=2): %d\n", escrituras_exitosas)
 
-	fmt.Printf("nodos_caidos_al_finalizar: %d\n", nodos_caidos_al_finalizar)
+	fmt.Printf("Nodos BD caídos al finalizar: %d\n", nodos_caidos_al_finalizar)
 
-	fmt.Println("caidas_de_cada_nodo:")
+	fmt.Println("Resincronizaciones de nodos DB:")
 	for id, n := range caidasPorNodo {
 		fmt.Printf("  %s: %d\n", id, n)
 	}
 
-	fmt.Println("caidas de cada consumidor:")
+	fmt.Println("Caídas por cada Consumidor:")
 	for id, n := range caidasPorConsumidor {
 		fmt.Printf("  %s: %d\n", id, n)
 	}
 
-	fmt.Println("resincronizaciones_exitosas_consumidores:")
+	fmt.Println("Resincronizaciones exitosas por Consumidor:")
 	for id, n := range resyncOKPorConsumidor {
 		fmt.Printf("  %s: %d\n", id, n)
 	}
 
-	fmt.Println("confirmacion si un consumidor logró generar su csv:")
+	fmt.Println("Generaciones de CSV exitosas:")
 	for id := range s.consumers {
 		ok := confirmCSVConsumidor[id]
 		fmt.Printf("  %s: %t\n", id, ok)
 	}
 
-	fmt.Println("cantidad de ofertas recibida por cada consumidor:")
+	fmt.Println("Cantidad de ofertas recibidas por cada Consumidor:")
 	for id, n := range ofertasPorConsumidor {
 		fmt.Printf("  %s: %d\n", id, n)
 	}
@@ -670,7 +678,7 @@ func main() {
 	recoveryServer := &RecoveryServer{broker: bs}
 	pb.RegisterRecoveryServer(s, recoveryServer)
 
-	fmt.Printf("Broker escuchando en %s…\n", brokerPort)
+	fmt.Printf("Broker escuchando en %s...\n", brokerPort)
 	if err := s.Serve(lis); err != nil {
 		fmt.Printf("Serve error: %v\n", err)
 	}

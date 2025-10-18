@@ -32,7 +32,16 @@ type ProductBase struct {
 	Product   string
 	Category  string
 	BasePrice int64
+	BaseStock int32
 }
+
+const (
+	Red    = "\033[31m"
+	Green  = "\033[32m"
+	Yellow = "\033[33m"
+	Blue   = "\033[34m"
+	Reset  = "\033[0m"
+)
 
 // -----------------------------------------------------------------------
 // 💡 FUNCIÓN DE GENERACIÓN DE ID SIN LIBRERÍA UUID
@@ -74,7 +83,7 @@ func registerWithBroker(client pb.EntityManagementClient) {
 
 	resp, err := client.RegisterEntity(ctx, req)
 	if err != nil {
-		fmt.Printf("❌ No se logró conectar con el broker: %v\n", err)
+		fmt.Printf("No se logró conectar con el broker: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -127,10 +136,17 @@ func loadCatalog(filename string) []ProductBase {
 			continue
 		}
 
+		stock, err := strconv.ParseInt(record[5], 10, 64)
+		if err != nil {
+			fmt.Printf("Stock base inválido '%s' para el producto '%s'. Skipeando.\n", record[5], productName)
+			continue
+		}
+
 		catalog = append(catalog, ProductBase{
 			Product:   productName,
 			Category:  category,
 			BasePrice: price,
+			BaseStock: int32(stock),
 		})
 	}
 
@@ -150,7 +166,7 @@ func generateOffer(base ProductBase, tienda string) *pb.Offer {
 	newPrice := int64(float64(base.BasePrice) * (1.0 - discount))
 
 	// Stock estrictamente mayor que cero (entre 1 y 100)
-	stock := rand.Int31n(100) + 1
+	stock := rand.Int31n(base.BaseStock) + 1
 
 	// Identificador único (sustitución de UUID)
 	offerID := generatePseudoUUID()
@@ -193,24 +209,20 @@ func startOfferProduction(catalog []ProductBase) {
 		cancel()
 
 		if err != nil {
-			fmt.Printf("❌ Error enviando oferta %s (Broker caído?): %v\n", offer.OfertaId, err)
+			fmt.Printf("Error enviando oferta %s (Broker caído?): %v\n", offer.OfertaId, err)
 		} else if resp.Accepted {
-			// 💡 CORRECCIÓN: Usar los marcadores de formato correctos.
-			// Producto (string) -> %s
-			// Precio (int64) -> %d
-			// Stock (int32) -> %d
 
-			fmt.Printf("✅ Oferta %s de Producto **%s** con descuento de %f enviada y ACEPTADA (P: %d, S: %d)\n", offer.OfertaId, offer.Producto, offer.Descuento, offer.Precio, offer.Stock)
+			fmt.Printf("Oferta %s de Producto **%s** con descuento de %.0f%% enviada y ACEPTADA (Precio: %d, Stock: %d)\n", offer.OfertaId, offer.Producto, offer.Descuento, offer.Precio, offer.Stock)
 		} else {
-			fmt.Printf("⚠️ Oferta %s RECHAZADA por Broker: %s\n", offer.OfertaId, resp.Message)
+			fmt.Printf("Oferta %s RECHAZADA por Broker: %s\n", offer.OfertaId, resp.Message)
 		}
 
 		if resp.GetTermino() {
 			fmt.Printf("Cyberday Finalizado\n")
 			break
 		}
-		// Frecuencia de emisión: 5 segundos
-		delay := 6 * time.Second
+		// Frecuencia de emisión: 2 segundos
+		delay := 2 * time.Second
 		time.Sleep(delay)
 	}
 }
@@ -238,15 +250,15 @@ func main() {
 		req := &pb.ConfirmRequest{}
 		resp, err := clientConf.Confirmacion(context.Background(), req)
 		if err != nil {
-			fmt.Printf("❌ No se logró conectar con el broker: %v\n", err)
+			fmt.Printf("No se logró conectar con el broker: %v\n", err)
 			os.Exit(1)
 			continue
 		}
 		if resp.GetReady() {
-			fmt.Println("✅ Broker READY. ¡Comenzando a enviar ofertas!")
+			fmt.Println("Broker READY. ¡Comenzando a enviar ofertas!")
 			break
 		}
-		fmt.Println("💤 Broker NO READY. Esperando 5 segundos antes de volver a preguntar...")
+		fmt.Println("Broker NO READY. Esperando 5 segundos antes de volver a preguntar...")
 		time.Sleep(5 * time.Second)
 	}
 

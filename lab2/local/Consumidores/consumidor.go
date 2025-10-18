@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +25,14 @@ import (
 
 const brokerAddress = "broker:50095"
 const outputDir = "/app/output"
+
+const (
+	Red    = "\033[31m"
+	Green  = "\033[32m"
+	Yellow = "\033[33m"
+	Blue   = "\033[34m"
+	Reset  = "\033[0m"
+)
 
 var (
 	isFailing bool
@@ -67,10 +74,22 @@ func getCSVFileName(entityID string) string {
 
 // Crear CSV (cabecera) si no existe
 func initCSVIfNeeded(fileName string) error {
-	if _, err := os.Stat(fileName); os.IsNotExist(err) {
-		if err := os.MkdirAll(filepath.Dir(fileName), 0755); err != nil {
+	// Extraer el directorio de la ruta utilizando strings.Split
+	dir := ""
+	parts := strings.Split(fileName, "/")
+	if len(parts) > 1 {
+		dir = strings.Join(parts[:len(parts)-1], "/")
+	}
+
+	// Crear directorio si no existe
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, 0755); err != nil {
 			return err
 		}
+	}
+
+	// Crear el archivo si no existe
+	if _, err := os.Stat(fileName); os.IsNotExist(err) {
 		f, err := os.Create(fileName)
 		if err != nil {
 			return err
@@ -118,12 +137,8 @@ func registerWithBroker(client pb.EntityManagementClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	dockerServiceName := os.Getenv("HOSTNAME")
-	if dockerServiceName == "" {
-		dockerServiceName = strings.ToLower(*entityID)
-	}
+	dockerServiceName := strings.ToLower(*entityID)
 	addressToRegister := dockerServiceName + *entityPort
-	fmt.Printf("[%s] Registrando con Address: %s\n", *entityID, addressToRegister)
 
 	req := &pb.RegistrationRequest{
 		EntityId:   *entityID,
@@ -150,7 +165,7 @@ func (s *ConsumerServer) ReceiveOffer(ctx context.Context, offer *pb.Offer) (*pb
 		return &pb.ConsumerResponse{Success: false, Message: "Consumidor en fallo; descartada"}, nil
 	}
 
-	fmt.Printf("[%s] 🎉 NUEVA OFERTA: %s (P: %d, T: %s, Cat: %s)\n",
+	fmt.Printf("[%s] NUEVA OFERTA: %s (P: %d, T: %s, Cat: %s)\n",
 		s.entityID, offer.GetProducto(), offer.GetPrecio(), offer.GetTienda(), offer.GetCategoria())
 
 	RegistroOfertas = append(RegistroOfertas, Oferta{
@@ -182,7 +197,7 @@ func Resincronizar(myID string, s *ConsumerServer) {
 
 	resp, err := client.GetFilteredHistory(ctx, &pb.HistoryRequest{ConsumerId: myID})
 	if err != nil || resp == nil {
-		fmt.Printf("[%s] GetFilteredHistory falló: %v\n", myID, err)
+		fmt.Printf("[%s] Resincronización falló: %v\n", myID, err)
 		return
 	}
 
@@ -208,7 +223,7 @@ func Resincronizar(myID string, s *ConsumerServer) {
 		})
 		added++
 	}
-	fmt.Printf("[%s] Resincronización completa: recibidas=%d, nuevas=%d, total=%d\n",
+	fmt.Printf("[%s] Resincronización completa: Ofertas recibidas=%d | Ofertas nuevas=%d | Ofertas totales=%d\n",
 		myID, len(resp.GetOffers()), added, len(RegistroOfertas))
 }
 
@@ -226,7 +241,7 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 	ticker := time.NewTicker(FailureCheckInterval)
 	defer ticker.Stop()
 
-	fmt.Printf("[%s] 🛠️ Daemon de fallos: prob=%.0f%%, caída=%s, cada=%s\n",
+	fmt.Printf("[%s] Daemon de fallos: prob=%.0f%%, caída=%s, cada=%s\n",
 		s.entityID, FailureProbability*100, FailureDuration, FailureCheckInterval)
 
 	time.Sleep(time.Duration(rand.Intn(5)+1) * time.Second)
@@ -234,7 +249,6 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 	for {
 		select {
 		case <-s.stopCh:
-			fmt.Printf("[%s] 📴 Daemon de fallos detenido por finalización\n", s.entityID)
 			return
 		case <-ticker.C:
 			failMu.Lock()
@@ -253,13 +267,13 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 					isFailing = true
 					failMu.Unlock()
 
-					fmt.Printf("🛑 [%s] CAÍDA INESPERADA… (%s)\n", s.entityID, FailureDuration)
+					fmt.Printf(Red+"[%s] CAÍDA INESPERADA... (%s)\n"+Reset, s.entityID, FailureDuration)
 					time.Sleep(FailureDuration)
 
 					failMu.Lock()
 					isFailing = false
 					failMu.Unlock()
-					fmt.Printf("✅ [%s] LEVANTADO… resincronizando\n", s.entityID)
+					fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, SOLICITANDO RESINCRINIZACIÓN...\n"+Reset, s.entityID)
 
 					Resincronizar(s.entityID, s)
 				}()
@@ -290,10 +304,10 @@ func (s *ConsumerServer) InformarFinalizacion(ctx context.Context, req *pb.Endin
 	// NO resincronizar: solo escribir lo que hay en memoria
 	fn := getCSVFileName(s.entityID)
 	if err := dumpAllToCSV(fn, RegistroOfertas); err != nil {
-		fmt.Printf("[%s] ⚠️ Error al generar CSV final: %v\n", s.entityID, err)
+		fmt.Printf("[%s] Error al generar CSV final: %v\n", s.entityID, err)
 		return &pb.EndingConfirm{Consumerconfirm: false}, nil
 	}
-	fmt.Printf("[%s] 🧾 CSV final generado con %d ofertas (sin resincronizar)\n", s.entityID, len(RegistroOfertas))
+	fmt.Printf("[%s] CSV final generado con %d ofertas\n", s.entityID, len(RegistroOfertas))
 	return &pb.EndingConfirm{Consumerconfirm: true}, nil
 }
 
@@ -328,7 +342,7 @@ func main() {
 
 	go consumer.IniciarDaemonDeFallos()
 
-	fmt.Printf("[%s] Listo para recibir ofertas en %s…\n", *entityID, *entityPort)
+	fmt.Printf("[%s] Listo para recibir ofertas en %s...\n", *entityID, *entityPort)
 	if err := s.Serve(lis); err != nil {
 		fmt.Printf("[%s] Serve error: %v\n", *entityID, err)
 		os.Exit(1)
