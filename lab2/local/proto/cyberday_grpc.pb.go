@@ -569,6 +569,108 @@ var Consumer_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	Finalizacion_InformarFinalizacion_FullMethodName = "/cyberday.Finalizacion/InformarFinalizacion"
+)
+
+// FinalizacionClient is the client API for Finalizacion service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type FinalizacionClient interface {
+	InformarFinalizacion(ctx context.Context, in *EndingNotify, opts ...grpc.CallOption) (*EndingConfirm, error)
+}
+
+type finalizacionClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewFinalizacionClient(cc grpc.ClientConnInterface) FinalizacionClient {
+	return &finalizacionClient{cc}
+}
+
+func (c *finalizacionClient) InformarFinalizacion(ctx context.Context, in *EndingNotify, opts ...grpc.CallOption) (*EndingConfirm, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EndingConfirm)
+	err := c.cc.Invoke(ctx, Finalizacion_InformarFinalizacion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// FinalizacionServer is the server API for Finalizacion service.
+// All implementations must embed UnimplementedFinalizacionServer
+// for forward compatibility.
+type FinalizacionServer interface {
+	InformarFinalizacion(context.Context, *EndingNotify) (*EndingConfirm, error)
+	mustEmbedUnimplementedFinalizacionServer()
+}
+
+// UnimplementedFinalizacionServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedFinalizacionServer struct{}
+
+func (UnimplementedFinalizacionServer) InformarFinalizacion(context.Context, *EndingNotify) (*EndingConfirm, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InformarFinalizacion not implemented")
+}
+func (UnimplementedFinalizacionServer) mustEmbedUnimplementedFinalizacionServer() {}
+func (UnimplementedFinalizacionServer) testEmbeddedByValue()                      {}
+
+// UnsafeFinalizacionServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to FinalizacionServer will
+// result in compilation errors.
+type UnsafeFinalizacionServer interface {
+	mustEmbedUnimplementedFinalizacionServer()
+}
+
+func RegisterFinalizacionServer(s grpc.ServiceRegistrar, srv FinalizacionServer) {
+	// If the following call pancis, it indicates UnimplementedFinalizacionServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Finalizacion_ServiceDesc, srv)
+}
+
+func _Finalizacion_InformarFinalizacion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EndingNotify)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FinalizacionServer).InformarFinalizacion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Finalizacion_InformarFinalizacion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FinalizacionServer).InformarFinalizacion(ctx, req.(*EndingNotify))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Finalizacion_ServiceDesc is the grpc.ServiceDesc for Finalizacion service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Finalizacion_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "cyberday.Finalizacion",
+	HandlerType: (*FinalizacionServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "InformarFinalizacion",
+			Handler:    _Finalizacion_InformarFinalizacion_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/cyberday.proto",
+}
+
+const (
 	Recovery_GetFilteredHistory_FullMethodName = "/cyberday.Recovery/GetFilteredHistory"
 )
 
@@ -664,112 +766,6 @@ var Recovery_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFilteredHistory",
 			Handler:    _Recovery_GetFilteredHistory_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/cyberday.proto",
-}
-
-const (
-	Finalizacion_InformarFinalizacion_FullMethodName = "/cyberday.Finalizacion/InformarFinalizacion"
-)
-
-// FinalizacionClient is the client API for Finalizacion service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// Finalización notification (Broker -> DBs/Consumers)
-type FinalizacionClient interface {
-	InformarFinalizacion(ctx context.Context, in *EndingNotify, opts ...grpc.CallOption) (*EndingConfirm, error)
-}
-
-type finalizacionClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewFinalizacionClient(cc grpc.ClientConnInterface) FinalizacionClient {
-	return &finalizacionClient{cc}
-}
-
-func (c *finalizacionClient) InformarFinalizacion(ctx context.Context, in *EndingNotify, opts ...grpc.CallOption) (*EndingConfirm, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EndingConfirm)
-	err := c.cc.Invoke(ctx, Finalizacion_InformarFinalizacion_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// FinalizacionServer is the server API for Finalizacion service.
-// All implementations must embed UnimplementedFinalizacionServer
-// for forward compatibility.
-//
-// Finalización notification (Broker -> DBs/Consumers)
-type FinalizacionServer interface {
-	InformarFinalizacion(context.Context, *EndingNotify) (*EndingConfirm, error)
-	mustEmbedUnimplementedFinalizacionServer()
-}
-
-// UnimplementedFinalizacionServer must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedFinalizacionServer struct{}
-
-func (UnimplementedFinalizacionServer) InformarFinalizacion(context.Context, *EndingNotify) (*EndingConfirm, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InformarFinalizacion not implemented")
-}
-func (UnimplementedFinalizacionServer) mustEmbedUnimplementedFinalizacionServer() {}
-func (UnimplementedFinalizacionServer) testEmbeddedByValue()                      {}
-
-// UnsafeFinalizacionServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to FinalizacionServer will
-// result in compilation errors.
-type UnsafeFinalizacionServer interface {
-	mustEmbedUnimplementedFinalizacionServer()
-}
-
-func RegisterFinalizacionServer(s grpc.ServiceRegistrar, srv FinalizacionServer) {
-	// If the following call pancis, it indicates UnimplementedFinalizacionServer was
-	// embedded by pointer and is nil.  This will cause panics if an
-	// unimplemented method is ever invoked, so we test this at initialization
-	// time to prevent it from happening at runtime later due to I/O.
-	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
-		t.testEmbeddedByValue()
-	}
-	s.RegisterService(&Finalizacion_ServiceDesc, srv)
-}
-
-func _Finalizacion_InformarFinalizacion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EndingNotify)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FinalizacionServer).InformarFinalizacion(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Finalizacion_InformarFinalizacion_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FinalizacionServer).InformarFinalizacion(ctx, req.(*EndingNotify))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// Finalizacion_ServiceDesc is the grpc.ServiceDesc for Finalizacion service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var Finalizacion_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cyberday.Finalizacion",
-	HandlerType: (*FinalizacionServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "InformarFinalizacion",
-			Handler:    _Finalizacion_InformarFinalizacion_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

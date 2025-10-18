@@ -5,10 +5,45 @@ option go_package = "./;cyberday";
 
 package cyberday;
 
-// -------------------------------------------------------------------------
-// --- 1. Data Messages ---
-// -------------------------------------------------------------------------
+service EntityManagement {
+  rpc RegisterEntity (RegistrationRequest) returns (RegistrationResponse); // Funcion para registrar cualquier tipo de entidad
+}
 
+// Solicitud de registro que incluye ID, Tipo y Direccion de la entidad
+message RegistrationRequest {
+  string entity_id = 1;
+  string entity_type = 2;
+  string address = 3;
+}
+
+// Resultado del registro
+message RegistrationResponse {
+  bool   success = 1;
+  string message = 2;
+}
+
+service ConfirmarInicio {
+  rpc Confirmacion (ConfirmRequest) returns (ConfirmResponse); // Solicitud de confirmar el inicio del cyberday para que tiendas sepan si pueden empezar a enviar ofertas
+}
+
+message ConfirmRequest {} // Solicitud vacia
+
+message ConfirmResponse { bool ready = 1; } // Respuesta del broker
+
+service OfferSubmission {
+  rpc SendOffer (Offer) returns (OfferSubmissionResponse); // Funcion para enviar ofertas desde tiendas a broker
+}
+
+service DBNode {
+  rpc StoreOffer      (Offer)            returns (StoreOfferResponse); // Funcion para almacenar ofertas en las BDs
+  rpc GetOfferHistory (RecoveryRequest)  returns (RecoveryResponse); // Funcion para solicitar el historial de ofertas de las BDs
+}
+
+service Consumer {
+  rpc ReceiveOffer    (Offer)            returns (ConsumerResponse); // Funcion para enviar ofertas alos consumidores
+}
+
+// Mensaje de oferta que incluye todos los atributos necesarios
 message Offer {
   string oferta_id = 1;
   string tienda = 2;
@@ -20,107 +55,65 @@ message Offer {
   float  descuento = 8;
 }
 
-// -------------------------------------------------------------------------
-// --- 2. Phase 1: Registration Messages ---
-// -------------------------------------------------------------------------
-
-message RegistrationRequest {
-  string entity_id = 1;
-  string entity_type = 2;
-  string address = 3;
-}
-
-message RegistrationResponse {
-  bool   success = 1;
-  string message = 2;
-}
-
-message ConfirmRequest {}
-message ConfirmResponse { bool ready = 1; }
-
-// -------------------------------------------------------------------------
-// --- 3. Phase 2: Offer Submission Messages ---
-// -------------------------------------------------------------------------
-
+// Mensaje que indica si la oferta se escribio exitosamente y tambien un indicador de si el broker sigue recibiendo ofertas
 message OfferSubmissionResponse {
   bool   accepted = 1; // True if W=2
   string message  = 2;
   bool   termino  = 3;
 }
 
-// -------------------------------------------------------------------------
-// --- 4. Phase 3 & 4: DB Node and Consumer Communication Messages ---
-// -------------------------------------------------------------------------
-
+// Mensaje que indica si una BD almacena correctamente una oferta
 message StoreOfferResponse {
   bool   success = 1;
   string message = 2;
 }
 
+// Mensaje que solicita una resincronizacion incluyendo el id de la entidad
+message RecoveryRequest { string requesting_node_id = 1; }
+
+// Mensaje que incluye el historial de ofertas
+message RecoveryResponse { repeated Offer offers = 1; }
+
+// Mensaje que indica si un consumidor recibio exitosamente una oferta
 message ConsumerResponse {
   bool   success = 1;
   string message = 2;
 }
 
-message RecoveryRequest { string requesting_node_id = 1; }
-message RecoveryResponse { repeated Offer offers = 1; }
+service Finalizacion {
+  rpc InformarFinalizacion (EndingNotify) returns (EndingConfirm); // Funcion que informa el fin del cyberday a los consumidores y dbs
+}
 
-// -------------------------------------------------------------------------
-// --- 5. Finalización ---
-// -------------------------------------------------------------------------
-
+// Mensaje que notifica si es momento de terminar y forzar que no hayan masi caidas
 message EndingNotify { bool fin = 1; }
+
+// Confirmaciones finalizacion por parte de BDs y Consumidores
 message EndingConfirm {
   bool bdconfirm       = 1;
   bool consumerconfirm = 2;
 }
 
-// -------------------------------------------------------------------------
-// --- 6. gRPC Services ---
-// -------------------------------------------------------------------------
-
-service EntityManagement {
-  rpc RegisterEntity (RegistrationRequest) returns (RegistrationResponse);
+service Recovery {
+  rpc GetFilteredHistory (HistoryRequest) returns (HistoryResponse); // Funcion que solicita el historial de ofertas segun preferencias
 }
 
-service ConfirmarInicio {
-  rpc Confirmacion (ConfirmRequest) returns (ConfirmResponse);
-}
-
-service OfferSubmission {
-  rpc SendOffer (Offer) returns (OfferSubmissionResponse);
-}
-
-service DBNode {
-  rpc StoreOffer      (Offer)            returns (StoreOfferResponse);
-  rpc GetOfferHistory (RecoveryRequest)  returns (RecoveryResponse);
-}
-
-service Consumer {
-  rpc ReceiveOffer    (Offer)            returns (ConsumerResponse);
-}
-
-// Broker-side history for consumers (R=2 consensus + filtering)
+// Mensaje que envia el consumidor para solicitar el historico
 message HistoryRequest { string consumer_id = 1; }
+
+// Mensaje que incluye el historico filtrado
 message HistoryResponse { repeated Offer offers = 1; }
 
-service Recovery {
-  rpc GetFilteredHistory (HistoryRequest) returns (HistoryResponse);
-}
-
-// Finalización notification (Broker -> DBs/Consumers)
-service Finalizacion {
-  rpc InformarFinalizacion (EndingNotify) returns (EndingConfirm);
-}
 service Caida {
-  rpc InformarCaida (FailNotify) returns (FailACK);
+  rpc InformarCaida (FailNotify) returns (FailACK); // Funcion que informa caida de una entidad al broker, para que este mantenga un registro
 }
 
+// Mensaje que incluye el id y tipo de entidad que reporta la caida
 message FailNotify {
   string id = 1;
   string type = 2;
 }
 
+// Mensaje de acknowledgment sobre la caida
 message FailACK {
   bool ack = 1;
 }

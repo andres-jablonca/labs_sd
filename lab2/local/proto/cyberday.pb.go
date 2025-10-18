@@ -23,6 +23,201 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Solicitud de registro que incluye ID, Tipo y Direccion de la entidad
+type RegistrationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EntityId      string                 `protobuf:"bytes,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
+	EntityType    string                 `protobuf:"bytes,2,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`
+	Address       string                 `protobuf:"bytes,3,opt,name=address,proto3" json:"address,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegistrationRequest) Reset() {
+	*x = RegistrationRequest{}
+	mi := &file_proto_cyberday_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegistrationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegistrationRequest) ProtoMessage() {}
+
+func (x *RegistrationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_cyberday_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegistrationRequest.ProtoReflect.Descriptor instead.
+func (*RegistrationRequest) Descriptor() ([]byte, []int) {
+	return file_proto_cyberday_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *RegistrationRequest) GetEntityId() string {
+	if x != nil {
+		return x.EntityId
+	}
+	return ""
+}
+
+func (x *RegistrationRequest) GetEntityType() string {
+	if x != nil {
+		return x.EntityType
+	}
+	return ""
+}
+
+func (x *RegistrationRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+// Resultado del registro
+type RegistrationResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegistrationResponse) Reset() {
+	*x = RegistrationResponse{}
+	mi := &file_proto_cyberday_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegistrationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegistrationResponse) ProtoMessage() {}
+
+func (x *RegistrationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_cyberday_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegistrationResponse.ProtoReflect.Descriptor instead.
+func (*RegistrationResponse) Descriptor() ([]byte, []int) {
+	return file_proto_cyberday_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *RegistrationResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RegistrationResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type ConfirmRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmRequest) Reset() {
+	*x = ConfirmRequest{}
+	mi := &file_proto_cyberday_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmRequest) ProtoMessage() {}
+
+func (x *ConfirmRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_cyberday_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmRequest.ProtoReflect.Descriptor instead.
+func (*ConfirmRequest) Descriptor() ([]byte, []int) {
+	return file_proto_cyberday_proto_rawDescGZIP(), []int{2}
+}
+
+type ConfirmResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ready         bool                   `protobuf:"varint,1,opt,name=ready,proto3" json:"ready,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmResponse) Reset() {
+	*x = ConfirmResponse{}
+	mi := &file_proto_cyberday_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmResponse) ProtoMessage() {}
+
+func (x *ConfirmResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_cyberday_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmResponse.ProtoReflect.Descriptor instead.
+func (*ConfirmResponse) Descriptor() ([]byte, []int) {
+	return file_proto_cyberday_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ConfirmResponse) GetReady() bool {
+	if x != nil {
+		return x.Ready
+	}
+	return false
+}
+
+// Mensaje de oferta que incluye todos los atributos necesarios
 type Offer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OfertaId      string                 `protobuf:"bytes,1,opt,name=oferta_id,json=ofertaId,proto3" json:"oferta_id,omitempty"`
@@ -39,7 +234,7 @@ type Offer struct {
 
 func (x *Offer) Reset() {
 	*x = Offer{}
-	mi := &file_proto_cyberday_proto_msgTypes[0]
+	mi := &file_proto_cyberday_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +246,7 @@ func (x *Offer) String() string {
 func (*Offer) ProtoMessage() {}
 
 func (x *Offer) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_cyberday_proto_msgTypes[0]
+	mi := &file_proto_cyberday_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +259,7 @@ func (x *Offer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Offer.ProtoReflect.Descriptor instead.
 func (*Offer) Descriptor() ([]byte, []int) {
-	return file_proto_cyberday_proto_rawDescGZIP(), []int{0}
+	return file_proto_cyberday_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Offer) GetOfertaId() string {
@@ -123,198 +318,7 @@ func (x *Offer) GetDescuento() float32 {
 	return 0
 }
 
-type RegistrationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	EntityId      string                 `protobuf:"bytes,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
-	EntityType    string                 `protobuf:"bytes,2,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`
-	Address       string                 `protobuf:"bytes,3,opt,name=address,proto3" json:"address,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RegistrationRequest) Reset() {
-	*x = RegistrationRequest{}
-	mi := &file_proto_cyberday_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RegistrationRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RegistrationRequest) ProtoMessage() {}
-
-func (x *RegistrationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_cyberday_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RegistrationRequest.ProtoReflect.Descriptor instead.
-func (*RegistrationRequest) Descriptor() ([]byte, []int) {
-	return file_proto_cyberday_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *RegistrationRequest) GetEntityId() string {
-	if x != nil {
-		return x.EntityId
-	}
-	return ""
-}
-
-func (x *RegistrationRequest) GetEntityType() string {
-	if x != nil {
-		return x.EntityType
-	}
-	return ""
-}
-
-func (x *RegistrationRequest) GetAddress() string {
-	if x != nil {
-		return x.Address
-	}
-	return ""
-}
-
-type RegistrationResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RegistrationResponse) Reset() {
-	*x = RegistrationResponse{}
-	mi := &file_proto_cyberday_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RegistrationResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RegistrationResponse) ProtoMessage() {}
-
-func (x *RegistrationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_cyberday_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RegistrationResponse.ProtoReflect.Descriptor instead.
-func (*RegistrationResponse) Descriptor() ([]byte, []int) {
-	return file_proto_cyberday_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *RegistrationResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-func (x *RegistrationResponse) GetMessage() string {
-	if x != nil {
-		return x.Message
-	}
-	return ""
-}
-
-type ConfirmRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ConfirmRequest) Reset() {
-	*x = ConfirmRequest{}
-	mi := &file_proto_cyberday_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ConfirmRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ConfirmRequest) ProtoMessage() {}
-
-func (x *ConfirmRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_cyberday_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ConfirmRequest.ProtoReflect.Descriptor instead.
-func (*ConfirmRequest) Descriptor() ([]byte, []int) {
-	return file_proto_cyberday_proto_rawDescGZIP(), []int{3}
-}
-
-type ConfirmResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ready         bool                   `protobuf:"varint,1,opt,name=ready,proto3" json:"ready,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ConfirmResponse) Reset() {
-	*x = ConfirmResponse{}
-	mi := &file_proto_cyberday_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ConfirmResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ConfirmResponse) ProtoMessage() {}
-
-func (x *ConfirmResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_cyberday_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ConfirmResponse.ProtoReflect.Descriptor instead.
-func (*ConfirmResponse) Descriptor() ([]byte, []int) {
-	return file_proto_cyberday_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *ConfirmResponse) GetReady() bool {
-	if x != nil {
-		return x.Ready
-	}
-	return false
-}
-
+// Mensaje que indica si la oferta se escribio exitosamente y tambien un indicador de si el broker sigue recibiendo ofertas
 type OfferSubmissionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Accepted      bool                   `protobuf:"varint,1,opt,name=accepted,proto3" json:"accepted,omitempty"` // True if W=2
@@ -375,6 +379,7 @@ func (x *OfferSubmissionResponse) GetTermino() bool {
 	return false
 }
 
+// Mensaje que indica si una BD almacena correctamente una oferta
 type StoreOfferResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
@@ -427,6 +432,97 @@ func (x *StoreOfferResponse) GetMessage() string {
 	return ""
 }
 
+// Mensaje que solicita una resincronizacion incluyendo el id de la entidad
+type RecoveryRequest struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	RequestingNodeId string                 `protobuf:"bytes,1,opt,name=requesting_node_id,json=requestingNodeId,proto3" json:"requesting_node_id,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *RecoveryRequest) Reset() {
+	*x = RecoveryRequest{}
+	mi := &file_proto_cyberday_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecoveryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecoveryRequest) ProtoMessage() {}
+
+func (x *RecoveryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_cyberday_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecoveryRequest.ProtoReflect.Descriptor instead.
+func (*RecoveryRequest) Descriptor() ([]byte, []int) {
+	return file_proto_cyberday_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *RecoveryRequest) GetRequestingNodeId() string {
+	if x != nil {
+		return x.RequestingNodeId
+	}
+	return ""
+}
+
+// Mensaje que incluye el historial de ofertas
+type RecoveryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Offers        []*Offer               `protobuf:"bytes,1,rep,name=offers,proto3" json:"offers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecoveryResponse) Reset() {
+	*x = RecoveryResponse{}
+	mi := &file_proto_cyberday_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecoveryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecoveryResponse) ProtoMessage() {}
+
+func (x *RecoveryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_cyberday_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecoveryResponse.ProtoReflect.Descriptor instead.
+func (*RecoveryResponse) Descriptor() ([]byte, []int) {
+	return file_proto_cyberday_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *RecoveryResponse) GetOffers() []*Offer {
+	if x != nil {
+		return x.Offers
+	}
+	return nil
+}
+
+// Mensaje que indica si un consumidor recibio exitosamente una oferta
 type ConsumerResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
@@ -437,7 +533,7 @@ type ConsumerResponse struct {
 
 func (x *ConsumerResponse) Reset() {
 	*x = ConsumerResponse{}
-	mi := &file_proto_cyberday_proto_msgTypes[7]
+	mi := &file_proto_cyberday_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -449,7 +545,7 @@ func (x *ConsumerResponse) String() string {
 func (*ConsumerResponse) ProtoMessage() {}
 
 func (x *ConsumerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_cyberday_proto_msgTypes[7]
+	mi := &file_proto_cyberday_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -462,7 +558,7 @@ func (x *ConsumerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConsumerResponse.ProtoReflect.Descriptor instead.
 func (*ConsumerResponse) Descriptor() ([]byte, []int) {
-	return file_proto_cyberday_proto_rawDescGZIP(), []int{7}
+	return file_proto_cyberday_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ConsumerResponse) GetSuccess() bool {
@@ -479,94 +575,7 @@ func (x *ConsumerResponse) GetMessage() string {
 	return ""
 }
 
-type RecoveryRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	RequestingNodeId string                 `protobuf:"bytes,1,opt,name=requesting_node_id,json=requestingNodeId,proto3" json:"requesting_node_id,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *RecoveryRequest) Reset() {
-	*x = RecoveryRequest{}
-	mi := &file_proto_cyberday_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RecoveryRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RecoveryRequest) ProtoMessage() {}
-
-func (x *RecoveryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_cyberday_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RecoveryRequest.ProtoReflect.Descriptor instead.
-func (*RecoveryRequest) Descriptor() ([]byte, []int) {
-	return file_proto_cyberday_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *RecoveryRequest) GetRequestingNodeId() string {
-	if x != nil {
-		return x.RequestingNodeId
-	}
-	return ""
-}
-
-type RecoveryResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Offers        []*Offer               `protobuf:"bytes,1,rep,name=offers,proto3" json:"offers,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RecoveryResponse) Reset() {
-	*x = RecoveryResponse{}
-	mi := &file_proto_cyberday_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RecoveryResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RecoveryResponse) ProtoMessage() {}
-
-func (x *RecoveryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_cyberday_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RecoveryResponse.ProtoReflect.Descriptor instead.
-func (*RecoveryResponse) Descriptor() ([]byte, []int) {
-	return file_proto_cyberday_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *RecoveryResponse) GetOffers() []*Offer {
-	if x != nil {
-		return x.Offers
-	}
-	return nil
-}
-
+// Mensaje que notifica si es momento de terminar y forzar que no hayan masi caidas
 type EndingNotify struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Fin           bool                   `protobuf:"varint,1,opt,name=fin,proto3" json:"fin,omitempty"`
@@ -611,6 +620,7 @@ func (x *EndingNotify) GetFin() bool {
 	return false
 }
 
+// Confirmaciones finalizacion por parte de BDs y Consumidores
 type EndingConfirm struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Bdconfirm       bool                   `protobuf:"varint,1,opt,name=bdconfirm,proto3" json:"bdconfirm,omitempty"`
@@ -663,7 +673,7 @@ func (x *EndingConfirm) GetConsumerconfirm() bool {
 	return false
 }
 
-// Broker-side history for consumers (R=2 consensus + filtering)
+// Mensaje que envia el consumidor para solicitar el historico
 type HistoryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ConsumerId    string                 `protobuf:"bytes,1,opt,name=consumer_id,json=consumerId,proto3" json:"consumer_id,omitempty"`
@@ -708,6 +718,7 @@ func (x *HistoryRequest) GetConsumerId() string {
 	return ""
 }
 
+// Mensaje que incluye el historico filtrado
 type HistoryResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Offers        []*Offer               `protobuf:"bytes,1,rep,name=offers,proto3" json:"offers,omitempty"`
@@ -752,6 +763,7 @@ func (x *HistoryResponse) GetOffers() []*Offer {
 	return nil
 }
 
+// Mensaje que incluye el id y tipo de entidad que reporta la caida
 type FailNotify struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -804,6 +816,7 @@ func (x *FailNotify) GetType() string {
 	return ""
 }
 
+// Mensaje de acknowledgment sobre la caida
 type FailACK struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Ack           bool                   `protobuf:"varint,1,opt,name=ack,proto3" json:"ack,omitempty"`
@@ -852,16 +865,7 @@ var File_proto_cyberday_proto protoreflect.FileDescriptor
 
 const file_proto_cyberday_proto_rawDesc = "" +
 	"\n" +
-	"\x14proto/cyberday.proto\x12\bcyberday\"\xd8\x01\n" +
-	"\x05Offer\x12\x1b\n" +
-	"\toferta_id\x18\x01 \x01(\tR\bofertaId\x12\x16\n" +
-	"\x06tienda\x18\x02 \x01(\tR\x06tienda\x12\x1c\n" +
-	"\tcategoria\x18\x03 \x01(\tR\tcategoria\x12\x1a\n" +
-	"\bproducto\x18\x04 \x01(\tR\bproducto\x12\x16\n" +
-	"\x06precio\x18\x05 \x01(\x03R\x06precio\x12\x14\n" +
-	"\x05stock\x18\x06 \x01(\x05R\x05stock\x12\x14\n" +
-	"\x05fecha\x18\a \x01(\tR\x05fecha\x12\x1c\n" +
-	"\tdescuento\x18\b \x01(\x02R\tdescuento\"m\n" +
+	"\x14proto/cyberday.proto\x12\bcyberday\"m\n" +
 	"\x13RegistrationRequest\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\tR\bentityId\x12\x1f\n" +
 	"\ventity_type\x18\x02 \x01(\tR\n" +
@@ -872,21 +876,30 @@ const file_proto_cyberday_proto_rawDesc = "" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"\x10\n" +
 	"\x0eConfirmRequest\"'\n" +
 	"\x0fConfirmResponse\x12\x14\n" +
-	"\x05ready\x18\x01 \x01(\bR\x05ready\"i\n" +
+	"\x05ready\x18\x01 \x01(\bR\x05ready\"\xd8\x01\n" +
+	"\x05Offer\x12\x1b\n" +
+	"\toferta_id\x18\x01 \x01(\tR\bofertaId\x12\x16\n" +
+	"\x06tienda\x18\x02 \x01(\tR\x06tienda\x12\x1c\n" +
+	"\tcategoria\x18\x03 \x01(\tR\tcategoria\x12\x1a\n" +
+	"\bproducto\x18\x04 \x01(\tR\bproducto\x12\x16\n" +
+	"\x06precio\x18\x05 \x01(\x03R\x06precio\x12\x14\n" +
+	"\x05stock\x18\x06 \x01(\x05R\x05stock\x12\x14\n" +
+	"\x05fecha\x18\a \x01(\tR\x05fecha\x12\x1c\n" +
+	"\tdescuento\x18\b \x01(\x02R\tdescuento\"i\n" +
 	"\x17OfferSubmissionResponse\x12\x1a\n" +
 	"\baccepted\x18\x01 \x01(\bR\baccepted\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x18\n" +
 	"\atermino\x18\x03 \x01(\bR\atermino\"H\n" +
 	"\x12StoreOfferResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"F\n" +
-	"\x10ConsumerResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"?\n" +
 	"\x0fRecoveryRequest\x12,\n" +
 	"\x12requesting_node_id\x18\x01 \x01(\tR\x10requestingNodeId\";\n" +
 	"\x10RecoveryResponse\x12'\n" +
-	"\x06offers\x18\x01 \x03(\v2\x0f.cyberday.OfferR\x06offers\" \n" +
+	"\x06offers\x18\x01 \x03(\v2\x0f.cyberday.OfferR\x06offers\"F\n" +
+	"\x10ConsumerResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\" \n" +
 	"\fEndingNotify\x12\x10\n" +
 	"\x03fin\x18\x01 \x01(\bR\x03fin\"W\n" +
 	"\rEndingConfirm\x12\x1c\n" +
@@ -914,11 +927,11 @@ const file_proto_cyberday_proto_rawDesc = "" +
 	"StoreOffer\x12\x0f.cyberday.Offer\x1a\x1c.cyberday.StoreOfferResponse\x12H\n" +
 	"\x0fGetOfferHistory\x12\x19.cyberday.RecoveryRequest\x1a\x1a.cyberday.RecoveryResponse2G\n" +
 	"\bConsumer\x12;\n" +
-	"\fReceiveOffer\x12\x0f.cyberday.Offer\x1a\x1a.cyberday.ConsumerResponse2U\n" +
-	"\bRecovery\x12I\n" +
-	"\x12GetFilteredHistory\x12\x18.cyberday.HistoryRequest\x1a\x19.cyberday.HistoryResponse2W\n" +
+	"\fReceiveOffer\x12\x0f.cyberday.Offer\x1a\x1a.cyberday.ConsumerResponse2W\n" +
 	"\fFinalizacion\x12G\n" +
-	"\x14InformarFinalizacion\x12\x16.cyberday.EndingNotify\x1a\x17.cyberday.EndingConfirm2A\n" +
+	"\x14InformarFinalizacion\x12\x16.cyberday.EndingNotify\x1a\x17.cyberday.EndingConfirm2U\n" +
+	"\bRecovery\x12I\n" +
+	"\x12GetFilteredHistory\x12\x18.cyberday.HistoryRequest\x1a\x19.cyberday.HistoryResponse2A\n" +
 	"\x05Caida\x128\n" +
 	"\rInformarCaida\x12\x14.cyberday.FailNotify\x1a\x11.cyberday.FailACKB\rZ\v./;cyberdayb\x06proto3"
 
@@ -936,16 +949,16 @@ func file_proto_cyberday_proto_rawDescGZIP() []byte {
 
 var file_proto_cyberday_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_proto_cyberday_proto_goTypes = []any{
-	(*Offer)(nil),                   // 0: cyberday.Offer
-	(*RegistrationRequest)(nil),     // 1: cyberday.RegistrationRequest
-	(*RegistrationResponse)(nil),    // 2: cyberday.RegistrationResponse
-	(*ConfirmRequest)(nil),          // 3: cyberday.ConfirmRequest
-	(*ConfirmResponse)(nil),         // 4: cyberday.ConfirmResponse
+	(*RegistrationRequest)(nil),     // 0: cyberday.RegistrationRequest
+	(*RegistrationResponse)(nil),    // 1: cyberday.RegistrationResponse
+	(*ConfirmRequest)(nil),          // 2: cyberday.ConfirmRequest
+	(*ConfirmResponse)(nil),         // 3: cyberday.ConfirmResponse
+	(*Offer)(nil),                   // 4: cyberday.Offer
 	(*OfferSubmissionResponse)(nil), // 5: cyberday.OfferSubmissionResponse
 	(*StoreOfferResponse)(nil),      // 6: cyberday.StoreOfferResponse
-	(*ConsumerResponse)(nil),        // 7: cyberday.ConsumerResponse
-	(*RecoveryRequest)(nil),         // 8: cyberday.RecoveryRequest
-	(*RecoveryResponse)(nil),        // 9: cyberday.RecoveryResponse
+	(*RecoveryRequest)(nil),         // 7: cyberday.RecoveryRequest
+	(*RecoveryResponse)(nil),        // 8: cyberday.RecoveryResponse
+	(*ConsumerResponse)(nil),        // 9: cyberday.ConsumerResponse
 	(*EndingNotify)(nil),            // 10: cyberday.EndingNotify
 	(*EndingConfirm)(nil),           // 11: cyberday.EndingConfirm
 	(*HistoryRequest)(nil),          // 12: cyberday.HistoryRequest
@@ -954,25 +967,25 @@ var file_proto_cyberday_proto_goTypes = []any{
 	(*FailACK)(nil),                 // 15: cyberday.FailACK
 }
 var file_proto_cyberday_proto_depIdxs = []int32{
-	0,  // 0: cyberday.RecoveryResponse.offers:type_name -> cyberday.Offer
-	0,  // 1: cyberday.HistoryResponse.offers:type_name -> cyberday.Offer
-	1,  // 2: cyberday.EntityManagement.RegisterEntity:input_type -> cyberday.RegistrationRequest
-	3,  // 3: cyberday.ConfirmarInicio.Confirmacion:input_type -> cyberday.ConfirmRequest
-	0,  // 4: cyberday.OfferSubmission.SendOffer:input_type -> cyberday.Offer
-	0,  // 5: cyberday.DBNode.StoreOffer:input_type -> cyberday.Offer
-	8,  // 6: cyberday.DBNode.GetOfferHistory:input_type -> cyberday.RecoveryRequest
-	0,  // 7: cyberday.Consumer.ReceiveOffer:input_type -> cyberday.Offer
-	12, // 8: cyberday.Recovery.GetFilteredHistory:input_type -> cyberday.HistoryRequest
-	10, // 9: cyberday.Finalizacion.InformarFinalizacion:input_type -> cyberday.EndingNotify
+	4,  // 0: cyberday.RecoveryResponse.offers:type_name -> cyberday.Offer
+	4,  // 1: cyberday.HistoryResponse.offers:type_name -> cyberday.Offer
+	0,  // 2: cyberday.EntityManagement.RegisterEntity:input_type -> cyberday.RegistrationRequest
+	2,  // 3: cyberday.ConfirmarInicio.Confirmacion:input_type -> cyberday.ConfirmRequest
+	4,  // 4: cyberday.OfferSubmission.SendOffer:input_type -> cyberday.Offer
+	4,  // 5: cyberday.DBNode.StoreOffer:input_type -> cyberday.Offer
+	7,  // 6: cyberday.DBNode.GetOfferHistory:input_type -> cyberday.RecoveryRequest
+	4,  // 7: cyberday.Consumer.ReceiveOffer:input_type -> cyberday.Offer
+	10, // 8: cyberday.Finalizacion.InformarFinalizacion:input_type -> cyberday.EndingNotify
+	12, // 9: cyberday.Recovery.GetFilteredHistory:input_type -> cyberday.HistoryRequest
 	14, // 10: cyberday.Caida.InformarCaida:input_type -> cyberday.FailNotify
-	2,  // 11: cyberday.EntityManagement.RegisterEntity:output_type -> cyberday.RegistrationResponse
-	4,  // 12: cyberday.ConfirmarInicio.Confirmacion:output_type -> cyberday.ConfirmResponse
+	1,  // 11: cyberday.EntityManagement.RegisterEntity:output_type -> cyberday.RegistrationResponse
+	3,  // 12: cyberday.ConfirmarInicio.Confirmacion:output_type -> cyberday.ConfirmResponse
 	5,  // 13: cyberday.OfferSubmission.SendOffer:output_type -> cyberday.OfferSubmissionResponse
 	6,  // 14: cyberday.DBNode.StoreOffer:output_type -> cyberday.StoreOfferResponse
-	9,  // 15: cyberday.DBNode.GetOfferHistory:output_type -> cyberday.RecoveryResponse
-	7,  // 16: cyberday.Consumer.ReceiveOffer:output_type -> cyberday.ConsumerResponse
-	13, // 17: cyberday.Recovery.GetFilteredHistory:output_type -> cyberday.HistoryResponse
-	11, // 18: cyberday.Finalizacion.InformarFinalizacion:output_type -> cyberday.EndingConfirm
+	8,  // 15: cyberday.DBNode.GetOfferHistory:output_type -> cyberday.RecoveryResponse
+	9,  // 16: cyberday.Consumer.ReceiveOffer:output_type -> cyberday.ConsumerResponse
+	11, // 17: cyberday.Finalizacion.InformarFinalizacion:output_type -> cyberday.EndingConfirm
+	13, // 18: cyberday.Recovery.GetFilteredHistory:output_type -> cyberday.HistoryResponse
 	15, // 19: cyberday.Caida.InformarCaida:output_type -> cyberday.FailACK
 	11, // [11:20] is the sub-list for method output_type
 	2,  // [2:11] is the sub-list for method input_type
