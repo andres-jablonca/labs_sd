@@ -52,10 +52,11 @@ type DBNodeServer struct {
 	pb.UnimplementedFinalizacionServer
 	pb.UnimplementedCaidaServer
 
-	entityID string
-	mu       sync.RWMutex
-	data     map[string]*pb.Offer
-	stopCh   chan struct{}
+	entityID   string
+	mu         sync.RWMutex
+	data       map[string]*pb.Offer
+	stopCh     chan struct{}
+	grpcServer *grpc.Server
 }
 
 func NewDBNodeServer(id string) *DBNodeServer {
@@ -69,6 +70,16 @@ func NewDBNodeServer(id string) *DBNodeServer {
 // -------------------------------------------------------------------------
 // Helpers
 // -------------------------------------------------------------------------
+
+func (s *DBNodeServer) ShutdownSoon() {
+	go func() {
+		// Espera corta para asegurar que el EndingConfirm ya se envió
+		time.Sleep(600 * time.Millisecond)
+		if s.grpcServer != nil {
+			s.grpcServer.GracefulStop() // cierra listeners y deja terminar RPCs en curso
+		}
+	}()
+}
 
 func peersFor(id string) []string {
 	peers := []string{}
@@ -191,6 +202,7 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 	for {
 		select {
 		case <-s.stopCh:
+			fmt.Printf("[%s] Daemon de fallos detenido por finalización\n", s.entityID)
 			return
 		case <-ticker.C:
 			failMu.Lock()
@@ -215,10 +227,16 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 
 					failMu.Lock()
 					isFailing = false
-					failMu.Unlock()
-					fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, SOLICITANDO RESINCRINIZACIÓN...\n"+Reset, s.entityID)
 
-					Resincronizar(s.entityID, s)
+					// Verificar si hubo finalización durante la caída
+					select {
+					case <-s.stopCh:
+						fmt.Printf(Yellow+"[%s] Sistema finalizado durante la caída - omitiendo resincronización\n"+Reset, s.entityID)
+					default:
+						fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, SOLICITANDO RESINCRINIZACIÓN...\n"+Reset, s.entityID)
+						Resincronizar(s.entityID, s)
+					}
+					failMu.Unlock()
 				}()
 			}
 		}
@@ -265,9 +283,36 @@ func (s *DBNodeServer) GetOfferHistory(ctx context.Context, req *pb.RecoveryRequ
 
 // Finalización: detener daemon y limpiar estado
 func (s *DBNodeServer) InformarFinalizacion(ctx context.Context, req *pb.EndingNotify) (*pb.EndingConfirm, error) {
-	if !req.GetFin() {
+	// Verificar si la BD estuvo caída durante la finalización
+	failMu.Lock()
+	failing := isFailing
+	failMu.Unlock()
+
+	if failing {
+		fmt.Printf(Red+"[%s] BD CAÍDA - No puede confirmar finalización\n"+Reset, s.entityID)
+		// Programar shutdown después de responder
+		go s.ShutdownSoon()
 		return &pb.EndingConfirm{Bdconfirm: false}, nil
 	}
+
+	if !req.GetFin() {
+		// Programar shutdown después de responder
+		go s.ShutdownSoon()
+		return &pb.EndingConfirm{Bdconfirm: false}, nil
+	}
+
+	// Verificar si la BD se recuperó muy recientemente durante la ventana de finalización
+	select {
+	case <-s.stopCh:
+		// Ya se estaba finalizando, probablemente se recuperó durante el proceso
+		fmt.Printf(Red+"[%s] RECUPERADO DURANTE FINALIZACIÓN - No puede confirmar\n"+Reset, s.entityID)
+		go s.ShutdownSoon()
+		return &pb.EndingConfirm{Bdconfirm: false}, nil
+	default:
+		// Continuar con la finalización normal
+	}
+
+	// Detener daemon y limpiar estado de fallo
 	select {
 	case <-s.stopCh:
 	default:
@@ -276,6 +321,10 @@ func (s *DBNodeServer) InformarFinalizacion(ctx context.Context, req *pb.EndingN
 	failMu.Lock()
 	isFailing = false
 	failMu.Unlock()
+
+	// Programar shutdown después de responder exitosamente
+	go s.ShutdownSoon()
+
 	return &pb.EndingConfirm{Bdconfirm: true}, nil
 }
 
@@ -306,6 +355,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
+	dbServer.grpcServer = s
 	pb.RegisterEntityManagementServer(s, dbServer)
 	pb.RegisterDBNodeServer(s, dbServer)
 	pb.RegisterFinalizacionServer(s, dbServer)

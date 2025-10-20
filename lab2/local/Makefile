@@ -23,8 +23,13 @@ docker-mv3:
 	docker compose up --build parisio db3 consumer-group-3
 
 
-docker-mv4:
+build-mv4:
+	sudo rm -rf csv_clientes
 	docker compose up --build broker 
+
+docker-mv4:
+	sudo rm -rf csv_clientes
+	docker compose up broker 
 
 
 reporte:

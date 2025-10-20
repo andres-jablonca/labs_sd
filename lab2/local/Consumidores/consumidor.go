@@ -1,4 +1,3 @@
-// consumidor.go
 package main
 
 import (
@@ -50,8 +49,9 @@ type ConsumerServer struct {
 	pb.UnimplementedConsumerServer
 	pb.UnimplementedFinalizacionServer
 
-	entityID string
-	stopCh   chan struct{}
+	entityID   string
+	stopCh     chan struct{}
+	grpcServer *grpc.Server
 }
 
 type Oferta struct {
@@ -126,6 +126,16 @@ func dumpAllToCSV(fileName string, ofertas []Oferta) error {
 		}
 	}
 	return nil
+}
+
+func (s *ConsumerServer) ShutdownSoon() {
+	go func() {
+		// Espera corta para asegurar que el EndingConfirm ya se envió
+		time.Sleep(600 * time.Millisecond)
+		if s.grpcServer != nil {
+			s.grpcServer.GracefulStop() // cierra listeners y deja terminar RPCs en curso
+		}
+	}()
 }
 
 // -------------------------------------------------------------------------
@@ -304,22 +314,43 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 
 					failMu.Lock()
 					isFailing = false
+					// Marcar que se está en proceso de recuperación
+					select {
+					case <-s.stopCh:
+						// Si ya se inició la finalización, no intentar resincronizar
+						fmt.Printf(Yellow+"[%s] Sistema finalizado - omitiendo resincronización\n"+Reset, s.entityID)
+					default:
+						// Solo resincronizar si el sistema no ha finalizado
+						fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, SOLICITANDO RESINCRINIZACIÓN...\n"+Reset, s.entityID)
+						Resincronizar(s.entityID, s)
+					}
 					failMu.Unlock()
-					fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, SOLICITANDO RESINCRINIZACIÓN...\n"+Reset, s.entityID)
-
-					Resincronizar(s.entityID, s)
 				}()
 			}
 		}
 	}
 }
 
-// -------------------------------------------------------------------------
+/// -------------------------------------------------------------------------
 // Finalización (Broker -> Consumer)
 // -------------------------------------------------------------------------
 
 func (s *ConsumerServer) InformarFinalizacion(ctx context.Context, req *pb.EndingNotify) (*pb.EndingConfirm, error) {
+	// Verificar si el consumidor estuvo caído durante la finalización
+	// Si está caído actualmente O si se recuperó recientemente durante la ventana de finalización
+	failMu.Lock()
+	failing := isFailing
+	failMu.Unlock()
+
+	if failing {
+		fmt.Printf(Red+"[%s] CONSUMIDOR CAÍDO - No se genera CSV final\n"+Reset, s.entityID)
+		// Programa el apagado y retorna confirmación (false)
+		s.ShutdownSoon()
+		return &pb.EndingConfirm{Consumerconfirm: false}, nil
+	}
+
 	if !req.GetFin() {
+		// No es fin real; no apagamos.
 		return &pb.EndingConfirm{Consumerconfirm: false}, nil
 	}
 
@@ -336,9 +367,14 @@ func (s *ConsumerServer) InformarFinalizacion(ctx context.Context, req *pb.Endin
 	fn := getCSVFileName(s.entityID)
 	if err := dumpAllToCSV(fn, RegistroOfertas); err != nil {
 		fmt.Printf("[%s] Error al generar CSV final: %v\n", s.entityID, err)
+		// Programa apagado aunque haya fallado la escritura (tu requerimiento es terminar de todos modos)
+		s.ShutdownSoon()
 		return &pb.EndingConfirm{Consumerconfirm: false}, nil
 	}
-	fmt.Printf("[%s] CSV final generado con %d ofertas\n", s.entityID, len(RegistroOfertas))
+	fmt.Printf(Green+"[%s] CSV final generado con %d ofertas\n"+Reset, s.entityID, len(RegistroOfertas))
+
+	// Programa el apagado y retorna confirmación (true)
+	s.ShutdownSoon()
 	return &pb.EndingConfirm{Consumerconfirm: true}, nil
 }
 
@@ -368,6 +404,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
+	consumer.grpcServer = s
 	pb.RegisterConsumerServer(s, consumer)
 	pb.RegisterFinalizacionServer(s, consumer)
 
