@@ -1,41 +1,45 @@
 ================= MÉTRICAS FINALES =================
-Escrituras totales (Suma de escrituras en cada BD): 186
-Escrituras exitosas (W=2): 62
+
+Ofertas por tienda:
+  Parisio: 20
+  Falabellox: 20
+  Riploy: 20
+
+Escrituras totales (Suma de escrituras en cada BD): 157
+Escrituras exitosas (W=2): 60
+Escrituras fallidas (W<2): 0
+
+Lecturas exitosas (R=2): 4
+Lecturas fallidas (R<2): 0
+
 Nodos BD caídos al finalizar: 0
 
 Caídas por nodo DB:
+  DB1: 1
 
 Caídas por Consumidor:
+  C1-3: 1
+  C3-3: 1
+  C3-4: 1
+  C2-2: 1
 
 Resincronizaciones exitosas por Consumidor:
+  C3-3: 1
+  C3-4: 1
+  C2-2: 1
+  C1-3: 1
 
-Generaciones de CSV exitosas:
-  C2-1: false
-  C1-2: false
-  C1-4: false
-  C3-1: false
-  C3-4: false
-  C2-3: false
-  C2-2: false
-  C2-4: false
-  C1-1: false
-  C1-3: false
-  C3-3: false
-  C3-2: false
-
-Cantidad de ofertas recibidas por cada Consumidor:
-  C3-4: 2
-  C1-2: 2
-  C3-3: 5
-  C2-2: 44
-  C1-3: 20
-  C1-4: 4
-  C3-2: 49
-  C3-1: 2
-  C2-1: 18
-
-Ofertas por tienda:
-  Parisio: 22
-  Falabellox: 20
-  Riploy: 20
+Resumen por Consumidor:
+  C1-4: 6 ofertas recibidas. Archivo CSV generado(true)
+  C1-1: 0 ofertas recibidas. Archivo CSV generado(true)
+  C1-3: 12 ofertas recibidas. Archivo CSV generado(true)
+  C3-2: 50 ofertas recibidas. Archivo CSV generado(true)
+  C3-4: 0 ofertas recibidas. Archivo CSV generado(true)
+  C3-3: 6 ofertas recibidas. Archivo CSV generado(true)
+  C2-2: 27 ofertas recibidas. Archivo CSV generado(true)
+  C2-1: 15 ofertas recibidas. Archivo CSV generado(true)
+  C1-2: 1 ofertas recibidas. Archivo CSV generado(true)
+  C3-1: 0 ofertas recibidas. Archivo CSV generado(true)
+  C2-4: 0 ofertas recibidas. Archivo CSV generado(true)
+  C2-3: 0 ofertas recibidas. Archivo CSV generado(true)
 ==============================================================

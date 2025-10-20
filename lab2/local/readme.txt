@@ -38,4 +38,4 @@ make docker-down
 
 ## Cosas extras
 * Broker es quien lee consumidores.csv y filtra según las preferencias
-*
+* Dado que libreria UUID no se encuentra dentro de las librerias permitidas, pero se pide en la rubrica, se implementó una funcion que simula crear ids del tipo UUID

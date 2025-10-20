@@ -47,6 +47,9 @@ var (
 
 	escrituras_totales  int64
 	escrituras_exitosas int64
+	escrituras_fallidas int64
+	lecturas_exitosas   int64
+	lecturas_fallidas   int64
 
 	nodos_caidos_al_finalizar int64
 
@@ -322,6 +325,39 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 	}
 	terminacionMu.Unlock()
 
+	// Verificar límites por tienda antes de procesar
+	terminacionMu.Lock()
+	switch offer.GetTienda() {
+	case "Parisio":
+		if ofertas_parisio >= 20 {
+			terminacionMu.Unlock()
+			return &pb.OfferSubmissionResponse{
+				Accepted: false,
+				Message:  "Límite de ofertas alcanzado para Parisio (20/20)",
+				Termino:  false,
+			}, nil
+		}
+	case "Falabellox":
+		if ofertas_falabellox >= 20 {
+			terminacionMu.Unlock()
+			return &pb.OfferSubmissionResponse{
+				Accepted: false,
+				Message:  "Límite de ofertas alcanzado para Falabellox (20/20)",
+				Termino:  false,
+			}, nil
+		}
+	case "Riploy":
+		if ofertas_riploy >= 20 {
+			terminacionMu.Unlock()
+			return &pb.OfferSubmissionResponse{
+				Accepted: false,
+				Message:  "Límite de ofertas alcanzado para Riploy (20/20)",
+				Termino:  false,
+			}, nil
+		}
+	}
+	terminacionMu.Unlock()
+
 	fmt.Printf(Yellow+"[Oferta %s]"+Reset+" Iniciando escritura distribuida (N=%d, W=%d)\n", offer.GetOfertaId(), N, W)
 
 	if len(s.dbNodes) < N {
@@ -377,15 +413,18 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 		terminacionMu.Lock()
 		defer terminacionMu.Unlock()
 
-		switch offer.GetTienda() {
-		case "Parisio":
-			ofertas_parisio++
-		case "Falabellox":
-			ofertas_falabellox++
-		case "Riploy":
-			ofertas_riploy++
+		if !sistemaTerminado {
+			switch offer.GetTienda() {
+			case "Parisio":
+				ofertas_parisio++
+			case "Falabellox":
+				ofertas_falabellox++
+			case "Riploy":
+				ofertas_riploy++
+			}
 		}
 
+		// Verificar si todas las tiendas alcanzaron el límite
 		if ofertas_falabellox >= 20 && ofertas_parisio >= 20 && ofertas_riploy >= 20 {
 			time.Sleep(2 * time.Second)
 			fmt.Println("\n=======================================================")
@@ -398,6 +437,7 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 
 		return &pb.OfferSubmissionResponse{Accepted: true, Message: "OK", Termino: false}, nil
 	} else {
+		escrituras_fallidas++
 		fmt.Printf(Yellow+"[Oferta %s]"+Reset+" Escritura no exitosa, no se cumple W=2\n", offer.GetOfertaId())
 	}
 
@@ -530,9 +570,11 @@ found:
 
 	// Si se encontró una coincidencia, se imprime la lectura exitosa
 	if matchesFound {
+		lecturas_exitosas++
 		fmt.Println("Lectura exitosa, se cumple R=2")
 	} else {
 		// Si no hay coincidencias, se imprime la lectura no exitosa
+		lecturas_fallidas++
 		fmt.Println("Lectura no exitosa, no se cumple R=2")
 		// Devolvemos un historial vacío en caso de no encontrar coincidencias
 		return &pb.HistoryResponse{Offers: nil}, nil
@@ -573,9 +615,13 @@ func (s *BrokerServer) informarFinAConsumer(consumer Entity, timeout time.Durati
 	resp, err := c.InformarFinalizacion(ctx, &pb.EndingNotify{Fin: true})
 	if err == nil && resp != nil && resp.GetConsumerconfirm() {
 		confirmMu.Lock()
-		confirmCSVConsumidor[consumer.ID] = true
+		confirmCSVConsumidor[consumer.ID] = resp.GetConsumerconfirm()
 		confirmMu.Unlock()
 		fmt.Printf(Blue+"[Fin]"+Reset+" Consumidor %s confirmó CSV final: %t\n", consumer.ID, resp.GetConsumerconfirm())
+	} else {
+		confirmMu.Lock()
+		confirmCSVConsumidor[consumer.ID] = false
+		confirmMu.Unlock()
 	}
 }
 
@@ -623,10 +669,13 @@ func (s *BrokerServer) notifyFinalizationNoWaitAndPrintMetrics() {
 		go s.informarFinADB(db, 2*time.Second)
 	}
 	for _, co := range cons {
-		go s.informarFinAConsumer(co, 3*time.Second)
+		go s.informarFinAConsumer(co, 2*time.Second)
 	}
 
-	s.generarReporteTXT()
+	go func() {
+		time.Sleep(5 * time.Second) // Esperar suficiente tiempo
+		s.generarReporteTXT()
+	}()
 }
 
 type CaidaServer struct {
@@ -661,8 +710,19 @@ func (s *BrokerServer) generarReporteTXT() {
 
 	// Escribir el reporte
 	fmt.Fprintln(file, "================= MÉTRICAS FINALES =================")
+
+	fmt.Fprintf(file, "\nOfertas por tienda:\n")
+	fmt.Fprintf(file, "  Parisio: %d\n", ofertas_parisio)
+	fmt.Fprintf(file, "  Falabellox: %d\n", ofertas_falabellox)
+	fmt.Fprintf(file, "  Riploy: %d\n\n", ofertas_riploy)
+
 	fmt.Fprintf(file, "Escrituras totales (Suma de escrituras en cada BD): %d\n", escrituras_totales)
 	fmt.Fprintf(file, "Escrituras exitosas (W=2): %d\n", escrituras_exitosas)
+	fmt.Fprintf(file, "Escrituras fallidas (W<2): %d\n\n", escrituras_fallidas)
+
+	fmt.Fprintf(file, "Lecturas exitosas (R=2): %d\n", lecturas_exitosas)
+	fmt.Fprintf(file, "Lecturas fallidas (R<2): %d\n\n", lecturas_fallidas)
+
 	fmt.Fprintf(file, "Nodos BD caídos al finalizar: %d\n", nodos_caidos_al_finalizar)
 
 	fmt.Fprintln(file, "\nCaídas por nodo DB:")
@@ -680,21 +740,27 @@ func (s *BrokerServer) generarReporteTXT() {
 		fmt.Fprintf(file, "  %s: %d\n", id, n)
 	}
 
-	fmt.Fprintln(file, "\nGeneraciones de CSV exitosas:")
+	fmt.Fprintln(file, "\nResumen por Consumidor:")
+	// Obtener todos los IDs de consumidores y ordenarlos para consistencia
+	s.mu.Lock()
+	consumerIDs := make([]string, 0, len(s.consumers))
 	for id := range s.consumers {
-		ok := confirmCSVConsumidor[id]
-		fmt.Fprintf(file, "  %s: %t\n", id, ok)
+		consumerIDs = append(consumerIDs, id)
 	}
+	s.mu.Unlock()
 
-	fmt.Fprintln(file, "\nCantidad de ofertas recibidas por cada Consumidor:")
-	for id, n := range ofertasPorConsumidor {
-		fmt.Fprintf(file, "  %s: %d\n", id, n)
+	// Ordenar los IDs para mejor presentación
+	//sort.Strings(consumerIDs) // Opcional: descomenta si quieres orden alfabético
+
+	for _, id := range consumerIDs {
+		ofertasRecibidas := ofertasPorConsumidor[id]
+		csvGenerado := confirmCSVConsumidor[id]
+		estadoCSV := "generado"
+		if !csvGenerado {
+			estadoCSV = "no generado"
+		}
+		fmt.Fprintf(file, "  %s: %d ofertas recibidas. Archivo CSV %s\n", id, ofertasRecibidas, estadoCSV)
 	}
-
-	fmt.Fprintf(file, "\nOfertas por tienda:\n")
-	fmt.Fprintf(file, "  Parisio: %d\n", ofertas_parisio)
-	fmt.Fprintf(file, "  Falabellox: %d\n", ofertas_falabellox)
-	fmt.Fprintf(file, "  Riploy: %d\n", ofertas_riploy)
 
 	fmt.Fprintln(file, "==============================================================")
 
