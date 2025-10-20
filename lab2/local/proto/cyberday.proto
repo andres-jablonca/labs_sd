@@ -91,6 +91,7 @@ message EndingNotify { bool fin = 1; }
 message EndingConfirm {
   bool bdconfirm       = 1;
   bool consumerconfirm = 2;
+  int32 consumeroffers = 3;
 }
 
 service Recovery {

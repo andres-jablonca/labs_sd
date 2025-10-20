@@ -205,17 +205,17 @@ func startOfferProduction(catalog []ProductBase) {
 
 		// Enviar al Broker (Fase 2)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		resp, err := client.SendOffer(ctx, offer)
+		resp1, err := client.SendOffer(ctx, offer)
 		cancel()
-
 		if err != nil {
+
 			fmt.Printf("Error enviando oferta %s (Broker caído?): %v\n", offer.OfertaId, err)
-		} else if resp.Accepted {
+		} else if resp1.Accepted {
 
 			fmt.Printf("Oferta %s de Producto **%s** con descuento de %f enviada y ACEPTADA (Precio: %d, Stock: %d)\n", offer.OfertaId, offer.Producto, offer.Descuento, offer.Precio, offer.Stock)
 		}
 
-		if resp.GetTermino() {
+		if resp1.GetTermino() {
 			fmt.Printf("Cyberday Finalizado\n")
 			break
 		}

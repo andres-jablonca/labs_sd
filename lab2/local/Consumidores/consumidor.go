@@ -142,7 +142,6 @@ func registerWithBroker(client pb.EntityManagementClient) {
 		dockerServiceName = strings.ToLower(*entityID)
 	}
 	addressToRegister := dockerServiceName + *entityPort
-	fmt.Printf("[%s] Registrando con Address: %s\n", *entityID, addressToRegister)
 
 	req := &pb.RegistrationRequest{
 		EntityId:   *entityID,
@@ -334,7 +333,6 @@ func (s *ConsumerServer) InformarFinalizacion(ctx context.Context, req *pb.Endin
 	isFailing = false
 	failMu.Unlock()
 
-	// NO resincronizar: solo escribir lo que hay en memoria
 	fn := getCSVFileName(s.entityID)
 	if err := dumpAllToCSV(fn, RegistroOfertas); err != nil {
 		fmt.Printf("[%s] Error al generar CSV final: %v\n", s.entityID, err)

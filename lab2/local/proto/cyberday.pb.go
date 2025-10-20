@@ -625,6 +625,7 @@ type EndingConfirm struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Bdconfirm       bool                   `protobuf:"varint,1,opt,name=bdconfirm,proto3" json:"bdconfirm,omitempty"`
 	Consumerconfirm bool                   `protobuf:"varint,2,opt,name=consumerconfirm,proto3" json:"consumerconfirm,omitempty"`
+	Consumeroffers  int32                  `protobuf:"varint,3,opt,name=consumeroffers,proto3" json:"consumeroffers,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -671,6 +672,13 @@ func (x *EndingConfirm) GetConsumerconfirm() bool {
 		return x.Consumerconfirm
 	}
 	return false
+}
+
+func (x *EndingConfirm) GetConsumeroffers() int32 {
+	if x != nil {
+		return x.Consumeroffers
+	}
+	return 0
 }
 
 // Mensaje que envia el consumidor para solicitar el historico
@@ -901,10 +909,11 @@ const file_proto_cyberday_proto_rawDesc = "" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\" \n" +
 	"\fEndingNotify\x12\x10\n" +
-	"\x03fin\x18\x01 \x01(\bR\x03fin\"W\n" +
+	"\x03fin\x18\x01 \x01(\bR\x03fin\"\x7f\n" +
 	"\rEndingConfirm\x12\x1c\n" +
 	"\tbdconfirm\x18\x01 \x01(\bR\tbdconfirm\x12(\n" +
-	"\x0fconsumerconfirm\x18\x02 \x01(\bR\x0fconsumerconfirm\"1\n" +
+	"\x0fconsumerconfirm\x18\x02 \x01(\bR\x0fconsumerconfirm\x12&\n" +
+	"\x0econsumeroffers\x18\x03 \x01(\x05R\x0econsumeroffers\"1\n" +
 	"\x0eHistoryRequest\x12\x1f\n" +
 	"\vconsumer_id\x18\x01 \x01(\tR\n" +
 	"consumerId\":\n" +

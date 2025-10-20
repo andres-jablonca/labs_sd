@@ -307,7 +307,7 @@ func (s *BrokerServer) notifyConsumers(offer *pb.Offer) {
 		}(c)
 	}
 	wg.Wait()
-	fmt.Printf(Yellow+"[Oferta %s]"+Reset+" Oferta enviada correctamente a %d consumidores\n\n", offer.GetOfertaId(), countOK)
+	fmt.Printf(Yellow+"[Oferta %s]"+Reset+" Oferta enviada correctamente a %d consumidores\n\n\n", offer.GetOfertaId(), countOK)
 }
 
 // -------------------------------------------------------------------------
@@ -343,8 +343,6 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 	}
 	s.mu.Unlock()
 
-	escrituras_totales++
-
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(n Entity) {
@@ -365,6 +363,7 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 			}
 			mu.Lock()
 			confirmed++
+			escrituras_totales++
 			mu.Unlock()
 		}(node)
 	}
@@ -576,7 +575,7 @@ func (s *BrokerServer) informarFinAConsumer(consumer Entity, timeout time.Durati
 		confirmMu.Lock()
 		confirmCSVConsumidor[consumer.ID] = true
 		confirmMu.Unlock()
-		fmt.Printf(Blue+"[Fin]"+Reset+" Consumidor %s confirmó CSV final\n", consumer.ID)
+		fmt.Printf(Blue+"[Fin]"+Reset+" Consumidor %s confirmó CSV final: %t\n", consumer.ID, resp.GetConsumerconfirm())
 	}
 }
 
@@ -627,11 +626,7 @@ func (s *BrokerServer) notifyFinalizationNoWaitAndPrintMetrics() {
 		go s.informarFinAConsumer(co, 3*time.Second)
 	}
 
-	// pequeña ventana para respuestas inmediatas sin bloquear
-	time.Sleep(2 * time.Second)
-
 	s.generarReporteTXT()
-	os.Exit(0)
 }
 
 type CaidaServer struct {
@@ -666,8 +661,8 @@ func (s *BrokerServer) generarReporteTXT() {
 
 	// Escribir el reporte
 	fmt.Fprintln(file, "================= MÉTRICAS FINALES =================")
-	fmt.Fprintf(file, "Escrituras totales (Todas las BD): %d\n", escrituras_totales)
-	fmt.Fprintf(file, "Escrituras exitosas (w=2): %d\n", escrituras_exitosas)
+	fmt.Fprintf(file, "Escrituras totales (Suma de escrituras en cada BD): %d\n", escrituras_totales)
+	fmt.Fprintf(file, "Escrituras exitosas (W=2): %d\n", escrituras_exitosas)
 	fmt.Fprintf(file, "Nodos BD caídos al finalizar: %d\n", nodos_caidos_al_finalizar)
 
 	fmt.Fprintln(file, "\nCaídas por nodo DB:")
@@ -701,7 +696,6 @@ func (s *BrokerServer) generarReporteTXT() {
 	fmt.Fprintf(file, "  Falabellox: %d\n", ofertas_falabellox)
 	fmt.Fprintf(file, "  Riploy: %d\n", ofertas_riploy)
 
-	fmt.Fprintf(file, "\nTotal de entidades registradas: %d\n", contador_registrados)
 	fmt.Fprintln(file, "==============================================================")
 
 	fmt.Printf(Blue + "[Reporte]" + Reset + " Reporte generado exitosamente\n")

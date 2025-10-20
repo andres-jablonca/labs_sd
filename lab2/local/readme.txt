@@ -1,9 +1,41 @@
-orden de comandos:
+# Laboratorio 1 Sistemas Distribuidos Grupo 9
+### Integrantes:
+* Andrés Jablonca 202173578-K
+* Walter Sanhueza 202023564-3
+* Matías Pérez 202187515-8
 
-Al actualizar proto: make proto
-Al cambiar un .go: make tidy
+## Tener en cuenta que la tarea completa se subió a cada máquina virtual, sin embargo ciertas entidades están pensadas para ser ejecutada en una máquina virtual en específico.
+### - dist033: Broker (IP: 10.35.168.43) (mv1)
+### - dist034: BD1, Consumidor1, Riploy (IP: 10.35.168.44) (mv2)
+### - dist035: BD2, Consumidor2, Falabellox (IP: 10.35.168.45) (mv3)
+### - dist036: BD3, Consumidor3, Parisio (IP: 10.35.168.46) (mv4)
 
-Broker Central:    make docker-broker
-Databases:         make docker-{db1,db2,db3}      
-Productores:       make docker-{riploy,parisio,falabellox}
-Consumidores:      make docker-{c1,c2,c3}
+## Instrucciones de compilación y ejecución
+
+### Acceder a Maquina Virtual y luego a grupo-9/"Laboratorio 2"/
+
+### Actualizar archivo go.sum por si acaso
+make tidy
+
+### Compilar archivo .proto por si acaso
+make proto
+
+### Levantar contenedores de las entidades en sus máquinas virtuales correspondientes
+make docker-down
+make docker-{mv1,mv2,mv3,mv4}
+
+### La mv1 (broker) debe ser levantada antes que todas las demás, ya que estas dependen del broker
+
+### Para ver reporte final una vez se haya generado (solo disponible en dist033:mv1:Broker)
+Ctrl+C (para detener ejecucion del broker)
+make ver-reporte
+
+### Para dar de baja cada contenedor (en cada máquina virtual)
+make docker-down
+
+## Consideraciones y flujo del sistema
+
+
+## Cosas extras
+* Broker es quien lee consumidores.csv y filtra según las preferencias
+*
