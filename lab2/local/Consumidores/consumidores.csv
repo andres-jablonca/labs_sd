@@ -1,0 +1,13 @@
+id_consumidor,categoria,tienda,precio_max
+C1-1,Electrodomésticos,Falabellox;Riploy;Parisio,50000
+C1-2,Electrónica,null,100000
+C1-3,null,Falabellox,null
+C1-4,Electrodomésticos;Infantil;Hogar,Falabellox,200000
+C2-1,null,Riploy,300000
+C2-2,null,null,200000
+C2-3,Moda;Automotriz,Falabellox,20000
+C2-4,Belleza,Falabellox;Parisio,20000
+C3-1,Automotriz;Mascotas;Juguetes,Riploy,50000
+C3-2,null,Riploy;Parisio;Falabellox,300000
+C3-3,Infantil,null,300000
+C3-4,Electrónica,Parisio,200000

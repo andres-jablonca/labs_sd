@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -26,11 +27,12 @@ const brokerAddress = "broker:50095"
 const outputDir = "/app/output"
 
 const (
-	Red    = "\033[31m"
-	Green  = "\033[32m"
-	Yellow = "\033[33m"
-	Blue   = "\033[34m"
-	Reset  = "\033[0m"
+	Red          = "\033[31m"
+	Green        = "\033[32m"
+	Yellow       = "\033[33m"
+	Blue         = "\033[34m"
+	Reset        = "\033[0m"
+	prefsCSVPath = "Consumidores/consumidores.csv"
 )
 
 var (
@@ -39,8 +41,9 @@ var (
 )
 
 var (
-	entityID   = flag.String("id", "C1-1", "ID único del consumidor.")
-	entityPort = flag.String("port", ":50071", "Puerto local gRPC del consumidor.")
+	entityID       = flag.String("id", "C1-1", "ID único del consumidor.")
+	entityPort     = flag.String("port", ":50071", "Puerto local gRPC del consumidor.")
+	strictMismatch = flag.Bool("strict_mismatch", true, "Si true, ofertas no relevantes responden success=false al broker.")
 )
 
 // -------------------------------------------------------------------------
@@ -56,6 +59,7 @@ type ConsumerServer struct {
 
 type Oferta struct {
 	id        string
+	fecha     string
 	producto  string
 	precio    int64
 	tienda    string
@@ -64,31 +68,118 @@ type Oferta struct {
 
 var RegistroOfertas []Oferta
 
+// -------------------- Preferencias locales (mismo modelo del broker) --------------------
+
+type Preference struct {
+	Categories map[string]bool
+	Stores     map[string]bool
+	MaxPrice   int64 // -1 => sin límite
+}
+
+var (
+	myPrefs     *Preference
+	myPrefsOnce sync.Once
+)
+
 func NewConsumerServer(id string) *ConsumerServer {
 	return &ConsumerServer{entityID: id, stopCh: make(chan struct{})}
 }
 
-func getCSVFileName(entityID string) string {
-	return fmt.Sprintf("%s/registro_ofertas_%s.csv", outputDir, entityID)
+func GenerarNombresCSV(entityID string) string {
+	return fmt.Sprintf("%s/ofertas_%s.csv", outputDir, entityID)
 }
 
-// Crear CSV (cabecera) si no existe
+// --------- Carga de preferencias (replica de broker.loadConsumerPreferences para 1 ID) ---------
+
+func loadMyPreferences(path, id string) (*Preference, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("error al abrir %s: %w", path, err)
+	}
+	defer f.Close()
+
+	r := csv.NewReader(f)
+	if _, err := r.Read(); err != nil { // lee cabecera
+		return nil, fmt.Errorf("error leyendo cabecera de %s: %w", path, err)
+	}
+
+	for {
+		rec, err := r.Read()
+		if err != nil {
+			break
+		}
+		if len(rec) < 4 {
+			continue
+		}
+		if strings.TrimSpace(rec[0]) != id {
+			continue
+		}
+
+		categories := make(map[string]bool)
+		if strings.ToLower(rec[1]) != "null" && rec[1] != "" {
+			for _, cat := range strings.Split(rec[1], ";") {
+				categories[strings.TrimSpace(cat)] = true
+			}
+		}
+		stores := make(map[string]bool)
+		if strings.ToLower(rec[2]) != "null" && rec[2] != "" {
+			for _, st := range strings.Split(rec[2], ";") {
+				stores[strings.TrimSpace(st)] = true
+			}
+		}
+		var maxPrice int64 = -1
+		if strings.ToLower(rec[3]) != "null" && rec[3] != "" {
+			if p, err := strconv.ParseInt(rec[3], 10, 64); err == nil {
+				maxPrice = p
+			}
+		}
+
+		return &Preference{
+			Categories: categories,
+			Stores:     stores,
+			MaxPrice:   maxPrice,
+		}, nil
+	}
+	return nil, nil
+}
+
+// --------- Comparador de relevancia (copiado de broker.isRelevant) ---------
+
+func isRelevantLocal(offer *pb.Offer, prefs *Preference) bool {
+	if prefs == nil {
+		return true
+	}
+	if len(prefs.Stores) > 0 {
+		if _, ok := prefs.Stores[offer.GetTienda()]; !ok {
+			return false
+		}
+	}
+	if len(prefs.Categories) > 0 {
+		if _, ok := prefs.Categories[offer.GetCategoria()]; !ok {
+			return false
+		}
+	}
+	if prefs.MaxPrice != -1 && offer.GetPrecio() > prefs.MaxPrice {
+		return false
+	}
+	return true
+}
+
+// -------------------------------------------------------------------------
+// CSV helpers
+// -------------------------------------------------------------------------
+
 func initCSVIfNeeded(fileName string) error {
-	// Extraer el directorio de la ruta utilizando strings.Split
 	dir := ""
 	parts := strings.Split(fileName, "/")
 	if len(parts) > 1 {
 		dir = strings.Join(parts[:len(parts)-1], "/")
 	}
-
-	// Crear directorio si no existe
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return err
 		}
 	}
-
-	// Crear el archivo si no existe
 	if _, err := os.Stat(fileName); os.IsNotExist(err) {
 		f, err := os.Create(fileName)
 		if err != nil {
@@ -97,13 +188,12 @@ func initCSVIfNeeded(fileName string) error {
 		defer f.Close()
 		w := csv.NewWriter(f)
 		defer w.Flush()
-		return w.Write([]string{"producto", "precio", "tienda", "categoria"})
+		return w.Write([]string{"oferta_id", "fecha", "producto", "precio", "tienda", "categoria"})
 	}
 	return nil
 }
 
-// Volcar TODAS las ofertas de memoria al CSV (reemplaza archivo)
-func dumpAllToCSV(fileName string, ofertas []Oferta) error {
+func EscribirCSV(fileName string, ofertas []Oferta) error {
 	if err := initCSVIfNeeded(fileName); err != nil {
 		return err
 	}
@@ -114,9 +204,11 @@ func dumpAllToCSV(fileName string, ofertas []Oferta) error {
 	defer f.Close()
 	w := csv.NewWriter(f)
 	defer w.Flush()
-	_ = w.Write([]string{"producto", "precio", "tienda", "categoria"})
+	_ = w.Write([]string{"oferta_id", "fecha", "producto", "precio", "tienda", "categoria"})
 	for _, o := range ofertas {
 		if err := w.Write([]string{
+			o.id,
+			o.fecha,
 			o.producto,
 			fmt.Sprintf("%d", o.precio),
 			o.tienda,
@@ -130,10 +222,9 @@ func dumpAllToCSV(fileName string, ofertas []Oferta) error {
 
 func (s *ConsumerServer) ShutdownSoon() {
 	go func() {
-		// Espera corta para asegurar que el EndingConfirm ya se envió
 		time.Sleep(600 * time.Millisecond)
 		if s.grpcServer != nil {
-			s.grpcServer.GracefulStop() // cierra listeners y deja terminar RPCs en curso
+			s.grpcServer.GracefulStop()
 		}
 	}()
 }
@@ -167,7 +258,7 @@ func registerWithBroker(client pb.EntityManagementClient) {
 }
 
 // -------------------------------------------------------------------------
-// Recepción de Ofertas (solo memoria; CSV se genera al final)
+// Recepción de Ofertas (filtrado 1:1 con broker)
 // -------------------------------------------------------------------------
 
 func (s *ConsumerServer) ReceiveOffer(ctx context.Context, offer *pb.Offer) (*pb.ConsumerResponse, error) {
@@ -178,11 +269,22 @@ func (s *ConsumerServer) ReceiveOffer(ctx context.Context, offer *pb.Offer) (*pb
 		return &pb.ConsumerResponse{Success: false, Message: "Consumidor en fallo; descartada"}, nil
 	}
 
-	fmt.Printf("[%s] NUEVA OFERTA RECIBIDA: %s (Precio: %d, Tienda: %s, Categoría: %s)\n",
-		s.entityID, offer.GetProducto(), offer.GetPrecio(), offer.GetTienda(), offer.GetCategoria())
+	// Verificación idéntica a la del broker
+	if !isRelevantLocal(offer, myPrefs) {
+		fmt.Printf(Red+"[%s] OFERTA RECIBIDA PERO NO COINCIDE CON PREFERENCIAS -> ignorada | [%s | %s | %d]\n"+Reset,
+			s.entityID, offer.GetCategoria(), offer.GetTienda(), offer.GetPrecio())
+		if *strictMismatch {
+			return &pb.ConsumerResponse{Success: false, Message: "Irrelevante según preferencias"}, nil
+		}
+		return &pb.ConsumerResponse{Success: true, Message: "Irrelevante (no almacenada)"}, nil
+	}
+
+	fmt.Printf("[%s] NUEVA OFERTA RECIBIDA: %s (ID: %s,Precio: %d, Tienda: %s, Categoría: %s)\n",
+		s.entityID, offer.GetOfertaId(), offer.GetProducto(), offer.GetPrecio(), offer.GetTienda(), offer.GetCategoria())
 
 	RegistroOfertas = append(RegistroOfertas, Oferta{
 		id:        offer.GetOfertaId(),
+		fecha:     offer.GetFecha(),
 		producto:  offer.GetProducto(),
 		precio:    offer.GetPrecio(),
 		tienda:    offer.GetTienda(),
@@ -193,7 +295,7 @@ func (s *ConsumerServer) ReceiveOffer(ctx context.Context, offer *pb.Offer) (*pb
 }
 
 // -------------------------------------------------------------------------
-// Resincronización (solo cuando vuelve de caída)
+// Resincronización
 // -------------------------------------------------------------------------
 
 func Resincronizar(myID string, s *ConsumerServer) {
@@ -227,21 +329,25 @@ func Resincronizar(myID string, s *ConsumerServer) {
 		if _, ok := known[of.GetOfertaId()]; ok {
 			continue
 		}
-		RegistroOfertas = append(RegistroOfertas, Oferta{
-			id:        of.GetOfertaId(),
-			producto:  of.GetProducto(),
-			precio:    of.GetPrecio(),
-			tienda:    of.GetTienda(),
-			categoria: of.GetCategoria(),
-		})
-		added++
+		// El broker ya filtra con su isRelevant; mantenemos la misma verificación por simetría
+		if isRelevantLocal(of, myPrefs) {
+			RegistroOfertas = append(RegistroOfertas, Oferta{
+				id:        of.GetOfertaId(),
+				fecha:     of.GetFecha(),
+				producto:  of.GetProducto(),
+				precio:    of.GetPrecio(),
+				tienda:    of.GetTienda(),
+				categoria: of.GetCategoria(),
+			})
+			added++
+		}
 	}
 	fmt.Printf(Green+"[%s] Resincronización completa: Ofertas recibidas=%d | Ofertas nuevas=%d | Ofertas totales=%d\n"+Reset,
 		myID, len(resp.GetOffers()), added, len(RegistroOfertas))
 }
 
 // -------------------------------------------------------------------------
-// Daemon de fallos (prob. 8% cada 25s, 10s de caída)
+// Daemon de fallos
 // -------------------------------------------------------------------------
 
 const (
@@ -274,7 +380,6 @@ func (s *ConsumerServer) reportarCaidaABroker() {
 	}
 
 	if resp.GetAck() {
-
 	}
 }
 
@@ -314,13 +419,10 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 
 					failMu.Lock()
 					isFailing = false
-					// Marcar que se está en proceso de recuperación
 					select {
 					case <-s.stopCh:
-						// Si ya se inició la finalización, no intentar resincronizar
 						fmt.Printf(Yellow+"[%s] Sistema finalizado - omitiendo resincronización\n"+Reset, s.entityID)
 					default:
-						// Solo resincronizar si el sistema no ha finalizado
 						fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, SOLICITANDO RESINCRINIZACIÓN...\n"+Reset, s.entityID)
 						Resincronizar(s.entityID, s)
 					}
@@ -331,30 +433,25 @@ func (s *ConsumerServer) IniciarDaemonDeFallos() {
 	}
 }
 
-/// -------------------------------------------------------------------------
-// Finalización (Broker -> Consumer)
+// -------------------------------------------------------------------------
+// Finalización
 // -------------------------------------------------------------------------
 
 func (s *ConsumerServer) InformarFinalizacion(ctx context.Context, req *pb.EndingNotify) (*pb.EndingConfirm, error) {
-	// Verificar si el consumidor estuvo caído durante la finalización
-	// Si está caído actualmente O si se recuperó recientemente durante la ventana de finalización
 	failMu.Lock()
 	failing := isFailing
 	failMu.Unlock()
 
 	if failing {
-		fmt.Printf(Red+"[%s] CONSUMIDOR CAÍDO - No se genera CSV final\n"+Reset, s.entityID)
-		// Programa el apagado y retorna confirmación (false)
+		fmt.Printf(Red+"[%s] CAÍDO. No genera CSV final\n"+Reset, s.entityID)
 		s.ShutdownSoon()
 		return &pb.EndingConfirm{Consumerconfirm: false}, nil
 	}
 
 	if !req.GetFin() {
-		// No es fin real; no apagamos.
 		return &pb.EndingConfirm{Consumerconfirm: false}, nil
 	}
 
-	// detener daemon y limpiar fallo
 	select {
 	case <-s.stopCh:
 	default:
@@ -364,16 +461,14 @@ func (s *ConsumerServer) InformarFinalizacion(ctx context.Context, req *pb.Endin
 	isFailing = false
 	failMu.Unlock()
 
-	fn := getCSVFileName(s.entityID)
-	if err := dumpAllToCSV(fn, RegistroOfertas); err != nil {
+	fn := GenerarNombresCSV(s.entityID)
+	if err := EscribirCSV(fn, RegistroOfertas); err != nil {
 		fmt.Printf("[%s] Error al generar CSV final: %v\n", s.entityID, err)
-		// Programa apagado aunque haya fallado la escritura (tu requerimiento es terminar de todos modos)
 		s.ShutdownSoon()
 		return &pb.EndingConfirm{Consumerconfirm: false}, nil
 	}
 	fmt.Printf(Green+"[%s] CSV final generado con %d ofertas\n"+Reset, s.entityID, len(RegistroOfertas))
 
-	// Programa el apagado y retorna confirmación (true)
 	s.ShutdownSoon()
 	return &pb.EndingConfirm{Consumerconfirm: true}, nil
 }
@@ -385,6 +480,14 @@ func (s *ConsumerServer) InformarFinalizacion(ctx context.Context, req *pb.Endin
 func main() {
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
+
+	// Cargar preferencias al inicio (opcional; igual se hace lazy en ReceiveOffer)
+	if p, err := loadMyPreferences(prefsCSVPath, *entityID); err != nil {
+		fmt.Printf(Red+"[%s] Error preferencias inicial: %v\n"+Reset, *entityID, err)
+	} else {
+		myPrefs = p
+		fmt.Printf("Preferencias cargadas desde archivo csv.\n")
+	}
 
 	consumer := NewConsumerServer(*entityID)
 

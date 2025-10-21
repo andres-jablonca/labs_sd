@@ -46,7 +46,6 @@ var (
 	terminacionMu        sync.Mutex
 	sistemaTerminado     bool
 
-	escrituras_totales  int64
 	escrituras_exitosas int64
 	escrituras_fallidas int64
 	lecturas_exitosas   int64
@@ -253,7 +252,6 @@ func (s *BrokerServer) RegisterEntity(ctx context.Context, req *pb.RegistrationR
 	fmt.Printf("[Registro] %s registrad@ correctamente (%s) en %s. Total de registrados: %d\n",
 		id, ent.Type, ent.Address, len(s.entities))
 
-	// Usar atomic para contador global
 	atomic.AddInt64(&contador_registrados, 1)
 	return &pb.RegistrationResponse{
 		Success: true,
@@ -412,7 +410,6 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 			}
 			mu.Lock()
 			confirmed++
-			escrituras_totales++
 			mu.Unlock()
 		}(node)
 	}
@@ -442,7 +439,7 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 			time.Sleep(2 * time.Second)
 			fmt.Println("\n=======================================================")
 			fmt.Println("Límite de ofertas alcanzado! Finalizando CyberDay...")
-			fmt.Println("=======================================================")
+			fmt.Printf("=======================================================\n\n")
 			sistemaTerminado = true
 			s.notifyFinalizationNoWaitAndPrintMetrics()
 			return &pb.OfferSubmissionResponse{Accepted: true, Message: "Finalizado", Termino: true}, nil
@@ -451,7 +448,7 @@ func (s *BrokerServer) SendOffer(ctx context.Context, offer *pb.Offer) (*pb.Offe
 		return &pb.OfferSubmissionResponse{Accepted: true, Message: "OK", Termino: false}, nil
 	} else {
 		escrituras_fallidas++
-		fmt.Printf(Yellow+"[Oferta %s]"+Reset+" Escritura no exitosa, no se cumple W=2\n", offer.GetOfertaId())
+		fmt.Printf(Yellow+"[Oferta %s]"+Reset+" Escritura no exitosa, no se cumple W=2\n\n", offer.GetOfertaId())
 	}
 
 	return &pb.OfferSubmissionResponse{
@@ -527,8 +524,6 @@ func (r *RecoveryServer) GetFilteredHistory(ctx context.Context, req *pb.History
 		return &pb.HistoryResponse{Offers: nil}, nil
 	}
 
-	fmt.Printf("Solicitud de histórico por parte de %s\n", consumerID)
-
 	r.broker.mu.Lock()
 	nodes := make([]Entity, 0, len(r.broker.dbNodes))
 	for _, n := range r.broker.dbNodes {
@@ -581,14 +576,15 @@ found:
 	resyncOKPorConsumidor[consumerID]++
 	resyncMu.Unlock()
 
+	fmt.Printf("Solicitud de histórico por parte de %s...\n", consumerID)
 	// Si se encontró una coincidencia, se imprime la lectura exitosa
 	if matchesFound {
 		lecturas_exitosas++
-		fmt.Println("Lectura exitosa, se cumple R=2")
+		fmt.Printf("Lectura exitosa, se cumple R=2. Enviando histórico a %s...\n\n", consumerID)
 	} else {
 		// Si no hay coincidencias, se imprime la lectura no exitosa
 		lecturas_fallidas++
-		fmt.Println("Lectura no exitosa, no se cumple R=2")
+		fmt.Printf("Lectura no exitosa, no se cumple R=2. No se le enviará nada a %s...\n\n", consumerID)
 		// Devolvemos un historial vacío en caso de no encontrar coincidencias
 		return &pb.HistoryResponse{Offers: nil}, nil
 	}
@@ -631,7 +627,7 @@ func (s *BrokerServer) informarFinAConsumer(consumer Entity, timeout time.Durati
 	resp, err := c.InformarFinalizacion(ctx, &pb.EndingNotify{Fin: true})
 	if err != nil {
 		// El consumidor está caído (timeout, connection refused, etc.)
-		fmt.Printf(Red+"[Fin]"+Reset+" Consumidor %s CAÍDO - No se pudo contactar: %v\n", consumer.ID, err)
+		fmt.Printf(Red+"[Fin]"+Reset+" Consumidor %s CAÍDO: %v\n", consumer.ID, err)
 		confirmMu.Lock()
 		confirmCSVConsumidor[consumer.ID] = false
 		confirmMu.Unlock()
@@ -642,12 +638,12 @@ func (s *BrokerServer) informarFinAConsumer(consumer Entity, timeout time.Durati
 		confirmMu.Lock()
 		confirmCSVConsumidor[consumer.ID] = true
 		confirmMu.Unlock()
-		fmt.Printf(Green+"[Fin]"+Reset+" Consumidor %s confirmó CSV final\n", consumer.ID)
+		fmt.Printf(Green+"[Fin]"+Reset+" Consumidor %s generó CSV final\n", consumer.ID)
 	} else {
 		confirmMu.Lock()
 		confirmCSVConsumidor[consumer.ID] = false
 		confirmMu.Unlock()
-		fmt.Printf(Red+"[Fin]"+Reset+" Consumidor %s NO confirmó CSV final\n", consumer.ID)
+		fmt.Printf(Red+"[Fin]"+Reset+" Consumidor %s NO generó CSV final\n", consumer.ID)
 	}
 }
 
@@ -657,7 +653,7 @@ func (s *BrokerServer) informarFinADB(node Entity, timeout time.Duration) {
 
 	conn, err := grpc.Dial(node.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf(Blue+"[Fin]"+Reset+" DB %s CAÍDA - No se pudo conectar: %v\n", node.ID, err)
+		fmt.Printf(Blue+"[Fin]"+Reset+" %s CAÍDA: %v\n", node.ID, err)
 		s.mu.Lock()
 		nodos_caidos_al_finalizar++
 		caidos_arreglo = append(caidos_arreglo, node.ID)
@@ -671,7 +667,7 @@ func (s *BrokerServer) informarFinADB(node Entity, timeout time.Duration) {
 
 	// Si hay error de conexión o timeout, la BD está caída
 	if err != nil {
-		fmt.Printf(Red+"[Fin]"+Reset+" DB %s CAÍDA - Error de comunicación: %v\n", node.ID, err)
+		fmt.Printf(Red+"[Fin]"+Reset+" %s CAÍDA: %v\n", node.ID, err)
 		s.mu.Lock()
 		nodos_caidos_al_finalizar++
 		caidos_arreglo = append(caidos_arreglo, node.ID)
@@ -681,7 +677,7 @@ func (s *BrokerServer) informarFinADB(node Entity, timeout time.Duration) {
 
 	// Si la BD responde pero no confirma (estaba caída durante finalización)
 	if resp == nil || !resp.GetBdconfirm() {
-		fmt.Printf(Red+"[Fin]"+Reset+" DB %s CAÍDA DURANTE FINALIZACIÓN - No confirmó\n", node.ID)
+		fmt.Printf(Red+"[Fin]"+Reset+" %s CAÍDA.\n", node.ID)
 		s.mu.Lock()
 		nodos_caidos_al_finalizar++
 		caidos_arreglo = append(caidos_arreglo, node.ID)
@@ -689,7 +685,7 @@ func (s *BrokerServer) informarFinADB(node Entity, timeout time.Duration) {
 		return
 	}
 
-	fmt.Printf(Green+"[Fin]"+Reset+" DB %s confirmó finalización correctamente\n", node.ID)
+	fmt.Printf(Green+"[Fin]"+Reset+" %s confirmó finalización correctamente\n", node.ID)
 }
 
 func (s *BrokerServer) notifyFinalizationNoWaitAndPrintMetrics() {
@@ -753,12 +749,11 @@ func (s *BrokerServer) generarReporteTXT() {
 	// Escribir el reporte
 	fmt.Fprintln(file, "================= REPORTE FINAL =================")
 
-	fmt.Fprintf(file, "\nOfertas por tienda:\n")
+	fmt.Fprintf(file, "\nOfertas por tienda (Recibidas por Broker):\n")
 	fmt.Fprintf(file, "  Parisio: %d\n", ofertas_parisio)
 	fmt.Fprintf(file, "  Falabellox: %d\n", ofertas_falabellox)
 	fmt.Fprintf(file, "  Riploy: %d\n\n", ofertas_riploy)
-
-	fmt.Fprintf(file, "Escrituras totales (Suma de escrituras en cada BD): %d\n", escrituras_totales)
+	escrituras_exitosas = escrituras_exitosas - escrituras_fallidas
 	fmt.Fprintf(file, "Escrituras exitosas (W=2): %d\n", escrituras_exitosas)
 	fmt.Fprintf(file, "Escrituras fallidas (W<2): %d\n\n", escrituras_fallidas)
 
@@ -794,9 +789,6 @@ func (s *BrokerServer) generarReporteTXT() {
 	}
 	s.mu.Unlock()
 
-	// Ordenar los IDs para mejor presentación
-	//sort.Strings(consumerIDs) // Opcional: descomenta si quieres orden alfabético
-
 	for _, id := range consumerIDs {
 		ofertasRecibidas := ofertasPorConsumidor[id]
 		csvGenerado := confirmCSVConsumidor[id]
@@ -809,17 +801,11 @@ func (s *BrokerServer) generarReporteTXT() {
 
 	conclusion := ""
 
-	// Caso 1: Sistema óptimo - sin fallos y consistencia perfecta
-	if nodos_caidos_al_finalizar == 0 && escrituras_fallidas == 0 && lecturas_fallidas == 0 {
-		conclusion = "✅ SISTEMA ÓPTIMO: El sistema demostró alta disponibilidad y consistencia perfecta. " +
-			"No hubo caídas de nodos DB, todas las escrituras cumplieron W=2 y todas las lecturas R=2. " +
-			"La tolerancia a fallos funcionó correctamente y los consumidores recibieron todas sus ofertas relevantes."
-	} else if nodos_caidos_al_finalizar > 0 && escrituras_fallidas == 0 && lecturas_fallidas == 0 { // Caso 2: Sistema robusto - fallos manejados correctamente
-		conclusion = "🔄 SISTEMA ROBUSTO: El sistema mantuvo la consistencia a pesar de fallos. " +
-			fmt.Sprintf("Aunque %d nodo(s) DB cayeron temporalmente, ", nodos_caidos_al_finalizar) +
-			"las escrituras y lecturas se completaron exitosamente gracias a la replicación. " +
-			"La tolerancia a fallos funcionó según lo especificado."
-	} else if escrituras_fallidas > 0 || lecturas_fallidas > 0 { // Caso 3: Sistema con degradación controlada
+	if len(caidasPorNodo) == 0 && escrituras_fallidas == 0 && lecturas_fallidas == 0 {
+		conclusion = "NO EVIDENCIA DE TOLERANCIA A FALLOS: El sistema mantuvo la consistencia pero no se pudo evidenciar su tolerancia a fallos, ya que no se registró ninguna caída de nodos DB."
+	} else if (nodos_caidos_al_finalizar > 0 || len(caidasPorNodo) > 0) && escrituras_fallidas == 0 && lecturas_fallidas == 0 {
+		conclusion = "SISTEMA ROBUSTO Y CONSISTENTE: El sistema demostró exitosamente su Tolerancia a Fallos y Consistencia. A pesar de registrarse caída(s) temporal(es) de nodos DB, todas las operaciones de escritura y lectura fueron exitosas, lo que prueba la correcta aplicación de los quorums W=2 y R=2 para garantizar la disponibilidad y la integridad del dato."
+	} else if escrituras_fallidas > 0 || lecturas_fallidas > 0 {
 		fallos := ""
 		if escrituras_fallidas > 0 {
 			fallos += fmt.Sprintf("%d escrituras fallidas (W<2)", escrituras_fallidas)
@@ -830,24 +816,25 @@ func (s *BrokerServer) generarReporteTXT() {
 			}
 			fallos += fmt.Sprintf("%d lecturas fallidas (R<2)", lecturas_fallidas)
 		}
-
-		conclusion = "⚠️  SISTEMA CON DEGRADACIÓN: El sistema mantuvo disponibilidad pero con pérdida parcial de consistencia. " +
-			fmt.Sprintf("Se presentaron %s debido a fallos simultáneos en múltiples nodos. ", fallos) +
-			"Sin embargo, el núcleo del sistema permaneció operativo y la mayoría de operaciones se completaron exitosamente."
-	} else if nodos_caidos_al_finalizar >= 2 && (escrituras_fallidas > 0 || lecturas_fallidas > 0) { // Caso 4: Sistema crítico - múltiples fallos
-		conclusion = "❌ SISTEMA CRÍTICO: El sistema experimentó fallos significativos que afectaron la consistencia. " +
-			fmt.Sprintf("Con %d nodos DB caídos y operaciones fallidas, ", nodos_caidos_al_finalizar) +
-			"la disponibilidad se mantuvo pero la consistencia bajo reglas DynamoDB no pudo garantizarse completamente."
-	} else if len(resyncOKPorConsumidor) > 0 && escrituras_fallidas == 0 { // Caso 5: Sistema recuperado exitosamente
+		conclusion = "SISTEMA CON DEGRADACIÓN: El sistema mantuvo disponibilidad pero con pérdida parcial de consistencia. " +
+			fmt.Sprintf("Se presentaron %s debido a caídas simultáneas en múltiples nodos. ", fallos)
+		if escrituras_exitosas > escrituras_fallidas || lecturas_exitosas > lecturas_fallidas {
+			conclusion += "Sin embargo, el sistema logró permanecer operativo y la mayoría de operaciones se completaron exitosamente."
+		}
+	} else if nodos_caidos_al_finalizar >= 2 && (escrituras_fallidas > 0 || lecturas_fallidas > 0) {
+		conclusion = "SISTEMA CRÍTICO: El sistema experimentó fallos significativos que afectaron la consistencia. " +
+			"Con nodos DB caídos y operaciones fallidas, " +
+			"la disponibilidad se mantuvo pero la consistencia bajo reglas específicadas no pudo garantizarse completamente."
+	} else if len(resyncOKPorConsumidor) > 0 && lecturas_fallidas == 0 {
 		totalResync := 0
 		for _, n := range resyncOKPorConsumidor {
 			totalResync += n
 		}
-		conclusion = "🔄 SISTEMA RECUPERADO: El sistema superó fallos temporales mediante resincronización exitosa. " +
-			fmt.Sprintf("Se recuperaron %d consumidores y se mantuvo la consistencia en escrituras. ", totalResync) +
+		conclusion = "SISTEMA RECUPERADO: El sistema superó fallos temporales mediante resincronización exitosa. " +
+			fmt.Sprintf("Se recuperaron %d consumidores y se mantuvo la consistencia en lecturas. ", totalResync) +
 			"La replicación eventual funcionó correctamente para restaurar el estado del sistema."
-	} else { // Caso default para cualquier escenario no cubierto
-		conclusion = "📊 SISTEMA FUNCIONAL: El sistema operó dentro de parámetros aceptables. " +
+	} else {
+		conclusion = "SISTEMA FUNCIONAL: El sistema operó dentro de parámetros aceptables. " +
 			"Se presentaron algunos fallos pero el núcleo distributivo mantuvo operatividad. " +
 			"La consistencia se preservó en la mayoría de operaciones críticas."
 	}

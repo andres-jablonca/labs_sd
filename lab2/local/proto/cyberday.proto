@@ -84,7 +84,7 @@ service Finalizacion {
   rpc InformarFinalizacion (EndingNotify) returns (EndingConfirm); // Funcion que informa el fin del cyberday a los consumidores y dbs
 }
 
-// Mensaje que notifica si es momento de terminar y forzar que no hayan masi caidas
+// Mensaje que notifica si es momento de terminar y forzar que no hayan mas caidas
 message EndingNotify { bool fin = 1; }
 
 // Confirmaciones finalizacion por parte de BDs y Consumidores

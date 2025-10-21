@@ -1,48 +1,47 @@
-================= MÉTRICAS FINALES =================
+================= REPORTE FINAL =================
 
-Ofertas por tienda:
+Ofertas por tienda (Recibidas por Broker):
   Parisio: 25
   Falabellox: 25
   Riploy: 25
 
-Escrituras totales (Suma de escrituras en cada BD): 197
 Escrituras exitosas (W=2): 75
 Escrituras fallidas (W<2): 0
 
 Lecturas exitosas (R=2): 4
 Lecturas fallidas (R<2): 0
 
-Nodos BD caídos al finalizar: 1
-  DB2
+Nodos BD caídos al finalizar: 0
 
 Caídas por nodo DB:
-  DB2: 2
+  DB1: 1
 
 Caídas por Consumidor:
-  C3-2: 2
-  C3-1: 1
-  C1-2: 1
-  C1-4: 1
-  C1-1: 1
+  C1-2: 2
+  C3-2: 1
+  C3-3: 1
   C2-1: 1
 
 Resincronizaciones exitosas por Consumidor:
-  C1-1: 1
   C2-1: 1
+  C1-2: 1
   C3-2: 1
-  C3-1: 1
+  C3-3: 1
 
 Resumen por Consumidor:
-  C3-3: 5 ofertas recibidas. Archivo CSV generado
-  C1-2: 1 ofertas recibidas. Archivo CSV no generado
-  C1-4: 4 ofertas recibidas. Archivo CSV no generado
-  C2-4: 0 ofertas recibidas. Archivo CSV generado
-  C2-1: 14 ofertas recibidas. Archivo CSV generado
-  C3-1: 0 ofertas recibidas. Archivo CSV generado
-  C3-2: 38 ofertas recibidas. Archivo CSV no generado
-  C3-4: 1 ofertas recibidas. Archivo CSV generado
-  C1-3: 25 ofertas recibidas. Archivo CSV generado
-  C1-1: 0 ofertas recibidas. Archivo CSV generado
-  C2-2: 44 ofertas recibidas. Archivo CSV generado
-  C2-3: 0 ofertas recibidas. Archivo CSV generado
+  C2-2: 51 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C2-1: 12 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C1-4: 4 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C1-2: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV no generado
+  C3-3: 4 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C3-1: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C3-4: 1 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C2-4: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C2-3: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C1-3: 25 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C1-1: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C3-2: 46 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+
+Conlusión final:
+SISTEMA ROBUSTO Y CONSISTENTE: El sistema demostró exitosamente su Tolerancia a Fallos y Consistencia. A pesar de registrarse caída(s) temporal(es) de nodos DB, todas las operaciones de escritura y lectura fueron exitosas, lo que prueba la correcta aplicación de los quorums W=2 y R=2 para garantizar la disponibilidad y la integridad del dato.
 ==============================================================

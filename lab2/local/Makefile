@@ -24,11 +24,9 @@ docker-mv3:
 
 
 build-mv4:
-	sudo rm -rf csv_clientes
 	docker compose up --build broker 
 
 docker-mv4:
-	sudo rm -rf csv_clientes
 	docker compose up broker 
 
 

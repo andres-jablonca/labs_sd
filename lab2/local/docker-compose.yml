@@ -72,7 +72,7 @@ services:
       context: .
       dockerfile: Consumidores/Dockerfile
     container_name: Consumer-Group-1
-    command: ["/app/start-group1.sh"]
+    command: /bin/sh -c "mkdir -p /app/output && rm -rf /app/output/* && exec /app/start-group1.sh"
     ports:
       - "50071:50071"
       - "50072:50072" 
@@ -86,7 +86,7 @@ services:
       context: .
       dockerfile: Consumidores/Dockerfile
     container_name: Consumer-Group-2
-    command: ["/app/start-group2.sh"]
+    command: /bin/sh -c "mkdir -p /app/output && rm -rf /app/output/* && exec /app/start-group2.sh"
     ports:
       - "50075:50075"
       - "50076:50076"
@@ -100,7 +100,7 @@ services:
       context: .
       dockerfile: Consumidores/Dockerfile
     container_name: Consumer-Group-3
-    command: ["/app/start-group3.sh"]
+    command: /bin/sh -c "mkdir -p /app/output && rm -rf /app/output/* && exec /app/start-group3.sh"
     ports:
       - "50079:50079"
       - "50080:50080"

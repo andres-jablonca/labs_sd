@@ -202,7 +202,6 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 	for {
 		select {
 		case <-s.stopCh:
-			fmt.Printf("[%s] Daemon de fallos detenido por finalización\n", s.entityID)
 			return
 		case <-ticker.C:
 			failMu.Lock()
@@ -289,7 +288,7 @@ func (s *DBNodeServer) InformarFinalizacion(ctx context.Context, req *pb.EndingN
 	failMu.Unlock()
 
 	if failing {
-		fmt.Printf(Red+"[%s] BD CAÍDA - No puede confirmar finalización\n"+Reset, s.entityID)
+		fmt.Printf(Red+"[%s] DB CAÍDA. No puede confirmar finalización\n"+Reset, s.entityID)
 		// Programar shutdown después de responder
 		go s.ShutdownSoon()
 		return &pb.EndingConfirm{Bdconfirm: false}, nil
@@ -305,7 +304,7 @@ func (s *DBNodeServer) InformarFinalizacion(ctx context.Context, req *pb.EndingN
 	select {
 	case <-s.stopCh:
 		// Ya se estaba finalizando, probablemente se recuperó durante el proceso
-		fmt.Printf(Red+"[%s] RECUPERADO DURANTE FINALIZACIÓN - No puede confirmar\n"+Reset, s.entityID)
+		fmt.Printf(Red+"[%s] DB CAÍDA. No puede confirmar finalización\n"+Reset, s.entityID)
 		go s.ShutdownSoon()
 		return &pb.EndingConfirm{Bdconfirm: false}, nil
 	default:
@@ -321,6 +320,8 @@ func (s *DBNodeServer) InformarFinalizacion(ctx context.Context, req *pb.EndingN
 	failMu.Lock()
 	isFailing = false
 	failMu.Unlock()
+
+	fmt.Printf(Green+"[%s] Finalización confirmada.\n"+Reset, s.entityID)
 
 	// Programar shutdown después de responder exitosamente
 	go s.ShutdownSoon()

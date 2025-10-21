@@ -14,7 +14,6 @@ import (
 
 	pb "lab2/proto"
 
-	// La librería "github.com/google/uuid" ha sido removida
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -27,6 +26,22 @@ var (
 	entityID   = flag.String("id", "Riploy", "ID único de la entidad.")
 	entityPort = flag.String("port", ":50052", "Puerto local del servidor gRPC del Productor.")
 )
+
+// Categorías permitidas (match exacto tras normalización)
+var allowedCategories = map[string]struct{}{
+	"Electrónica":       {},
+	"Moda":              {},
+	"Hogar":             {},
+	"Deportes":          {},
+	"Belleza":           {},
+	"Infantil":          {},
+	"Computación":       {},
+	"Electrodomésticos": {},
+	"Herramientas":      {},
+	"Juguetes":          {},
+	"Automotriz":        {},
+	"Mascotas":          {},
+}
 
 type ProductBase struct {
 	Product   string
@@ -43,22 +58,26 @@ const (
 	Reset  = "\033[0m"
 )
 
+// Normaliza categorías: quita bullets y espacios
+func normalizeCategory(s string) string {
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "•") {
+		s = strings.TrimSpace(strings.TrimPrefix(s, "•"))
+	}
+	return s
+}
+
+func isAllowedCategory(cat string) bool {
+	_, ok := allowedCategories[normalizeCategory(cat)]
+	return ok
+}
+
 // -----------------------------------------------------------------------
 // 💡 FUNCIÓN DE GENERACIÓN DE ID SIN LIBRERÍA UUID
-// Crea un ID pseudo-único concatenando la marca de tiempo en nanosegundos
-// (que es altamente única) y un número aleatorio para mayor garantía.
 // -----------------------------------------------------------------------
 func generatePseudoUUID() string {
-	// 1. Marca de tiempo en nanosegundos (altamente única)
 	timestamp := time.Now().UnixNano()
-
-	// 2. Número aleatorio de 6 dígitos
-	// Se usa rand.Intn(1000000) para obtener un número entre 0 y 999999.
 	randomPart := rand.Intn(1000000)
-
-	// 3. Concatenar y formatear como string
-	// El formato hexadecimal es similar a un UUID y es conciso.
-	// Usamos fmt.Sprintf ya que fmt está permitido.
 	return fmt.Sprintf("%x-%x", timestamp, randomPart)
 }
 
@@ -70,8 +89,6 @@ func registerWithBroker(client pb.EntityManagementClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	// ⚠️ Importante: Corregir la dirección para usar el nombre del servicio Docker
-	// ya que "localhost" causaría "connection refused" en la red Docker.
 	dockerServiceName := strings.ToLower(*entityID)
 	addressToRegister := dockerServiceName + *entityPort
 
@@ -96,7 +113,7 @@ func registerWithBroker(client pb.EntityManagementClient) {
 
 // --- Lógica de Fase 2: Producción de Ofertas ---
 
-// loadCatalog lee el archivo CSV del catálogo.
+// loadCatalog lee el archivo CSV del catálogo y filtra por categorías permitidas.
 func loadCatalog(filename string) []ProductBase {
 	catalog := []ProductBase{}
 	fmt.Printf("Cargando catalogo desde %s...\n", filename)
@@ -127,8 +144,13 @@ func loadCatalog(filename string) []ProductBase {
 			os.Exit(1)
 		}
 
-		category := record[2]
+		category := normalizeCategory(record[2])
 		productName := record[3]
+
+		if !isAllowedCategory(category) {
+			fmt.Printf(Yellow+"[SKIP] Producto '%s' ignorado por categoría no permitida: '%s'\n"+Reset, productName, record[2])
+			continue
+		}
 
 		price, err := strconv.ParseInt(record[4], 10, 64)
 		if err != nil {
@@ -136,26 +158,30 @@ func loadCatalog(filename string) []ProductBase {
 			continue
 		}
 
-		stock, err := strconv.ParseInt(record[5], 10, 64)
+		stockParsed, err := strconv.ParseInt(record[5], 10, 64)
 		if err != nil {
 			fmt.Printf("Stock base inválido '%s' para el producto '%s'. Skipeando.\n", record[5], productName)
+			continue
+		}
+		if stockParsed <= 0 {
+			fmt.Printf("Stock base no positivo '%s' para el producto '%s'. Skipeando.\n", record[5], productName)
 			continue
 		}
 
 		catalog = append(catalog, ProductBase{
 			Product:   productName,
-			Category:  category,
+			Category:  category, // ya normalizada
 			BasePrice: price,
-			BaseStock: int32(stock),
+			BaseStock: int32(stockParsed),
 		})
 	}
 
 	if len(catalog) == 0 {
-		fmt.Printf("Catalogo vacío. No se puede seguir.\n")
+		fmt.Printf(Red + "Catálogo sin ítems válidos en categorías permitidas. Abortando.\n" + Reset)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Se cargaron %d productos desde el catalogo.\n", len(catalog))
+	fmt.Printf("Se cargaron %d productos válidos (categorías permitidas).\n", len(catalog))
 	return catalog
 }
 
@@ -165,19 +191,19 @@ func generateOffer(base ProductBase, tienda string) *pb.Offer {
 	discount := float64(rand.Intn(41)+10) / 100.0
 	newPrice := int64(float64(base.BasePrice) * (1.0 - discount))
 
-	// Stock estrictamente mayor que cero (entre 1 y 100)
+	// Stock estricto > 0 (hasta BaseStock)
 	stock := rand.Int31n(base.BaseStock) + 1
 
-	// Identificador único (sustitución de UUID)
+	// Identificador pseudo-único
 	offerID := generatePseudoUUID()
 
-	// Fecha correspondiente al momento exacto de su generación
+	// Fecha en el momento de generación
 	fecha := time.Now().Format("2006-01-02 15:04:05")
 
 	return &pb.Offer{
 		OfertaId:  offerID,
 		Tienda:    tienda,
-		Categoria: base.Category,
+		Categoria: base.Category, // ya verificada/permitida
 		Producto:  base.Product,
 		Precio:    newPrice,
 		Stock:     stock,
@@ -201,6 +227,14 @@ func startOfferProduction(catalog []ProductBase) {
 	fmt.Printf("Iniciando producción de ofertas...\n")
 	for {
 		base := catalog[r.Intn(len(catalog))]
+
+		// Seguridad adicional: si por alguna razón llegara una categoría no permitida, se salta
+		if !isAllowedCategory(base.Category) {
+			fmt.Printf(Yellow+"[SKIP-RUNTIME] Categoría '%s' no permitida para '%s'\n"+Reset, base.Category, base.Product)
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+
 		offer := generateOffer(base, *entityID)
 
 		// Enviar al Broker (Fase 2)
@@ -208,20 +242,17 @@ func startOfferProduction(catalog []ProductBase) {
 		resp1, err := client.SendOffer(ctx, offer)
 		cancel()
 		if err != nil {
-
 			fmt.Printf("Error enviando oferta %s (Broker caído?): %v\n", offer.OfertaId, err)
 		} else if resp1.Accepted {
-
-			fmt.Printf("Oferta %s de Producto **%s** con descuento de %f enviada y ACEPTADA (Precio: %d, Stock: %d)\n", offer.OfertaId, offer.Producto, offer.Descuento, offer.Precio, offer.Stock)
+			fmt.Printf("Oferta %s de Producto **%s** con descuento de %f enviada y ACEPTADA (Precio: %d, Stock: %d)\n",
+				offer.OfertaId, offer.Producto, offer.Descuento, offer.Precio, offer.Stock)
 		}
 
-		if resp1.GetTermino() {
+		if resp1 != nil && resp1.GetTermino() {
 			fmt.Printf("Cyberday Finalizado\n")
 			break
 		}
-		// Frecuencia de emisión: 2 segundos
-		delay := 2 * time.Second
-		time.Sleep(delay)
+		time.Sleep(2 * time.Second)
 	}
 }
 
@@ -229,7 +260,6 @@ func startOfferProduction(catalog []ProductBase) {
 
 func main() {
 	flag.Parse()
-
 	rand.Seed(time.Now().UnixNano())
 
 	// 1. Registro (Fase 1)
@@ -250,7 +280,6 @@ func main() {
 		if err != nil {
 			fmt.Printf("No se logró conectar con el broker: %v\n", err)
 			os.Exit(1)
-			continue
 		}
 		if resp.GetReady() {
 			fmt.Println("Broker READY. ¡Comenzando a enviar ofertas!")
@@ -265,12 +294,7 @@ func main() {
 	catalogFile := fmt.Sprintf("Productores/catalogos/%s_catalogo.csv", lowerCaseID)
 
 	catalog := loadCatalog(catalogFile)
+	startOfferProduction(catalog)
 
-	if len(catalog) > 0 {
-		startOfferProduction(catalog)
-	} else {
-		fmt.Printf("No se pudo iniciar producción: Catalogo está vacío.\n")
-		os.Exit(1)
-	}
 	fmt.Printf("%s Cerrando tienda \n", *entityID)
 }
