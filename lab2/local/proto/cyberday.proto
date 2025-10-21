@@ -5,46 +5,46 @@ option go_package = "./;cyberday";
 
 package cyberday;
 
-service EntityManagement {
-  rpc RegisterEntity (RegistrationRequest) returns (RegistrationResponse); // Funcion para registrar cualquier tipo de entidad
+service RegistroEntidades {
+  rpc RegistrarEntidad (SolicitudRegistro) returns (RespuestaRegistro); // Funcion para registrar cualquier tipo de entidad
 }
 
 // Solicitud de registro que incluye ID, Tipo y Direccion de la entidad
-message RegistrationRequest {
-  string entity_id = 1;
-  string entity_type = 2;
-  string address = 3;
+message SolicitudRegistro {
+  string id_entidad = 1;
+  string tipo_entidad = 2;
+  string direccion = 3;
 }
 
 // Resultado del registro
-message RegistrationResponse {
-  bool   success = 1;
-  string message = 2;
+message RespuestaRegistro {
+  bool   exito = 1;
+  string mensaje = 2;
 }
 
 service ConfirmarInicio {
-  rpc Confirmacion (ConfirmRequest) returns (ConfirmResponse); // Solicitud de confirmar el inicio del cyberday para que tiendas sepan si pueden empezar a enviar ofertas
+  rpc Confirmacion (SolicitudInicio) returns (RespuestaInicio); // Solicitud de confirmar el inicio del cyberday para que tiendas sepan si pueden empezar a enviar ofertas
 }
 
-message ConfirmRequest {} // Solicitud vacia
+message SolicitudInicio {} // Solicitud vacia
 
-message ConfirmResponse { bool ready = 1; } // Respuesta del broker
+message RespuestaInicio { bool listo = 1; } // Respuesta del broker
 
-service OfferSubmission {
-  rpc SendOffer (Offer) returns (OfferSubmissionResponse); // Funcion para enviar ofertas desde tiendas a broker
+service Ofertas {
+  rpc EnviarOferta (Oferta) returns (RespuestaOferta); // Funcion para enviar ofertas desde tiendas a broker
 }
 
-service DBNode {
-  rpc StoreOffer      (Offer)            returns (StoreOfferResponse); // Funcion para almacenar ofertas en las BDs
-  rpc GetOfferHistory (RecoveryRequest)  returns (RecoveryResponse); // Funcion para solicitar el historial de ofertas de las BDs
+service NodoDB {
+  rpc AlmacenarOferta      (Oferta)            returns (RespuestaAlmacenarOferta); // Funcion para almacenar ofertas en las BDs
+  rpc GetHistorialOfertas (SolicitudHistorialBD)  returns (RespuestaHistorialBD); // Funcion para solicitar el historial de ofertas de las BDs
 }
 
 service Consumer {
-  rpc ReceiveOffer    (Offer)            returns (ConsumerResponse); // Funcion para enviar ofertas alos consumidores
+  rpc RecibirOferta    (Oferta)            returns (RespuestaConsumidor); // Funcion para enviar ofertas a los consumidores
 }
 
 // Mensaje de oferta que incluye todos los atributos necesarios
-message Offer {
+message Oferta {
   string oferta_id = 1;
   string tienda = 2;
   string categoria = 3;
@@ -56,53 +56,52 @@ message Offer {
 }
 
 // Mensaje que indica si la oferta se escribio exitosamente y tambien un indicador de si el broker sigue recibiendo ofertas
-message OfferSubmissionResponse {
-  bool   accepted = 1; // True if W=2
-  string message  = 2;
+message RespuestaOferta {
+  bool   aceptado = 1; // True if W=2
+  string mensaje  = 2;
   bool   termino  = 3;
 }
 
 // Mensaje que indica si una BD almacena correctamente una oferta
-message StoreOfferResponse {
-  bool   success = 1;
-  string message = 2;
+message RespuestaAlmacenarOferta {
+  bool   exito = 1;
+  string mensaje = 2;
 }
 
 // Mensaje que solicita una resincronizacion incluyendo el id de la entidad
-message RecoveryRequest { string requesting_node_id = 1; }
+message SolicitudHistorialBD { string id_nodo = 1; }
 
 // Mensaje que incluye el historial de ofertas
-message RecoveryResponse { repeated Offer offers = 1; }
+message RespuestaHistorialBD { repeated Oferta Ofertas = 1; }
 
 // Mensaje que indica si un consumidor recibio exitosamente una oferta
-message ConsumerResponse {
-  bool   success = 1;
-  string message = 2;
+message RespuestaConsumidor {
+  bool   exito = 1;
+  string mensaje = 2;
 }
 
 service Finalizacion {
-  rpc InformarFinalizacion (EndingNotify) returns (EndingConfirm); // Funcion que informa el fin del cyberday a los consumidores y dbs
+  rpc InformarFinalizacion (NotificarFin) returns (ConfirmacionFin); // Funcion que informa el fin del cyberday a los consumidores y dbs
 }
 
 // Mensaje que notifica si es momento de terminar y forzar que no hayan mas caidas
-message EndingNotify { bool fin = 1; }
+message NotificarFin { bool fin = 1; }
 
 // Confirmaciones finalizacion por parte de BDs y Consumidores
-message EndingConfirm {
-  bool bdconfirm       = 1;
-  bool consumerconfirm = 2;
-  int32 consumeroffers = 3;
+message ConfirmacionFin {
+  bool confirmacionbd       = 1;
+  bool confirmacionconsumidor = 2;
 }
 
 service Recovery {
-  rpc GetFilteredHistory (HistoryRequest) returns (HistoryResponse); // Funcion que solicita el historial de ofertas segun preferencias
+  rpc GetHistorialFiltrado (SolicitudHistorialConsumer) returns (RespuestaHistorialConsumer); // Funcion que solicita el historial de ofertas segun preferencias
 }
 
 // Mensaje que envia el consumidor para solicitar el historico
-message HistoryRequest { string consumer_id = 1; }
+message SolicitudHistorialConsumer { string id_consumidor = 1; }
 
 // Mensaje que incluye el historico filtrado
-message HistoryResponse { repeated Offer offers = 1; }
+message RespuestaHistorialConsumer { repeated Oferta Ofertas = 1; }
 
 service Caida {
   rpc InformarCaida (FailNotify) returns (FailACK); // Funcion que informa caida de una entidad al broker, para que este mantenga un registro
@@ -111,7 +110,7 @@ service Caida {
 // Mensaje que incluye el id y tipo de entidad que reporta la caida
 message FailNotify {
   string id = 1;
-  string type = 2;
+  string tipo = 2;
 }
 
 // Mensaje de acknowledgment sobre la caida

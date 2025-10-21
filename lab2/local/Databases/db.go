@@ -18,26 +18,21 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// -------------------------------------------------------------------------
-// Config
-// -------------------------------------------------------------------------
+const direccionBroker = "broker:50095"
 
-const brokerAddress = "broker:50095"
-
+// Flags default (cambian con cada bd)
 var (
 	dbNodeID   = flag.String("id", "DB1", "ID del nodo DB (DB1|DB2|DB3)")
 	dbNodePort = flag.String("port", ":50061", "Puerto gRPC del nodo DB")
 )
 
-// -------------------------------------------------------------------------
-// Estado + servidor
-// -------------------------------------------------------------------------
-
+// Util para detectar falla
 var (
 	isFailing bool
 	failMu    sync.Mutex
 )
 
+// Colores para mayor diferenciacion en prints
 const (
 	Red    = "\033[31m"
 	Green  = "\033[32m"
@@ -46,42 +41,54 @@ const (
 	Reset  = "\033[0m"
 )
 
+// Server nodo BD
 type DBNodeServer struct {
-	pb.UnimplementedEntityManagementServer
-	pb.UnimplementedDBNodeServer
+	pb.UnimplementedNodoDBServer
 	pb.UnimplementedFinalizacionServer
-	pb.UnimplementedCaidaServer
 
 	entityID   string
 	mu         sync.RWMutex
-	data       map[string]*pb.Offer
+	data       map[string]*pb.Oferta
 	stopCh     chan struct{}
 	grpcServer *grpc.Server
 }
 
+/*
+Nombre: NewDBNodeServer
+Parámetros: id string
+Retorno: *DBNodeServer
+Descripción: Crea un server nodo DB para almacenar ofertas.
+*/
 func NewDBNodeServer(id string) *DBNodeServer {
 	return &DBNodeServer{
 		entityID: id,
-		data:     make(map[string]*pb.Offer),
+		data:     make(map[string]*pb.Oferta),
 		stopCh:   make(chan struct{}),
 	}
 }
 
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
-
-func (s *DBNodeServer) ShutdownSoon() {
+/*
+Nombre: ForzarCierre
+Parámetros: ninguno
+Retorno: ninguno
+Descripción: Detiene el servidor gRPC de manera ordenada tras un breve delay.
+*/
+func (s *DBNodeServer) ForzarCierre() {
 	go func() {
-		// Espera corta para asegurar que el EndingConfirm ya se envió
 		time.Sleep(600 * time.Millisecond)
 		if s.grpcServer != nil {
-			s.grpcServer.GracefulStop() // cierra listeners y deja terminar RPCs en curso
+			s.grpcServer.GracefulStop()
 		}
 	}()
 }
 
-func peersFor(id string) []string {
+/*
+Nombre: Peers
+Parámetros: id string
+Retorno: []string
+Descripción: Devuelve las direcciones de los nodos DB restantes.
+*/
+func Peers(id string) []string {
 	peers := []string{}
 	if id != "DB1" {
 		peers = append(peers, "db1:50061")
@@ -95,7 +102,13 @@ func peersFor(id string) []string {
 	return peers
 }
 
-func registerWithBroker(client pb.EntityManagementClient, server *DBNodeServer) {
+/*
+Nombre: RegistrarConBroker
+Parámetros: client pb.RegistroEntidadesClient, server *DBNodeServer
+Retorno: ninguno
+Descripción: Registra este nodo DB en el broker con su dirección correspondiente.
+*/
+func RegistrarConBroker(client pb.RegistroEntidadesClient, server *DBNodeServer) {
 	fmt.Println("Registrando con Broker...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -103,31 +116,37 @@ func registerWithBroker(client pb.EntityManagementClient, server *DBNodeServer) 
 	dockerServiceName := strings.ToLower(server.entityID)
 	addressToRegister := dockerServiceName + *dbNodePort
 
-	req := &pb.RegistrationRequest{
-		EntityId:   server.entityID,
-		EntityType: "DBNode",
-		Address:    addressToRegister,
+	req := &pb.SolicitudRegistro{
+		IdEntidad:   server.entityID,
+		TipoEntidad: "DBNode",
+		Direccion:   addressToRegister,
 	}
 
-	resp, err := client.RegisterEntity(ctx, req)
-	if err != nil || !resp.GetSuccess() {
+	resp, err := client.RegistrarEntidad(ctx, req)
+	if err != nil || !resp.GetExito() {
 		fmt.Printf("Registro con broker falló: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Broker respondió: %s\n", resp.GetMessage())
+	fmt.Printf("Broker respondió: %s\n", resp.GetMensaje())
 }
 
+/*
+Nombre: Resincronizar
+Parámetros: myID string, s *DBNodeServer
+Retorno: ninguno
+Descripción: Copia ofertas desde nodos hasta lograr el estado más reciente (consistencia). Indica desde quien se resincroniza y cuanta data nueva recibio.
+*/
 func Resincronizar(myID string, s *DBNodeServer) {
-	addrs := peersFor(myID)
+	addrs := Peers(myID)
 	for _, addr := range addrs {
 		fmt.Printf("[%s] Resincronizando desde %s ...\n", myID, addr)
 		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			continue
 		}
-		client := pb.NewDBNodeClient(conn)
+		client := pb.NewNodoDBClient(conn)
 		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
-		resp, err := client.GetOfferHistory(ctx, &pb.RecoveryRequest{RequestingNodeId: myID})
+		resp, err := client.GetHistorialOfertas(ctx, &pb.SolicitudHistorialBD{IdNodo: myID})
 		cancel()
 		conn.Close()
 		if err != nil || resp == nil {
@@ -136,7 +155,7 @@ func Resincronizar(myID string, s *DBNodeServer) {
 
 		added := 0
 		s.mu.Lock()
-		for _, of := range resp.GetOffers() {
+		for _, of := range resp.GetOfertas() {
 			if of == nil || of.GetOfertaId() == "" {
 				continue
 			}
@@ -147,24 +166,20 @@ func Resincronizar(myID string, s *DBNodeServer) {
 		}
 		total := len(s.data)
 		s.mu.Unlock()
-		fmt.Printf(Green+"[%s] Resincronización desde %s | Ofertas nuevas=%d | Ofertas totales=%d\n"+Reset, myID, addr, added, total)
+		fmt.Printf(Green+"[%s] Resincronización desde %s | nuevas=%d | total=%d\n"+Reset, myID, addr, added, total)
 		return
 	}
 	fmt.Printf("[%s] No se pudo resincronizar con ningún nodo\n", myID)
 }
 
-// -------------------------------------------------------------------------
-// Fallos automáticos (10% cada 25s, 15s caído)
-// -------------------------------------------------------------------------
-
-const (
-	FailureCheckInterval = 25 * time.Second
-	FailureProbability   = 0.15
-	FailureDuration      = 15 * time.Second
-)
-
+/*
+Nombre: reportarCaidaABroker
+Parámetros: ninguno
+Retorno: ninguno
+Descripción: Informa al broker que el nodo DB se encuentra caído para que este lo pueda incluir en reporte final.
+*/
 func (s *DBNodeServer) reportarCaidaABroker() {
-	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(direccionBroker, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Printf("[%s] Error conectando al broker para reportar caída: %v\n", s.entityID, err)
 		return
@@ -177,25 +192,24 @@ func (s *DBNodeServer) reportarCaidaABroker() {
 
 	req := &pb.FailNotify{
 		Id:   s.entityID,
-		Type: "DBNode",
+		Tipo: "DBNode",
 	}
 
-	resp, err := client.InformarCaida(ctx, req)
-	if err != nil {
-		fmt.Printf("[%s] Error reportando caída al broker: %v\n", s.entityID, err)
-		return
-	}
-
-	if resp.GetAck() {
-	}
+	_, _ = client.InformarCaida(ctx, req)
 }
 
+/*
+Nombre: IniciarDaemonDeFallos
+Parámetros: ninguno
+Retorno: ninguno
+Descripción: Simula fallos periódicos con cierta probabilidad y ejecuta resincronización al volver.
+*/
 func (s *DBNodeServer) IniciarDaemonDeFallos() {
-	ticker := time.NewTicker(FailureCheckInterval)
+	ticker := time.NewTicker(25 * time.Second)
 	defer ticker.Stop()
 
 	fmt.Printf("[%s] Daemon de fallos: prob=%.0f%%, caída=%s, cada=%s\n",
-		s.entityID, FailureProbability*100, FailureDuration, FailureCheckInterval)
+		s.entityID, 0.20*100, 15*time.Second, 25*time.Second)
 
 	time.Sleep(time.Duration(rand.Intn(5)+1) * time.Second)
 
@@ -210,7 +224,7 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 			if down {
 				continue
 			}
-			if rand.Float64() < FailureProbability {
+			if rand.Float64() < 0.15 {
 				go func() {
 					failMu.Lock()
 					if isFailing {
@@ -220,19 +234,17 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 					isFailing = true
 					failMu.Unlock()
 
-					fmt.Printf(Red+"[%s] CAÍDA INESPERADA... (%s)\n"+Reset, s.entityID, FailureDuration)
+					fmt.Printf(Red+"[%s] CAÍDA INESPERADA... (%s)\n"+Reset, s.entityID, 15*time.Second)
 					s.reportarCaidaABroker()
-					time.Sleep(FailureDuration)
+					time.Sleep(15 * time.Second)
 
 					failMu.Lock()
 					isFailing = false
-
-					// Verificar si hubo finalización durante la caída
 					select {
 					case <-s.stopCh:
 						fmt.Printf(Yellow+"[%s] Sistema finalizado durante la caída - omitiendo resincronización\n"+Reset, s.entityID)
 					default:
-						fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, SOLICITANDO RESINCRINIZACIÓN...\n"+Reset, s.entityID)
+						fmt.Printf(Green+"[%s] LEVANTADO NUEVAMENTE, SOLICITANDO RESINCRONIZACIÓN...\n"+Reset, s.entityID)
 						Resincronizar(s.entityID, s)
 					}
 					failMu.Unlock()
@@ -242,19 +254,21 @@ func (s *DBNodeServer) IniciarDaemonDeFallos() {
 	}
 }
 
-// -------------------------------------------------------------------------
-// Implementación servicios
-// -------------------------------------------------------------------------
-
-func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.StoreOfferResponse, error) {
+/*
+Nombre: AlmacenarOferta
+Parámetros: ctx context.Context, offer *pb.Oferta
+Retorno: (*pb.RespuestaAlmacenarOferta, error)
+Descripción: Guarda una oferta si no existe y responde éxito o fallo.
+*/
+func (s *DBNodeServer) AlmacenarOferta(ctx context.Context, offer *pb.Oferta) (*pb.RespuestaAlmacenarOferta, error) {
 	failMu.Lock()
 	failing := isFailing
 	failMu.Unlock()
 	if failing {
-		return &pb.StoreOfferResponse{Success: false, Message: s.entityID + " en fallo"}, nil
+		return &pb.RespuestaAlmacenarOferta{Exito: false, Mensaje: s.entityID + " en fallo"}, nil
 	}
 	if offer.GetOfertaId() == "" {
-		return &pb.StoreOfferResponse{Success: false, Message: "oferta_id vacío"}, nil
+		return &pb.RespuestaAlmacenarOferta{Exito: false, Mensaje: "oferta_id vacío"}, nil
 	}
 
 	s.mu.Lock()
@@ -264,54 +278,58 @@ func (s *DBNodeServer) StoreOffer(ctx context.Context, offer *pb.Offer) (*pb.Sto
 	total := len(s.data)
 	s.mu.Unlock()
 
-	fmt.Printf("[%s] Oferta %s almacenada | Ofertas totales=%d\n", s.entityID, offer.GetOfertaId(), total)
-	return &pb.StoreOfferResponse{Success: true, Message: "ok"}, nil
+	fmt.Printf("[%s] Oferta %s almacenada | total=%d\n", s.entityID, offer.GetOfertaId(), total)
+	return &pb.RespuestaAlmacenarOferta{Exito: true, Mensaje: "ok"}, nil
 }
 
-func (s *DBNodeServer) GetOfferHistory(ctx context.Context, req *pb.RecoveryRequest) (*pb.RecoveryResponse, error) {
+/*
+Nombre: GetHistorialOfertas
+Parámetros: ctx context.Context, req *pb.SolicitudHistorialBD
+Retorno: (*pb.RespuestaHistorialBD, error)
+Descripción: Retorna todas las ofertas almacenadas en este nodo.
+*/
+func (s *DBNodeServer) GetHistorialOfertas(ctx context.Context, req *pb.SolicitudHistorialBD) (*pb.RespuestaHistorialBD, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	out := make([]*pb.Offer, 0, len(s.data))
+	out := make([]*pb.Oferta, 0, len(s.data))
 	for _, of := range s.data {
 		out = append(out, of)
 	}
-	fmt.Printf("[%s] Enviando histórico a %s (%d ofertas incluidas)\n", s.entityID, req.GetRequestingNodeId(), len(out))
-	return &pb.RecoveryResponse{Offers: out}, nil
+	fmt.Printf("[%s] Enviando histórico a %s (%d ofertas)\n", s.entityID, req.GetIdNodo(), len(out))
+	return &pb.RespuestaHistorialBD{Ofertas: out}, nil
 }
 
-// Finalización: detener daemon y limpiar estado
-func (s *DBNodeServer) InformarFinalizacion(ctx context.Context, req *pb.EndingNotify) (*pb.EndingConfirm, error) {
-	// Verificar si la BD estuvo caída durante la finalización
+/*
+Nombre: InformarFinalizacion
+Parámetros: ctx context.Context, req *pb.NotificarFin
+Retorno: (*pb.ConfirmacionFin, error)
+Descripción: Confirma finalización si el nodo no está fallando y termina al nodo.
+*/
+func (s *DBNodeServer) InformarFinalizacion(ctx context.Context, req *pb.NotificarFin) (*pb.ConfirmacionFin, error) {
 	failMu.Lock()
 	failing := isFailing
 	failMu.Unlock()
 
 	if failing {
 		fmt.Printf(Red+"[%s] DB CAÍDA. No puede confirmar finalización\n"+Reset, s.entityID)
-		// Programar shutdown después de responder
-		go s.ShutdownSoon()
-		return &pb.EndingConfirm{Bdconfirm: false}, nil
+		go s.ForzarCierre()
+		return &pb.ConfirmacionFin{Confirmacionbd: false}, nil
 	}
 
 	if !req.GetFin() {
-		// Programar shutdown después de responder
-		go s.ShutdownSoon()
-		return &pb.EndingConfirm{Bdconfirm: false}, nil
+		go s.ForzarCierre()
+		return &pb.ConfirmacionFin{Confirmacionbd: false}, nil
 	}
 
-	// Verificar si la BD se recuperó muy recientemente durante la ventana de finalización
 	select {
 	case <-s.stopCh:
-		// Ya se estaba finalizando, probablemente se recuperó durante el proceso
 		fmt.Printf(Red+"[%s] DB CAÍDA. No puede confirmar finalización\n"+Reset, s.entityID)
-		go s.ShutdownSoon()
-		return &pb.EndingConfirm{Bdconfirm: false}, nil
+		go s.ForzarCierre()
+		return &pb.ConfirmacionFin{Confirmacionbd: false}, nil
 	default:
-		// Continuar con la finalización normal
 	}
 
-	// Detener daemon y limpiar estado de fallo
 	select {
 	case <-s.stopCh:
 	default:
@@ -322,31 +340,31 @@ func (s *DBNodeServer) InformarFinalizacion(ctx context.Context, req *pb.EndingN
 	failMu.Unlock()
 
 	fmt.Printf(Green+"[%s] Finalización confirmada.\n"+Reset, s.entityID)
+	go s.ForzarCierre()
 
-	// Programar shutdown después de responder exitosamente
-	go s.ShutdownSoon()
-
-	return &pb.EndingConfirm{Bdconfirm: true}, nil
+	return &pb.ConfirmacionFin{Confirmacionbd: true}, nil
 }
 
-// -------------------------------------------------------------------------
-// main
-// -------------------------------------------------------------------------
-
+/*
+Nombre: main
+Parámetros: ninguno
+Retorno: ninguno
+Descripción: Inicia el nodo DB, se registra en el broker y sirve mediante gRPC.
+*/
 func main() {
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 
 	dbServer := NewDBNodeServer(*dbNodeID)
 
-	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(direccionBroker, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Printf("No se logró conexión con broker: %v\n", err)
 		os.Exit(1)
 	}
 	defer conn.Close()
-	emClient := pb.NewEntityManagementClient(conn)
-	registerWithBroker(emClient, dbServer)
+	emClient := pb.NewRegistroEntidadesClient(conn)
+	RegistrarConBroker(emClient, dbServer)
 
 	fmt.Printf("[%s] Escuchando en %s...\n", *dbNodeID, *dbNodePort)
 	lis, err := net.Listen("tcp", *dbNodePort)
@@ -357,8 +375,7 @@ func main() {
 
 	s := grpc.NewServer()
 	dbServer.grpcServer = s
-	pb.RegisterEntityManagementServer(s, dbServer)
-	pb.RegisterDBNodeServer(s, dbServer)
+	pb.RegisterNodoDBServer(s, dbServer)
 	pb.RegisterFinalizacionServer(s, dbServer)
 	go dbServer.IniciarDaemonDeFallos()
 

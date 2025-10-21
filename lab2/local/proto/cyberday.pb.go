@@ -24,29 +24,29 @@ const (
 )
 
 // Solicitud de registro que incluye ID, Tipo y Direccion de la entidad
-type RegistrationRequest struct {
+type SolicitudRegistro struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EntityId      string                 `protobuf:"bytes,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
-	EntityType    string                 `protobuf:"bytes,2,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`
-	Address       string                 `protobuf:"bytes,3,opt,name=address,proto3" json:"address,omitempty"`
+	IdEntidad     string                 `protobuf:"bytes,1,opt,name=id_entidad,json=idEntidad,proto3" json:"id_entidad,omitempty"`
+	TipoEntidad   string                 `protobuf:"bytes,2,opt,name=tipo_entidad,json=tipoEntidad,proto3" json:"tipo_entidad,omitempty"`
+	Direccion     string                 `protobuf:"bytes,3,opt,name=direccion,proto3" json:"direccion,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RegistrationRequest) Reset() {
-	*x = RegistrationRequest{}
+func (x *SolicitudRegistro) Reset() {
+	*x = SolicitudRegistro{}
 	mi := &file_proto_cyberday_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RegistrationRequest) String() string {
+func (x *SolicitudRegistro) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegistrationRequest) ProtoMessage() {}
+func (*SolicitudRegistro) ProtoMessage() {}
 
-func (x *RegistrationRequest) ProtoReflect() protoreflect.Message {
+func (x *SolicitudRegistro) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -58,55 +58,55 @@ func (x *RegistrationRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegistrationRequest.ProtoReflect.Descriptor instead.
-func (*RegistrationRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SolicitudRegistro.ProtoReflect.Descriptor instead.
+func (*SolicitudRegistro) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *RegistrationRequest) GetEntityId() string {
+func (x *SolicitudRegistro) GetIdEntidad() string {
 	if x != nil {
-		return x.EntityId
+		return x.IdEntidad
 	}
 	return ""
 }
 
-func (x *RegistrationRequest) GetEntityType() string {
+func (x *SolicitudRegistro) GetTipoEntidad() string {
 	if x != nil {
-		return x.EntityType
+		return x.TipoEntidad
 	}
 	return ""
 }
 
-func (x *RegistrationRequest) GetAddress() string {
+func (x *SolicitudRegistro) GetDireccion() string {
 	if x != nil {
-		return x.Address
+		return x.Direccion
 	}
 	return ""
 }
 
 // Resultado del registro
-type RegistrationResponse struct {
+type RespuestaRegistro struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Exito         bool                   `protobuf:"varint,1,opt,name=exito,proto3" json:"exito,omitempty"`
+	Mensaje       string                 `protobuf:"bytes,2,opt,name=mensaje,proto3" json:"mensaje,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RegistrationResponse) Reset() {
-	*x = RegistrationResponse{}
+func (x *RespuestaRegistro) Reset() {
+	*x = RespuestaRegistro{}
 	mi := &file_proto_cyberday_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RegistrationResponse) String() string {
+func (x *RespuestaRegistro) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegistrationResponse) ProtoMessage() {}
+func (*RespuestaRegistro) ProtoMessage() {}
 
-func (x *RegistrationResponse) ProtoReflect() protoreflect.Message {
+func (x *RespuestaRegistro) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -118,45 +118,45 @@ func (x *RegistrationResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegistrationResponse.ProtoReflect.Descriptor instead.
-func (*RegistrationResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RespuestaRegistro.ProtoReflect.Descriptor instead.
+func (*RespuestaRegistro) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *RegistrationResponse) GetSuccess() bool {
+func (x *RespuestaRegistro) GetExito() bool {
 	if x != nil {
-		return x.Success
+		return x.Exito
 	}
 	return false
 }
 
-func (x *RegistrationResponse) GetMessage() string {
+func (x *RespuestaRegistro) GetMensaje() string {
 	if x != nil {
-		return x.Message
+		return x.Mensaje
 	}
 	return ""
 }
 
-type ConfirmRequest struct {
+type SolicitudInicio struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ConfirmRequest) Reset() {
-	*x = ConfirmRequest{}
+func (x *SolicitudInicio) Reset() {
+	*x = SolicitudInicio{}
 	mi := &file_proto_cyberday_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ConfirmRequest) String() string {
+func (x *SolicitudInicio) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ConfirmRequest) ProtoMessage() {}
+func (*SolicitudInicio) ProtoMessage() {}
 
-func (x *ConfirmRequest) ProtoReflect() protoreflect.Message {
+func (x *SolicitudInicio) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -168,32 +168,32 @@ func (x *ConfirmRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ConfirmRequest.ProtoReflect.Descriptor instead.
-func (*ConfirmRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SolicitudInicio.ProtoReflect.Descriptor instead.
+func (*SolicitudInicio) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{2}
 }
 
-type ConfirmResponse struct {
+type RespuestaInicio struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ready         bool                   `protobuf:"varint,1,opt,name=ready,proto3" json:"ready,omitempty"`
+	Listo         bool                   `protobuf:"varint,1,opt,name=listo,proto3" json:"listo,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ConfirmResponse) Reset() {
-	*x = ConfirmResponse{}
+func (x *RespuestaInicio) Reset() {
+	*x = RespuestaInicio{}
 	mi := &file_proto_cyberday_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ConfirmResponse) String() string {
+func (x *RespuestaInicio) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ConfirmResponse) ProtoMessage() {}
+func (*RespuestaInicio) ProtoMessage() {}
 
-func (x *ConfirmResponse) ProtoReflect() protoreflect.Message {
+func (x *RespuestaInicio) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -205,20 +205,20 @@ func (x *ConfirmResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ConfirmResponse.ProtoReflect.Descriptor instead.
-func (*ConfirmResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RespuestaInicio.ProtoReflect.Descriptor instead.
+func (*RespuestaInicio) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ConfirmResponse) GetReady() bool {
+func (x *RespuestaInicio) GetListo() bool {
 	if x != nil {
-		return x.Ready
+		return x.Listo
 	}
 	return false
 }
 
 // Mensaje de oferta que incluye todos los atributos necesarios
-type Offer struct {
+type Oferta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OfertaId      string                 `protobuf:"bytes,1,opt,name=oferta_id,json=ofertaId,proto3" json:"oferta_id,omitempty"`
 	Tienda        string                 `protobuf:"bytes,2,opt,name=tienda,proto3" json:"tienda,omitempty"`
@@ -232,20 +232,20 @@ type Offer struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Offer) Reset() {
-	*x = Offer{}
+func (x *Oferta) Reset() {
+	*x = Oferta{}
 	mi := &file_proto_cyberday_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Offer) String() string {
+func (x *Oferta) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Offer) ProtoMessage() {}
+func (*Oferta) ProtoMessage() {}
 
-func (x *Offer) ProtoReflect() protoreflect.Message {
+func (x *Oferta) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -257,61 +257,61 @@ func (x *Offer) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Offer.ProtoReflect.Descriptor instead.
-func (*Offer) Descriptor() ([]byte, []int) {
+// Deprecated: Use Oferta.ProtoReflect.Descriptor instead.
+func (*Oferta) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *Offer) GetOfertaId() string {
+func (x *Oferta) GetOfertaId() string {
 	if x != nil {
 		return x.OfertaId
 	}
 	return ""
 }
 
-func (x *Offer) GetTienda() string {
+func (x *Oferta) GetTienda() string {
 	if x != nil {
 		return x.Tienda
 	}
 	return ""
 }
 
-func (x *Offer) GetCategoria() string {
+func (x *Oferta) GetCategoria() string {
 	if x != nil {
 		return x.Categoria
 	}
 	return ""
 }
 
-func (x *Offer) GetProducto() string {
+func (x *Oferta) GetProducto() string {
 	if x != nil {
 		return x.Producto
 	}
 	return ""
 }
 
-func (x *Offer) GetPrecio() int64 {
+func (x *Oferta) GetPrecio() int64 {
 	if x != nil {
 		return x.Precio
 	}
 	return 0
 }
 
-func (x *Offer) GetStock() int32 {
+func (x *Oferta) GetStock() int32 {
 	if x != nil {
 		return x.Stock
 	}
 	return 0
 }
 
-func (x *Offer) GetFecha() string {
+func (x *Oferta) GetFecha() string {
 	if x != nil {
 		return x.Fecha
 	}
 	return ""
 }
 
-func (x *Offer) GetDescuento() float32 {
+func (x *Oferta) GetDescuento() float32 {
 	if x != nil {
 		return x.Descuento
 	}
@@ -319,29 +319,29 @@ func (x *Offer) GetDescuento() float32 {
 }
 
 // Mensaje que indica si la oferta se escribio exitosamente y tambien un indicador de si el broker sigue recibiendo ofertas
-type OfferSubmissionResponse struct {
+type RespuestaOferta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Accepted      bool                   `protobuf:"varint,1,opt,name=accepted,proto3" json:"accepted,omitempty"` // True if W=2
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Aceptado      bool                   `protobuf:"varint,1,opt,name=aceptado,proto3" json:"aceptado,omitempty"` // True if W=2
+	Mensaje       string                 `protobuf:"bytes,2,opt,name=mensaje,proto3" json:"mensaje,omitempty"`
 	Termino       bool                   `protobuf:"varint,3,opt,name=termino,proto3" json:"termino,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OfferSubmissionResponse) Reset() {
-	*x = OfferSubmissionResponse{}
+func (x *RespuestaOferta) Reset() {
+	*x = RespuestaOferta{}
 	mi := &file_proto_cyberday_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OfferSubmissionResponse) String() string {
+func (x *RespuestaOferta) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OfferSubmissionResponse) ProtoMessage() {}
+func (*RespuestaOferta) ProtoMessage() {}
 
-func (x *OfferSubmissionResponse) ProtoReflect() protoreflect.Message {
+func (x *RespuestaOferta) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -353,26 +353,26 @@ func (x *OfferSubmissionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OfferSubmissionResponse.ProtoReflect.Descriptor instead.
-func (*OfferSubmissionResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RespuestaOferta.ProtoReflect.Descriptor instead.
+func (*RespuestaOferta) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *OfferSubmissionResponse) GetAccepted() bool {
+func (x *RespuestaOferta) GetAceptado() bool {
 	if x != nil {
-		return x.Accepted
+		return x.Aceptado
 	}
 	return false
 }
 
-func (x *OfferSubmissionResponse) GetMessage() string {
+func (x *RespuestaOferta) GetMensaje() string {
 	if x != nil {
-		return x.Message
+		return x.Mensaje
 	}
 	return ""
 }
 
-func (x *OfferSubmissionResponse) GetTermino() bool {
+func (x *RespuestaOferta) GetTermino() bool {
 	if x != nil {
 		return x.Termino
 	}
@@ -380,28 +380,28 @@ func (x *OfferSubmissionResponse) GetTermino() bool {
 }
 
 // Mensaje que indica si una BD almacena correctamente una oferta
-type StoreOfferResponse struct {
+type RespuestaAlmacenarOferta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Exito         bool                   `protobuf:"varint,1,opt,name=exito,proto3" json:"exito,omitempty"`
+	Mensaje       string                 `protobuf:"bytes,2,opt,name=mensaje,proto3" json:"mensaje,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *StoreOfferResponse) Reset() {
-	*x = StoreOfferResponse{}
+func (x *RespuestaAlmacenarOferta) Reset() {
+	*x = RespuestaAlmacenarOferta{}
 	mi := &file_proto_cyberday_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StoreOfferResponse) String() string {
+func (x *RespuestaAlmacenarOferta) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StoreOfferResponse) ProtoMessage() {}
+func (*RespuestaAlmacenarOferta) ProtoMessage() {}
 
-func (x *StoreOfferResponse) ProtoReflect() protoreflect.Message {
+func (x *RespuestaAlmacenarOferta) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -413,47 +413,47 @@ func (x *StoreOfferResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StoreOfferResponse.ProtoReflect.Descriptor instead.
-func (*StoreOfferResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RespuestaAlmacenarOferta.ProtoReflect.Descriptor instead.
+func (*RespuestaAlmacenarOferta) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *StoreOfferResponse) GetSuccess() bool {
+func (x *RespuestaAlmacenarOferta) GetExito() bool {
 	if x != nil {
-		return x.Success
+		return x.Exito
 	}
 	return false
 }
 
-func (x *StoreOfferResponse) GetMessage() string {
+func (x *RespuestaAlmacenarOferta) GetMensaje() string {
 	if x != nil {
-		return x.Message
+		return x.Mensaje
 	}
 	return ""
 }
 
 // Mensaje que solicita una resincronizacion incluyendo el id de la entidad
-type RecoveryRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	RequestingNodeId string                 `protobuf:"bytes,1,opt,name=requesting_node_id,json=requestingNodeId,proto3" json:"requesting_node_id,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+type SolicitudHistorialBD struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IdNodo        string                 `protobuf:"bytes,1,opt,name=id_nodo,json=idNodo,proto3" json:"id_nodo,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RecoveryRequest) Reset() {
-	*x = RecoveryRequest{}
+func (x *SolicitudHistorialBD) Reset() {
+	*x = SolicitudHistorialBD{}
 	mi := &file_proto_cyberday_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RecoveryRequest) String() string {
+func (x *SolicitudHistorialBD) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RecoveryRequest) ProtoMessage() {}
+func (*SolicitudHistorialBD) ProtoMessage() {}
 
-func (x *RecoveryRequest) ProtoReflect() protoreflect.Message {
+func (x *SolicitudHistorialBD) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -465,40 +465,40 @@ func (x *RecoveryRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RecoveryRequest.ProtoReflect.Descriptor instead.
-func (*RecoveryRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SolicitudHistorialBD.ProtoReflect.Descriptor instead.
+func (*SolicitudHistorialBD) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *RecoveryRequest) GetRequestingNodeId() string {
+func (x *SolicitudHistorialBD) GetIdNodo() string {
 	if x != nil {
-		return x.RequestingNodeId
+		return x.IdNodo
 	}
 	return ""
 }
 
 // Mensaje que incluye el historial de ofertas
-type RecoveryResponse struct {
+type RespuestaHistorialBD struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Offers        []*Offer               `protobuf:"bytes,1,rep,name=offers,proto3" json:"offers,omitempty"`
+	Ofertas       []*Oferta              `protobuf:"bytes,1,rep,name=Ofertas,proto3" json:"Ofertas,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RecoveryResponse) Reset() {
-	*x = RecoveryResponse{}
+func (x *RespuestaHistorialBD) Reset() {
+	*x = RespuestaHistorialBD{}
 	mi := &file_proto_cyberday_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RecoveryResponse) String() string {
+func (x *RespuestaHistorialBD) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RecoveryResponse) ProtoMessage() {}
+func (*RespuestaHistorialBD) ProtoMessage() {}
 
-func (x *RecoveryResponse) ProtoReflect() protoreflect.Message {
+func (x *RespuestaHistorialBD) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -510,41 +510,41 @@ func (x *RecoveryResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RecoveryResponse.ProtoReflect.Descriptor instead.
-func (*RecoveryResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RespuestaHistorialBD.ProtoReflect.Descriptor instead.
+func (*RespuestaHistorialBD) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *RecoveryResponse) GetOffers() []*Offer {
+func (x *RespuestaHistorialBD) GetOfertas() []*Oferta {
 	if x != nil {
-		return x.Offers
+		return x.Ofertas
 	}
 	return nil
 }
 
 // Mensaje que indica si un consumidor recibio exitosamente una oferta
-type ConsumerResponse struct {
+type RespuestaConsumidor struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Exito         bool                   `protobuf:"varint,1,opt,name=exito,proto3" json:"exito,omitempty"`
+	Mensaje       string                 `protobuf:"bytes,2,opt,name=mensaje,proto3" json:"mensaje,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ConsumerResponse) Reset() {
-	*x = ConsumerResponse{}
+func (x *RespuestaConsumidor) Reset() {
+	*x = RespuestaConsumidor{}
 	mi := &file_proto_cyberday_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ConsumerResponse) String() string {
+func (x *RespuestaConsumidor) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ConsumerResponse) ProtoMessage() {}
+func (*RespuestaConsumidor) ProtoMessage() {}
 
-func (x *ConsumerResponse) ProtoReflect() protoreflect.Message {
+func (x *RespuestaConsumidor) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -556,47 +556,47 @@ func (x *ConsumerResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ConsumerResponse.ProtoReflect.Descriptor instead.
-func (*ConsumerResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RespuestaConsumidor.ProtoReflect.Descriptor instead.
+func (*RespuestaConsumidor) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *ConsumerResponse) GetSuccess() bool {
+func (x *RespuestaConsumidor) GetExito() bool {
 	if x != nil {
-		return x.Success
+		return x.Exito
 	}
 	return false
 }
 
-func (x *ConsumerResponse) GetMessage() string {
+func (x *RespuestaConsumidor) GetMensaje() string {
 	if x != nil {
-		return x.Message
+		return x.Mensaje
 	}
 	return ""
 }
 
-// Mensaje que notifica si es momento de terminar y forzar que no hayan masi caidas
-type EndingNotify struct {
+// Mensaje que notifica si es momento de terminar y forzar que no hayan mas caidas
+type NotificarFin struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Fin           bool                   `protobuf:"varint,1,opt,name=fin,proto3" json:"fin,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EndingNotify) Reset() {
-	*x = EndingNotify{}
+func (x *NotificarFin) Reset() {
+	*x = NotificarFin{}
 	mi := &file_proto_cyberday_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EndingNotify) String() string {
+func (x *NotificarFin) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EndingNotify) ProtoMessage() {}
+func (*NotificarFin) ProtoMessage() {}
 
-func (x *EndingNotify) ProtoReflect() protoreflect.Message {
+func (x *NotificarFin) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -608,12 +608,12 @@ func (x *EndingNotify) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EndingNotify.ProtoReflect.Descriptor instead.
-func (*EndingNotify) Descriptor() ([]byte, []int) {
+// Deprecated: Use NotificarFin.ProtoReflect.Descriptor instead.
+func (*NotificarFin) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *EndingNotify) GetFin() bool {
+func (x *NotificarFin) GetFin() bool {
 	if x != nil {
 		return x.Fin
 	}
@@ -621,29 +621,28 @@ func (x *EndingNotify) GetFin() bool {
 }
 
 // Confirmaciones finalizacion por parte de BDs y Consumidores
-type EndingConfirm struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Bdconfirm       bool                   `protobuf:"varint,1,opt,name=bdconfirm,proto3" json:"bdconfirm,omitempty"`
-	Consumerconfirm bool                   `protobuf:"varint,2,opt,name=consumerconfirm,proto3" json:"consumerconfirm,omitempty"`
-	Consumeroffers  int32                  `protobuf:"varint,3,opt,name=consumeroffers,proto3" json:"consumeroffers,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+type ConfirmacionFin struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	Confirmacionbd         bool                   `protobuf:"varint,1,opt,name=confirmacionbd,proto3" json:"confirmacionbd,omitempty"`
+	Confirmacionconsumidor bool                   `protobuf:"varint,2,opt,name=confirmacionconsumidor,proto3" json:"confirmacionconsumidor,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
-func (x *EndingConfirm) Reset() {
-	*x = EndingConfirm{}
+func (x *ConfirmacionFin) Reset() {
+	*x = ConfirmacionFin{}
 	mi := &file_proto_cyberday_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EndingConfirm) String() string {
+func (x *ConfirmacionFin) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EndingConfirm) ProtoMessage() {}
+func (*ConfirmacionFin) ProtoMessage() {}
 
-func (x *EndingConfirm) ProtoReflect() protoreflect.Message {
+func (x *ConfirmacionFin) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -655,54 +654,47 @@ func (x *EndingConfirm) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EndingConfirm.ProtoReflect.Descriptor instead.
-func (*EndingConfirm) Descriptor() ([]byte, []int) {
+// Deprecated: Use ConfirmacionFin.ProtoReflect.Descriptor instead.
+func (*ConfirmacionFin) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *EndingConfirm) GetBdconfirm() bool {
+func (x *ConfirmacionFin) GetConfirmacionbd() bool {
 	if x != nil {
-		return x.Bdconfirm
+		return x.Confirmacionbd
 	}
 	return false
 }
 
-func (x *EndingConfirm) GetConsumerconfirm() bool {
+func (x *ConfirmacionFin) GetConfirmacionconsumidor() bool {
 	if x != nil {
-		return x.Consumerconfirm
+		return x.Confirmacionconsumidor
 	}
 	return false
-}
-
-func (x *EndingConfirm) GetConsumeroffers() int32 {
-	if x != nil {
-		return x.Consumeroffers
-	}
-	return 0
 }
 
 // Mensaje que envia el consumidor para solicitar el historico
-type HistoryRequest struct {
+type SolicitudHistorialConsumer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ConsumerId    string                 `protobuf:"bytes,1,opt,name=consumer_id,json=consumerId,proto3" json:"consumer_id,omitempty"`
+	IdConsumidor  string                 `protobuf:"bytes,1,opt,name=id_consumidor,json=idConsumidor,proto3" json:"id_consumidor,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HistoryRequest) Reset() {
-	*x = HistoryRequest{}
+func (x *SolicitudHistorialConsumer) Reset() {
+	*x = SolicitudHistorialConsumer{}
 	mi := &file_proto_cyberday_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HistoryRequest) String() string {
+func (x *SolicitudHistorialConsumer) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HistoryRequest) ProtoMessage() {}
+func (*SolicitudHistorialConsumer) ProtoMessage() {}
 
-func (x *HistoryRequest) ProtoReflect() protoreflect.Message {
+func (x *SolicitudHistorialConsumer) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -714,40 +706,40 @@ func (x *HistoryRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HistoryRequest.ProtoReflect.Descriptor instead.
-func (*HistoryRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SolicitudHistorialConsumer.ProtoReflect.Descriptor instead.
+func (*SolicitudHistorialConsumer) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *HistoryRequest) GetConsumerId() string {
+func (x *SolicitudHistorialConsumer) GetIdConsumidor() string {
 	if x != nil {
-		return x.ConsumerId
+		return x.IdConsumidor
 	}
 	return ""
 }
 
 // Mensaje que incluye el historico filtrado
-type HistoryResponse struct {
+type RespuestaHistorialConsumer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Offers        []*Offer               `protobuf:"bytes,1,rep,name=offers,proto3" json:"offers,omitempty"`
+	Ofertas       []*Oferta              `protobuf:"bytes,1,rep,name=Ofertas,proto3" json:"Ofertas,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HistoryResponse) Reset() {
-	*x = HistoryResponse{}
+func (x *RespuestaHistorialConsumer) Reset() {
+	*x = RespuestaHistorialConsumer{}
 	mi := &file_proto_cyberday_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HistoryResponse) String() string {
+func (x *RespuestaHistorialConsumer) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HistoryResponse) ProtoMessage() {}
+func (*RespuestaHistorialConsumer) ProtoMessage() {}
 
-func (x *HistoryResponse) ProtoReflect() protoreflect.Message {
+func (x *RespuestaHistorialConsumer) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_cyberday_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -759,14 +751,14 @@ func (x *HistoryResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HistoryResponse.ProtoReflect.Descriptor instead.
-func (*HistoryResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RespuestaHistorialConsumer.ProtoReflect.Descriptor instead.
+func (*RespuestaHistorialConsumer) Descriptor() ([]byte, []int) {
 	return file_proto_cyberday_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *HistoryResponse) GetOffers() []*Offer {
+func (x *RespuestaHistorialConsumer) GetOfertas() []*Oferta {
 	if x != nil {
-		return x.Offers
+		return x.Ofertas
 	}
 	return nil
 }
@@ -775,7 +767,7 @@ func (x *HistoryResponse) GetOffers() []*Offer {
 type FailNotify struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Tipo          string                 `protobuf:"bytes,2,opt,name=tipo,proto3" json:"tipo,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -817,9 +809,9 @@ func (x *FailNotify) GetId() string {
 	return ""
 }
 
-func (x *FailNotify) GetType() string {
+func (x *FailNotify) GetTipo() string {
 	if x != nil {
-		return x.Type
+		return x.Tipo
 	}
 	return ""
 }
@@ -873,19 +865,19 @@ var File_proto_cyberday_proto protoreflect.FileDescriptor
 
 const file_proto_cyberday_proto_rawDesc = "" +
 	"\n" +
-	"\x14proto/cyberday.proto\x12\bcyberday\"m\n" +
-	"\x13RegistrationRequest\x12\x1b\n" +
-	"\tentity_id\x18\x01 \x01(\tR\bentityId\x12\x1f\n" +
-	"\ventity_type\x18\x02 \x01(\tR\n" +
-	"entityType\x12\x18\n" +
-	"\aaddress\x18\x03 \x01(\tR\aaddress\"J\n" +
-	"\x14RegistrationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"\x10\n" +
-	"\x0eConfirmRequest\"'\n" +
-	"\x0fConfirmResponse\x12\x14\n" +
-	"\x05ready\x18\x01 \x01(\bR\x05ready\"\xd8\x01\n" +
-	"\x05Offer\x12\x1b\n" +
+	"\x14proto/cyberday.proto\x12\bcyberday\"s\n" +
+	"\x11SolicitudRegistro\x12\x1d\n" +
+	"\n" +
+	"id_entidad\x18\x01 \x01(\tR\tidEntidad\x12!\n" +
+	"\ftipo_entidad\x18\x02 \x01(\tR\vtipoEntidad\x12\x1c\n" +
+	"\tdireccion\x18\x03 \x01(\tR\tdireccion\"C\n" +
+	"\x11RespuestaRegistro\x12\x14\n" +
+	"\x05exito\x18\x01 \x01(\bR\x05exito\x12\x18\n" +
+	"\amensaje\x18\x02 \x01(\tR\amensaje\"\x11\n" +
+	"\x0fSolicitudInicio\"'\n" +
+	"\x0fRespuestaInicio\x12\x14\n" +
+	"\x05listo\x18\x01 \x01(\bR\x05listo\"\xd9\x01\n" +
+	"\x06Oferta\x12\x1b\n" +
 	"\toferta_id\x18\x01 \x01(\tR\bofertaId\x12\x16\n" +
 	"\x06tienda\x18\x02 \x01(\tR\x06tienda\x12\x1c\n" +
 	"\tcategoria\x18\x03 \x01(\tR\tcategoria\x12\x1a\n" +
@@ -893,54 +885,51 @@ const file_proto_cyberday_proto_rawDesc = "" +
 	"\x06precio\x18\x05 \x01(\x03R\x06precio\x12\x14\n" +
 	"\x05stock\x18\x06 \x01(\x05R\x05stock\x12\x14\n" +
 	"\x05fecha\x18\a \x01(\tR\x05fecha\x12\x1c\n" +
-	"\tdescuento\x18\b \x01(\x02R\tdescuento\"i\n" +
-	"\x17OfferSubmissionResponse\x12\x1a\n" +
-	"\baccepted\x18\x01 \x01(\bR\baccepted\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\x12\x18\n" +
-	"\atermino\x18\x03 \x01(\bR\atermino\"H\n" +
-	"\x12StoreOfferResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"?\n" +
-	"\x0fRecoveryRequest\x12,\n" +
-	"\x12requesting_node_id\x18\x01 \x01(\tR\x10requestingNodeId\";\n" +
-	"\x10RecoveryResponse\x12'\n" +
-	"\x06offers\x18\x01 \x03(\v2\x0f.cyberday.OfferR\x06offers\"F\n" +
-	"\x10ConsumerResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\" \n" +
-	"\fEndingNotify\x12\x10\n" +
-	"\x03fin\x18\x01 \x01(\bR\x03fin\"\x7f\n" +
-	"\rEndingConfirm\x12\x1c\n" +
-	"\tbdconfirm\x18\x01 \x01(\bR\tbdconfirm\x12(\n" +
-	"\x0fconsumerconfirm\x18\x02 \x01(\bR\x0fconsumerconfirm\x12&\n" +
-	"\x0econsumeroffers\x18\x03 \x01(\x05R\x0econsumeroffers\"1\n" +
-	"\x0eHistoryRequest\x12\x1f\n" +
-	"\vconsumer_id\x18\x01 \x01(\tR\n" +
-	"consumerId\":\n" +
-	"\x0fHistoryResponse\x12'\n" +
-	"\x06offers\x18\x01 \x03(\v2\x0f.cyberday.OfferR\x06offers\"0\n" +
+	"\tdescuento\x18\b \x01(\x02R\tdescuento\"a\n" +
+	"\x0fRespuestaOferta\x12\x1a\n" +
+	"\baceptado\x18\x01 \x01(\bR\baceptado\x12\x18\n" +
+	"\amensaje\x18\x02 \x01(\tR\amensaje\x12\x18\n" +
+	"\atermino\x18\x03 \x01(\bR\atermino\"J\n" +
+	"\x18RespuestaAlmacenarOferta\x12\x14\n" +
+	"\x05exito\x18\x01 \x01(\bR\x05exito\x12\x18\n" +
+	"\amensaje\x18\x02 \x01(\tR\amensaje\"/\n" +
+	"\x14SolicitudHistorialBD\x12\x17\n" +
+	"\aid_nodo\x18\x01 \x01(\tR\x06idNodo\"B\n" +
+	"\x14RespuestaHistorialBD\x12*\n" +
+	"\aOfertas\x18\x01 \x03(\v2\x10.cyberday.OfertaR\aOfertas\"E\n" +
+	"\x13RespuestaConsumidor\x12\x14\n" +
+	"\x05exito\x18\x01 \x01(\bR\x05exito\x12\x18\n" +
+	"\amensaje\x18\x02 \x01(\tR\amensaje\" \n" +
+	"\fNotificarFin\x12\x10\n" +
+	"\x03fin\x18\x01 \x01(\bR\x03fin\"q\n" +
+	"\x0fConfirmacionFin\x12&\n" +
+	"\x0econfirmacionbd\x18\x01 \x01(\bR\x0econfirmacionbd\x126\n" +
+	"\x16confirmacionconsumidor\x18\x02 \x01(\bR\x16confirmacionconsumidor\"A\n" +
+	"\x1aSolicitudHistorialConsumer\x12#\n" +
+	"\rid_consumidor\x18\x01 \x01(\tR\fidConsumidor\"H\n" +
+	"\x1aRespuestaHistorialConsumer\x12*\n" +
+	"\aOfertas\x18\x01 \x03(\v2\x10.cyberday.OfertaR\aOfertas\"0\n" +
 	"\n" +
 	"FailNotify\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04type\x18\x02 \x01(\tR\x04type\"\x1b\n" +
+	"\x04tipo\x18\x02 \x01(\tR\x04tipo\"\x1b\n" +
 	"\aFailACK\x12\x10\n" +
-	"\x03ack\x18\x01 \x01(\bR\x03ack2c\n" +
-	"\x10EntityManagement\x12O\n" +
-	"\x0eRegisterEntity\x12\x1d.cyberday.RegistrationRequest\x1a\x1e.cyberday.RegistrationResponse2V\n" +
-	"\x0fConfirmarInicio\x12C\n" +
-	"\fConfirmacion\x12\x18.cyberday.ConfirmRequest\x1a\x19.cyberday.ConfirmResponse2R\n" +
-	"\x0fOfferSubmission\x12?\n" +
-	"\tSendOffer\x12\x0f.cyberday.Offer\x1a!.cyberday.OfferSubmissionResponse2\x8f\x01\n" +
-	"\x06DBNode\x12;\n" +
-	"\n" +
-	"StoreOffer\x12\x0f.cyberday.Offer\x1a\x1c.cyberday.StoreOfferResponse\x12H\n" +
-	"\x0fGetOfferHistory\x12\x19.cyberday.RecoveryRequest\x1a\x1a.cyberday.RecoveryResponse2G\n" +
-	"\bConsumer\x12;\n" +
-	"\fReceiveOffer\x12\x0f.cyberday.Offer\x1a\x1a.cyberday.ConsumerResponse2W\n" +
-	"\fFinalizacion\x12G\n" +
-	"\x14InformarFinalizacion\x12\x16.cyberday.EndingNotify\x1a\x17.cyberday.EndingConfirm2U\n" +
-	"\bRecovery\x12I\n" +
-	"\x12GetFilteredHistory\x12\x18.cyberday.HistoryRequest\x1a\x19.cyberday.HistoryResponse2A\n" +
+	"\x03ack\x18\x01 \x01(\bR\x03ack2a\n" +
+	"\x11RegistroEntidades\x12L\n" +
+	"\x10RegistrarEntidad\x12\x1b.cyberday.SolicitudRegistro\x1a\x1b.cyberday.RespuestaRegistro2W\n" +
+	"\x0fConfirmarInicio\x12D\n" +
+	"\fConfirmacion\x12\x19.cyberday.SolicitudInicio\x1a\x19.cyberday.RespuestaInicio2F\n" +
+	"\aOfertas\x12;\n" +
+	"\fEnviarOferta\x12\x10.cyberday.Oferta\x1a\x19.cyberday.RespuestaOferta2\xa8\x01\n" +
+	"\x06NodoDB\x12G\n" +
+	"\x0fAlmacenarOferta\x12\x10.cyberday.Oferta\x1a\".cyberday.RespuestaAlmacenarOferta\x12U\n" +
+	"\x13GetHistorialOfertas\x12\x1e.cyberday.SolicitudHistorialBD\x1a\x1e.cyberday.RespuestaHistorialBD2L\n" +
+	"\bConsumer\x12@\n" +
+	"\rRecibirOferta\x12\x10.cyberday.Oferta\x1a\x1d.cyberday.RespuestaConsumidor2Y\n" +
+	"\fFinalizacion\x12I\n" +
+	"\x14InformarFinalizacion\x12\x16.cyberday.NotificarFin\x1a\x19.cyberday.ConfirmacionFin2n\n" +
+	"\bRecovery\x12b\n" +
+	"\x14GetHistorialFiltrado\x12$.cyberday.SolicitudHistorialConsumer\x1a$.cyberday.RespuestaHistorialConsumer2A\n" +
 	"\x05Caida\x128\n" +
 	"\rInformarCaida\x12\x14.cyberday.FailNotify\x1a\x11.cyberday.FailACKB\rZ\v./;cyberdayb\x06proto3"
 
@@ -958,43 +947,43 @@ func file_proto_cyberday_proto_rawDescGZIP() []byte {
 
 var file_proto_cyberday_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_proto_cyberday_proto_goTypes = []any{
-	(*RegistrationRequest)(nil),     // 0: cyberday.RegistrationRequest
-	(*RegistrationResponse)(nil),    // 1: cyberday.RegistrationResponse
-	(*ConfirmRequest)(nil),          // 2: cyberday.ConfirmRequest
-	(*ConfirmResponse)(nil),         // 3: cyberday.ConfirmResponse
-	(*Offer)(nil),                   // 4: cyberday.Offer
-	(*OfferSubmissionResponse)(nil), // 5: cyberday.OfferSubmissionResponse
-	(*StoreOfferResponse)(nil),      // 6: cyberday.StoreOfferResponse
-	(*RecoveryRequest)(nil),         // 7: cyberday.RecoveryRequest
-	(*RecoveryResponse)(nil),        // 8: cyberday.RecoveryResponse
-	(*ConsumerResponse)(nil),        // 9: cyberday.ConsumerResponse
-	(*EndingNotify)(nil),            // 10: cyberday.EndingNotify
-	(*EndingConfirm)(nil),           // 11: cyberday.EndingConfirm
-	(*HistoryRequest)(nil),          // 12: cyberday.HistoryRequest
-	(*HistoryResponse)(nil),         // 13: cyberday.HistoryResponse
-	(*FailNotify)(nil),              // 14: cyberday.FailNotify
-	(*FailACK)(nil),                 // 15: cyberday.FailACK
+	(*SolicitudRegistro)(nil),          // 0: cyberday.SolicitudRegistro
+	(*RespuestaRegistro)(nil),          // 1: cyberday.RespuestaRegistro
+	(*SolicitudInicio)(nil),            // 2: cyberday.SolicitudInicio
+	(*RespuestaInicio)(nil),            // 3: cyberday.RespuestaInicio
+	(*Oferta)(nil),                     // 4: cyberday.Oferta
+	(*RespuestaOferta)(nil),            // 5: cyberday.RespuestaOferta
+	(*RespuestaAlmacenarOferta)(nil),   // 6: cyberday.RespuestaAlmacenarOferta
+	(*SolicitudHistorialBD)(nil),       // 7: cyberday.SolicitudHistorialBD
+	(*RespuestaHistorialBD)(nil),       // 8: cyberday.RespuestaHistorialBD
+	(*RespuestaConsumidor)(nil),        // 9: cyberday.RespuestaConsumidor
+	(*NotificarFin)(nil),               // 10: cyberday.NotificarFin
+	(*ConfirmacionFin)(nil),            // 11: cyberday.ConfirmacionFin
+	(*SolicitudHistorialConsumer)(nil), // 12: cyberday.SolicitudHistorialConsumer
+	(*RespuestaHistorialConsumer)(nil), // 13: cyberday.RespuestaHistorialConsumer
+	(*FailNotify)(nil),                 // 14: cyberday.FailNotify
+	(*FailACK)(nil),                    // 15: cyberday.FailACK
 }
 var file_proto_cyberday_proto_depIdxs = []int32{
-	4,  // 0: cyberday.RecoveryResponse.offers:type_name -> cyberday.Offer
-	4,  // 1: cyberday.HistoryResponse.offers:type_name -> cyberday.Offer
-	0,  // 2: cyberday.EntityManagement.RegisterEntity:input_type -> cyberday.RegistrationRequest
-	2,  // 3: cyberday.ConfirmarInicio.Confirmacion:input_type -> cyberday.ConfirmRequest
-	4,  // 4: cyberday.OfferSubmission.SendOffer:input_type -> cyberday.Offer
-	4,  // 5: cyberday.DBNode.StoreOffer:input_type -> cyberday.Offer
-	7,  // 6: cyberday.DBNode.GetOfferHistory:input_type -> cyberday.RecoveryRequest
-	4,  // 7: cyberday.Consumer.ReceiveOffer:input_type -> cyberday.Offer
-	10, // 8: cyberday.Finalizacion.InformarFinalizacion:input_type -> cyberday.EndingNotify
-	12, // 9: cyberday.Recovery.GetFilteredHistory:input_type -> cyberday.HistoryRequest
+	4,  // 0: cyberday.RespuestaHistorialBD.Ofertas:type_name -> cyberday.Oferta
+	4,  // 1: cyberday.RespuestaHistorialConsumer.Ofertas:type_name -> cyberday.Oferta
+	0,  // 2: cyberday.RegistroEntidades.RegistrarEntidad:input_type -> cyberday.SolicitudRegistro
+	2,  // 3: cyberday.ConfirmarInicio.Confirmacion:input_type -> cyberday.SolicitudInicio
+	4,  // 4: cyberday.Ofertas.EnviarOferta:input_type -> cyberday.Oferta
+	4,  // 5: cyberday.NodoDB.AlmacenarOferta:input_type -> cyberday.Oferta
+	7,  // 6: cyberday.NodoDB.GetHistorialOfertas:input_type -> cyberday.SolicitudHistorialBD
+	4,  // 7: cyberday.Consumer.RecibirOferta:input_type -> cyberday.Oferta
+	10, // 8: cyberday.Finalizacion.InformarFinalizacion:input_type -> cyberday.NotificarFin
+	12, // 9: cyberday.Recovery.GetHistorialFiltrado:input_type -> cyberday.SolicitudHistorialConsumer
 	14, // 10: cyberday.Caida.InformarCaida:input_type -> cyberday.FailNotify
-	1,  // 11: cyberday.EntityManagement.RegisterEntity:output_type -> cyberday.RegistrationResponse
-	3,  // 12: cyberday.ConfirmarInicio.Confirmacion:output_type -> cyberday.ConfirmResponse
-	5,  // 13: cyberday.OfferSubmission.SendOffer:output_type -> cyberday.OfferSubmissionResponse
-	6,  // 14: cyberday.DBNode.StoreOffer:output_type -> cyberday.StoreOfferResponse
-	8,  // 15: cyberday.DBNode.GetOfferHistory:output_type -> cyberday.RecoveryResponse
-	9,  // 16: cyberday.Consumer.ReceiveOffer:output_type -> cyberday.ConsumerResponse
-	11, // 17: cyberday.Finalizacion.InformarFinalizacion:output_type -> cyberday.EndingConfirm
-	13, // 18: cyberday.Recovery.GetFilteredHistory:output_type -> cyberday.HistoryResponse
+	1,  // 11: cyberday.RegistroEntidades.RegistrarEntidad:output_type -> cyberday.RespuestaRegistro
+	3,  // 12: cyberday.ConfirmarInicio.Confirmacion:output_type -> cyberday.RespuestaInicio
+	5,  // 13: cyberday.Ofertas.EnviarOferta:output_type -> cyberday.RespuestaOferta
+	6,  // 14: cyberday.NodoDB.AlmacenarOferta:output_type -> cyberday.RespuestaAlmacenarOferta
+	8,  // 15: cyberday.NodoDB.GetHistorialOfertas:output_type -> cyberday.RespuestaHistorialBD
+	9,  // 16: cyberday.Consumer.RecibirOferta:output_type -> cyberday.RespuestaConsumidor
+	11, // 17: cyberday.Finalizacion.InformarFinalizacion:output_type -> cyberday.ConfirmacionFin
+	13, // 18: cyberday.Recovery.GetHistorialFiltrado:output_type -> cyberday.RespuestaHistorialConsumer
 	15, // 19: cyberday.Caida.InformarCaida:output_type -> cyberday.FailACK
 	11, // [11:20] is the sub-list for method output_type
 	2,  // [2:11] is the sub-list for method input_type

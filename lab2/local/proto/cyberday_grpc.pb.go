@@ -21,101 +21,101 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	EntityManagement_RegisterEntity_FullMethodName = "/cyberday.EntityManagement/RegisterEntity"
+	RegistroEntidades_RegistrarEntidad_FullMethodName = "/cyberday.RegistroEntidades/RegistrarEntidad"
 )
 
-// EntityManagementClient is the client API for EntityManagement service.
+// RegistroEntidadesClient is the client API for RegistroEntidades service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type EntityManagementClient interface {
-	RegisterEntity(ctx context.Context, in *RegistrationRequest, opts ...grpc.CallOption) (*RegistrationResponse, error)
+type RegistroEntidadesClient interface {
+	RegistrarEntidad(ctx context.Context, in *SolicitudRegistro, opts ...grpc.CallOption) (*RespuestaRegistro, error)
 }
 
-type entityManagementClient struct {
+type registroEntidadesClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewEntityManagementClient(cc grpc.ClientConnInterface) EntityManagementClient {
-	return &entityManagementClient{cc}
+func NewRegistroEntidadesClient(cc grpc.ClientConnInterface) RegistroEntidadesClient {
+	return &registroEntidadesClient{cc}
 }
 
-func (c *entityManagementClient) RegisterEntity(ctx context.Context, in *RegistrationRequest, opts ...grpc.CallOption) (*RegistrationResponse, error) {
+func (c *registroEntidadesClient) RegistrarEntidad(ctx context.Context, in *SolicitudRegistro, opts ...grpc.CallOption) (*RespuestaRegistro, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RegistrationResponse)
-	err := c.cc.Invoke(ctx, EntityManagement_RegisterEntity_FullMethodName, in, out, cOpts...)
+	out := new(RespuestaRegistro)
+	err := c.cc.Invoke(ctx, RegistroEntidades_RegistrarEntidad_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// EntityManagementServer is the server API for EntityManagement service.
-// All implementations must embed UnimplementedEntityManagementServer
+// RegistroEntidadesServer is the server API for RegistroEntidades service.
+// All implementations must embed UnimplementedRegistroEntidadesServer
 // for forward compatibility.
-type EntityManagementServer interface {
-	RegisterEntity(context.Context, *RegistrationRequest) (*RegistrationResponse, error)
-	mustEmbedUnimplementedEntityManagementServer()
+type RegistroEntidadesServer interface {
+	RegistrarEntidad(context.Context, *SolicitudRegistro) (*RespuestaRegistro, error)
+	mustEmbedUnimplementedRegistroEntidadesServer()
 }
 
-// UnimplementedEntityManagementServer must be embedded to have
+// UnimplementedRegistroEntidadesServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedEntityManagementServer struct{}
+type UnimplementedRegistroEntidadesServer struct{}
 
-func (UnimplementedEntityManagementServer) RegisterEntity(context.Context, *RegistrationRequest) (*RegistrationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegisterEntity not implemented")
+func (UnimplementedRegistroEntidadesServer) RegistrarEntidad(context.Context, *SolicitudRegistro) (*RespuestaRegistro, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegistrarEntidad not implemented")
 }
-func (UnimplementedEntityManagementServer) mustEmbedUnimplementedEntityManagementServer() {}
-func (UnimplementedEntityManagementServer) testEmbeddedByValue()                          {}
+func (UnimplementedRegistroEntidadesServer) mustEmbedUnimplementedRegistroEntidadesServer() {}
+func (UnimplementedRegistroEntidadesServer) testEmbeddedByValue()                           {}
 
-// UnsafeEntityManagementServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to EntityManagementServer will
+// UnsafeRegistroEntidadesServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RegistroEntidadesServer will
 // result in compilation errors.
-type UnsafeEntityManagementServer interface {
-	mustEmbedUnimplementedEntityManagementServer()
+type UnsafeRegistroEntidadesServer interface {
+	mustEmbedUnimplementedRegistroEntidadesServer()
 }
 
-func RegisterEntityManagementServer(s grpc.ServiceRegistrar, srv EntityManagementServer) {
-	// If the following call pancis, it indicates UnimplementedEntityManagementServer was
+func RegisterRegistroEntidadesServer(s grpc.ServiceRegistrar, srv RegistroEntidadesServer) {
+	// If the following call pancis, it indicates UnimplementedRegistroEntidadesServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&EntityManagement_ServiceDesc, srv)
+	s.RegisterService(&RegistroEntidades_ServiceDesc, srv)
 }
 
-func _EntityManagement_RegisterEntity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegistrationRequest)
+func _RegistroEntidades_RegistrarEntidad_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SolicitudRegistro)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EntityManagementServer).RegisterEntity(ctx, in)
+		return srv.(RegistroEntidadesServer).RegistrarEntidad(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EntityManagement_RegisterEntity_FullMethodName,
+		FullMethod: RegistroEntidades_RegistrarEntidad_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EntityManagementServer).RegisterEntity(ctx, req.(*RegistrationRequest))
+		return srv.(RegistroEntidadesServer).RegistrarEntidad(ctx, req.(*SolicitudRegistro))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// EntityManagement_ServiceDesc is the grpc.ServiceDesc for EntityManagement service.
+// RegistroEntidades_ServiceDesc is the grpc.ServiceDesc for RegistroEntidades service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var EntityManagement_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cyberday.EntityManagement",
-	HandlerType: (*EntityManagementServer)(nil),
+var RegistroEntidades_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "cyberday.RegistroEntidades",
+	HandlerType: (*RegistroEntidadesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "RegisterEntity",
-			Handler:    _EntityManagement_RegisterEntity_Handler,
+			MethodName: "RegistrarEntidad",
+			Handler:    _RegistroEntidades_RegistrarEntidad_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -130,7 +130,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConfirmarInicioClient interface {
-	Confirmacion(ctx context.Context, in *ConfirmRequest, opts ...grpc.CallOption) (*ConfirmResponse, error)
+	Confirmacion(ctx context.Context, in *SolicitudInicio, opts ...grpc.CallOption) (*RespuestaInicio, error)
 }
 
 type confirmarInicioClient struct {
@@ -141,9 +141,9 @@ func NewConfirmarInicioClient(cc grpc.ClientConnInterface) ConfirmarInicioClient
 	return &confirmarInicioClient{cc}
 }
 
-func (c *confirmarInicioClient) Confirmacion(ctx context.Context, in *ConfirmRequest, opts ...grpc.CallOption) (*ConfirmResponse, error) {
+func (c *confirmarInicioClient) Confirmacion(ctx context.Context, in *SolicitudInicio, opts ...grpc.CallOption) (*RespuestaInicio, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ConfirmResponse)
+	out := new(RespuestaInicio)
 	err := c.cc.Invoke(ctx, ConfirmarInicio_Confirmacion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ func (c *confirmarInicioClient) Confirmacion(ctx context.Context, in *ConfirmReq
 // All implementations must embed UnimplementedConfirmarInicioServer
 // for forward compatibility.
 type ConfirmarInicioServer interface {
-	Confirmacion(context.Context, *ConfirmRequest) (*ConfirmResponse, error)
+	Confirmacion(context.Context, *SolicitudInicio) (*RespuestaInicio, error)
 	mustEmbedUnimplementedConfirmarInicioServer()
 }
 
@@ -166,7 +166,7 @@ type ConfirmarInicioServer interface {
 // pointer dereference when methods are called.
 type UnimplementedConfirmarInicioServer struct{}
 
-func (UnimplementedConfirmarInicioServer) Confirmacion(context.Context, *ConfirmRequest) (*ConfirmResponse, error) {
+func (UnimplementedConfirmarInicioServer) Confirmacion(context.Context, *SolicitudInicio) (*RespuestaInicio, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Confirmacion not implemented")
 }
 func (UnimplementedConfirmarInicioServer) mustEmbedUnimplementedConfirmarInicioServer() {}
@@ -191,7 +191,7 @@ func RegisterConfirmarInicioServer(s grpc.ServiceRegistrar, srv ConfirmarInicioS
 }
 
 func _ConfirmarInicio_Confirmacion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConfirmRequest)
+	in := new(SolicitudInicio)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func _ConfirmarInicio_Confirmacion_Handler(srv interface{}, ctx context.Context,
 		FullMethod: ConfirmarInicio_Confirmacion_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfirmarInicioServer).Confirmacion(ctx, req.(*ConfirmRequest))
+		return srv.(ConfirmarInicioServer).Confirmacion(ctx, req.(*SolicitudInicio))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -225,101 +225,101 @@ var ConfirmarInicio_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	OfferSubmission_SendOffer_FullMethodName = "/cyberday.OfferSubmission/SendOffer"
+	Ofertas_EnviarOferta_FullMethodName = "/cyberday.Ofertas/EnviarOferta"
 )
 
-// OfferSubmissionClient is the client API for OfferSubmission service.
+// OfertasClient is the client API for Ofertas service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type OfferSubmissionClient interface {
-	SendOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*OfferSubmissionResponse, error)
+type OfertasClient interface {
+	EnviarOferta(ctx context.Context, in *Oferta, opts ...grpc.CallOption) (*RespuestaOferta, error)
 }
 
-type offerSubmissionClient struct {
+type ofertasClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewOfferSubmissionClient(cc grpc.ClientConnInterface) OfferSubmissionClient {
-	return &offerSubmissionClient{cc}
+func NewOfertasClient(cc grpc.ClientConnInterface) OfertasClient {
+	return &ofertasClient{cc}
 }
 
-func (c *offerSubmissionClient) SendOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*OfferSubmissionResponse, error) {
+func (c *ofertasClient) EnviarOferta(ctx context.Context, in *Oferta, opts ...grpc.CallOption) (*RespuestaOferta, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OfferSubmissionResponse)
-	err := c.cc.Invoke(ctx, OfferSubmission_SendOffer_FullMethodName, in, out, cOpts...)
+	out := new(RespuestaOferta)
+	err := c.cc.Invoke(ctx, Ofertas_EnviarOferta_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// OfferSubmissionServer is the server API for OfferSubmission service.
-// All implementations must embed UnimplementedOfferSubmissionServer
+// OfertasServer is the server API for Ofertas service.
+// All implementations must embed UnimplementedOfertasServer
 // for forward compatibility.
-type OfferSubmissionServer interface {
-	SendOffer(context.Context, *Offer) (*OfferSubmissionResponse, error)
-	mustEmbedUnimplementedOfferSubmissionServer()
+type OfertasServer interface {
+	EnviarOferta(context.Context, *Oferta) (*RespuestaOferta, error)
+	mustEmbedUnimplementedOfertasServer()
 }
 
-// UnimplementedOfferSubmissionServer must be embedded to have
+// UnimplementedOfertasServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedOfferSubmissionServer struct{}
+type UnimplementedOfertasServer struct{}
 
-func (UnimplementedOfferSubmissionServer) SendOffer(context.Context, *Offer) (*OfferSubmissionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendOffer not implemented")
+func (UnimplementedOfertasServer) EnviarOferta(context.Context, *Oferta) (*RespuestaOferta, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnviarOferta not implemented")
 }
-func (UnimplementedOfferSubmissionServer) mustEmbedUnimplementedOfferSubmissionServer() {}
-func (UnimplementedOfferSubmissionServer) testEmbeddedByValue()                         {}
+func (UnimplementedOfertasServer) mustEmbedUnimplementedOfertasServer() {}
+func (UnimplementedOfertasServer) testEmbeddedByValue()                 {}
 
-// UnsafeOfferSubmissionServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to OfferSubmissionServer will
+// UnsafeOfertasServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to OfertasServer will
 // result in compilation errors.
-type UnsafeOfferSubmissionServer interface {
-	mustEmbedUnimplementedOfferSubmissionServer()
+type UnsafeOfertasServer interface {
+	mustEmbedUnimplementedOfertasServer()
 }
 
-func RegisterOfferSubmissionServer(s grpc.ServiceRegistrar, srv OfferSubmissionServer) {
-	// If the following call pancis, it indicates UnimplementedOfferSubmissionServer was
+func RegisterOfertasServer(s grpc.ServiceRegistrar, srv OfertasServer) {
+	// If the following call pancis, it indicates UnimplementedOfertasServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&OfferSubmission_ServiceDesc, srv)
+	s.RegisterService(&Ofertas_ServiceDesc, srv)
 }
 
-func _OfferSubmission_SendOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Offer)
+func _Ofertas_EnviarOferta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Oferta)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OfferSubmissionServer).SendOffer(ctx, in)
+		return srv.(OfertasServer).EnviarOferta(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: OfferSubmission_SendOffer_FullMethodName,
+		FullMethod: Ofertas_EnviarOferta_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OfferSubmissionServer).SendOffer(ctx, req.(*Offer))
+		return srv.(OfertasServer).EnviarOferta(ctx, req.(*Oferta))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// OfferSubmission_ServiceDesc is the grpc.ServiceDesc for OfferSubmission service.
+// Ofertas_ServiceDesc is the grpc.ServiceDesc for Ofertas service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var OfferSubmission_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cyberday.OfferSubmission",
-	HandlerType: (*OfferSubmissionServer)(nil),
+var Ofertas_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "cyberday.Ofertas",
+	HandlerType: (*OfertasServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SendOffer",
-			Handler:    _OfferSubmission_SendOffer_Handler,
+			MethodName: "EnviarOferta",
+			Handler:    _Ofertas_EnviarOferta_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -327,139 +327,139 @@ var OfferSubmission_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	DBNode_StoreOffer_FullMethodName      = "/cyberday.DBNode/StoreOffer"
-	DBNode_GetOfferHistory_FullMethodName = "/cyberday.DBNode/GetOfferHistory"
+	NodoDB_AlmacenarOferta_FullMethodName     = "/cyberday.NodoDB/AlmacenarOferta"
+	NodoDB_GetHistorialOfertas_FullMethodName = "/cyberday.NodoDB/GetHistorialOfertas"
 )
 
-// DBNodeClient is the client API for DBNode service.
+// NodoDBClient is the client API for NodoDB service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type DBNodeClient interface {
-	StoreOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*StoreOfferResponse, error)
-	GetOfferHistory(ctx context.Context, in *RecoveryRequest, opts ...grpc.CallOption) (*RecoveryResponse, error)
+type NodoDBClient interface {
+	AlmacenarOferta(ctx context.Context, in *Oferta, opts ...grpc.CallOption) (*RespuestaAlmacenarOferta, error)
+	GetHistorialOfertas(ctx context.Context, in *SolicitudHistorialBD, opts ...grpc.CallOption) (*RespuestaHistorialBD, error)
 }
 
-type dBNodeClient struct {
+type nodoDBClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewDBNodeClient(cc grpc.ClientConnInterface) DBNodeClient {
-	return &dBNodeClient{cc}
+func NewNodoDBClient(cc grpc.ClientConnInterface) NodoDBClient {
+	return &nodoDBClient{cc}
 }
 
-func (c *dBNodeClient) StoreOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*StoreOfferResponse, error) {
+func (c *nodoDBClient) AlmacenarOferta(ctx context.Context, in *Oferta, opts ...grpc.CallOption) (*RespuestaAlmacenarOferta, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StoreOfferResponse)
-	err := c.cc.Invoke(ctx, DBNode_StoreOffer_FullMethodName, in, out, cOpts...)
+	out := new(RespuestaAlmacenarOferta)
+	err := c.cc.Invoke(ctx, NodoDB_AlmacenarOferta_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *dBNodeClient) GetOfferHistory(ctx context.Context, in *RecoveryRequest, opts ...grpc.CallOption) (*RecoveryResponse, error) {
+func (c *nodoDBClient) GetHistorialOfertas(ctx context.Context, in *SolicitudHistorialBD, opts ...grpc.CallOption) (*RespuestaHistorialBD, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RecoveryResponse)
-	err := c.cc.Invoke(ctx, DBNode_GetOfferHistory_FullMethodName, in, out, cOpts...)
+	out := new(RespuestaHistorialBD)
+	err := c.cc.Invoke(ctx, NodoDB_GetHistorialOfertas_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// DBNodeServer is the server API for DBNode service.
-// All implementations must embed UnimplementedDBNodeServer
+// NodoDBServer is the server API for NodoDB service.
+// All implementations must embed UnimplementedNodoDBServer
 // for forward compatibility.
-type DBNodeServer interface {
-	StoreOffer(context.Context, *Offer) (*StoreOfferResponse, error)
-	GetOfferHistory(context.Context, *RecoveryRequest) (*RecoveryResponse, error)
-	mustEmbedUnimplementedDBNodeServer()
+type NodoDBServer interface {
+	AlmacenarOferta(context.Context, *Oferta) (*RespuestaAlmacenarOferta, error)
+	GetHistorialOfertas(context.Context, *SolicitudHistorialBD) (*RespuestaHistorialBD, error)
+	mustEmbedUnimplementedNodoDBServer()
 }
 
-// UnimplementedDBNodeServer must be embedded to have
+// UnimplementedNodoDBServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedDBNodeServer struct{}
+type UnimplementedNodoDBServer struct{}
 
-func (UnimplementedDBNodeServer) StoreOffer(context.Context, *Offer) (*StoreOfferResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StoreOffer not implemented")
+func (UnimplementedNodoDBServer) AlmacenarOferta(context.Context, *Oferta) (*RespuestaAlmacenarOferta, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AlmacenarOferta not implemented")
 }
-func (UnimplementedDBNodeServer) GetOfferHistory(context.Context, *RecoveryRequest) (*RecoveryResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetOfferHistory not implemented")
+func (UnimplementedNodoDBServer) GetHistorialOfertas(context.Context, *SolicitudHistorialBD) (*RespuestaHistorialBD, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHistorialOfertas not implemented")
 }
-func (UnimplementedDBNodeServer) mustEmbedUnimplementedDBNodeServer() {}
-func (UnimplementedDBNodeServer) testEmbeddedByValue()                {}
+func (UnimplementedNodoDBServer) mustEmbedUnimplementedNodoDBServer() {}
+func (UnimplementedNodoDBServer) testEmbeddedByValue()                {}
 
-// UnsafeDBNodeServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to DBNodeServer will
+// UnsafeNodoDBServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to NodoDBServer will
 // result in compilation errors.
-type UnsafeDBNodeServer interface {
-	mustEmbedUnimplementedDBNodeServer()
+type UnsafeNodoDBServer interface {
+	mustEmbedUnimplementedNodoDBServer()
 }
 
-func RegisterDBNodeServer(s grpc.ServiceRegistrar, srv DBNodeServer) {
-	// If the following call pancis, it indicates UnimplementedDBNodeServer was
+func RegisterNodoDBServer(s grpc.ServiceRegistrar, srv NodoDBServer) {
+	// If the following call pancis, it indicates UnimplementedNodoDBServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&DBNode_ServiceDesc, srv)
+	s.RegisterService(&NodoDB_ServiceDesc, srv)
 }
 
-func _DBNode_StoreOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Offer)
+func _NodoDB_AlmacenarOferta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Oferta)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DBNodeServer).StoreOffer(ctx, in)
+		return srv.(NodoDBServer).AlmacenarOferta(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: DBNode_StoreOffer_FullMethodName,
+		FullMethod: NodoDB_AlmacenarOferta_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DBNodeServer).StoreOffer(ctx, req.(*Offer))
+		return srv.(NodoDBServer).AlmacenarOferta(ctx, req.(*Oferta))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DBNode_GetOfferHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RecoveryRequest)
+func _NodoDB_GetHistorialOfertas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SolicitudHistorialBD)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DBNodeServer).GetOfferHistory(ctx, in)
+		return srv.(NodoDBServer).GetHistorialOfertas(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: DBNode_GetOfferHistory_FullMethodName,
+		FullMethod: NodoDB_GetHistorialOfertas_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DBNodeServer).GetOfferHistory(ctx, req.(*RecoveryRequest))
+		return srv.(NodoDBServer).GetHistorialOfertas(ctx, req.(*SolicitudHistorialBD))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// DBNode_ServiceDesc is the grpc.ServiceDesc for DBNode service.
+// NodoDB_ServiceDesc is the grpc.ServiceDesc for NodoDB service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var DBNode_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cyberday.DBNode",
-	HandlerType: (*DBNodeServer)(nil),
+var NodoDB_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "cyberday.NodoDB",
+	HandlerType: (*NodoDBServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "StoreOffer",
-			Handler:    _DBNode_StoreOffer_Handler,
+			MethodName: "AlmacenarOferta",
+			Handler:    _NodoDB_AlmacenarOferta_Handler,
 		},
 		{
-			MethodName: "GetOfferHistory",
-			Handler:    _DBNode_GetOfferHistory_Handler,
+			MethodName: "GetHistorialOfertas",
+			Handler:    _NodoDB_GetHistorialOfertas_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -467,14 +467,14 @@ var DBNode_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Consumer_ReceiveOffer_FullMethodName = "/cyberday.Consumer/ReceiveOffer"
+	Consumer_RecibirOferta_FullMethodName = "/cyberday.Consumer/RecibirOferta"
 )
 
 // ConsumerClient is the client API for Consumer service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConsumerClient interface {
-	ReceiveOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*ConsumerResponse, error)
+	RecibirOferta(ctx context.Context, in *Oferta, opts ...grpc.CallOption) (*RespuestaConsumidor, error)
 }
 
 type consumerClient struct {
@@ -485,10 +485,10 @@ func NewConsumerClient(cc grpc.ClientConnInterface) ConsumerClient {
 	return &consumerClient{cc}
 }
 
-func (c *consumerClient) ReceiveOffer(ctx context.Context, in *Offer, opts ...grpc.CallOption) (*ConsumerResponse, error) {
+func (c *consumerClient) RecibirOferta(ctx context.Context, in *Oferta, opts ...grpc.CallOption) (*RespuestaConsumidor, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ConsumerResponse)
-	err := c.cc.Invoke(ctx, Consumer_ReceiveOffer_FullMethodName, in, out, cOpts...)
+	out := new(RespuestaConsumidor)
+	err := c.cc.Invoke(ctx, Consumer_RecibirOferta_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -499,7 +499,7 @@ func (c *consumerClient) ReceiveOffer(ctx context.Context, in *Offer, opts ...gr
 // All implementations must embed UnimplementedConsumerServer
 // for forward compatibility.
 type ConsumerServer interface {
-	ReceiveOffer(context.Context, *Offer) (*ConsumerResponse, error)
+	RecibirOferta(context.Context, *Oferta) (*RespuestaConsumidor, error)
 	mustEmbedUnimplementedConsumerServer()
 }
 
@@ -510,8 +510,8 @@ type ConsumerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedConsumerServer struct{}
 
-func (UnimplementedConsumerServer) ReceiveOffer(context.Context, *Offer) (*ConsumerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReceiveOffer not implemented")
+func (UnimplementedConsumerServer) RecibirOferta(context.Context, *Oferta) (*RespuestaConsumidor, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecibirOferta not implemented")
 }
 func (UnimplementedConsumerServer) mustEmbedUnimplementedConsumerServer() {}
 func (UnimplementedConsumerServer) testEmbeddedByValue()                  {}
@@ -534,20 +534,20 @@ func RegisterConsumerServer(s grpc.ServiceRegistrar, srv ConsumerServer) {
 	s.RegisterService(&Consumer_ServiceDesc, srv)
 }
 
-func _Consumer_ReceiveOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Offer)
+func _Consumer_RecibirOferta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Oferta)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConsumerServer).ReceiveOffer(ctx, in)
+		return srv.(ConsumerServer).RecibirOferta(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Consumer_ReceiveOffer_FullMethodName,
+		FullMethod: Consumer_RecibirOferta_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConsumerServer).ReceiveOffer(ctx, req.(*Offer))
+		return srv.(ConsumerServer).RecibirOferta(ctx, req.(*Oferta))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -560,8 +560,8 @@ var Consumer_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ConsumerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ReceiveOffer",
-			Handler:    _Consumer_ReceiveOffer_Handler,
+			MethodName: "RecibirOferta",
+			Handler:    _Consumer_RecibirOferta_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -576,7 +576,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FinalizacionClient interface {
-	InformarFinalizacion(ctx context.Context, in *EndingNotify, opts ...grpc.CallOption) (*EndingConfirm, error)
+	InformarFinalizacion(ctx context.Context, in *NotificarFin, opts ...grpc.CallOption) (*ConfirmacionFin, error)
 }
 
 type finalizacionClient struct {
@@ -587,9 +587,9 @@ func NewFinalizacionClient(cc grpc.ClientConnInterface) FinalizacionClient {
 	return &finalizacionClient{cc}
 }
 
-func (c *finalizacionClient) InformarFinalizacion(ctx context.Context, in *EndingNotify, opts ...grpc.CallOption) (*EndingConfirm, error) {
+func (c *finalizacionClient) InformarFinalizacion(ctx context.Context, in *NotificarFin, opts ...grpc.CallOption) (*ConfirmacionFin, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EndingConfirm)
+	out := new(ConfirmacionFin)
 	err := c.cc.Invoke(ctx, Finalizacion_InformarFinalizacion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -601,7 +601,7 @@ func (c *finalizacionClient) InformarFinalizacion(ctx context.Context, in *Endin
 // All implementations must embed UnimplementedFinalizacionServer
 // for forward compatibility.
 type FinalizacionServer interface {
-	InformarFinalizacion(context.Context, *EndingNotify) (*EndingConfirm, error)
+	InformarFinalizacion(context.Context, *NotificarFin) (*ConfirmacionFin, error)
 	mustEmbedUnimplementedFinalizacionServer()
 }
 
@@ -612,7 +612,7 @@ type FinalizacionServer interface {
 // pointer dereference when methods are called.
 type UnimplementedFinalizacionServer struct{}
 
-func (UnimplementedFinalizacionServer) InformarFinalizacion(context.Context, *EndingNotify) (*EndingConfirm, error) {
+func (UnimplementedFinalizacionServer) InformarFinalizacion(context.Context, *NotificarFin) (*ConfirmacionFin, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InformarFinalizacion not implemented")
 }
 func (UnimplementedFinalizacionServer) mustEmbedUnimplementedFinalizacionServer() {}
@@ -637,7 +637,7 @@ func RegisterFinalizacionServer(s grpc.ServiceRegistrar, srv FinalizacionServer)
 }
 
 func _Finalizacion_InformarFinalizacion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EndingNotify)
+	in := new(NotificarFin)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -649,7 +649,7 @@ func _Finalizacion_InformarFinalizacion_Handler(srv interface{}, ctx context.Con
 		FullMethod: Finalizacion_InformarFinalizacion_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FinalizacionServer).InformarFinalizacion(ctx, req.(*EndingNotify))
+		return srv.(FinalizacionServer).InformarFinalizacion(ctx, req.(*NotificarFin))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -671,14 +671,14 @@ var Finalizacion_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Recovery_GetFilteredHistory_FullMethodName = "/cyberday.Recovery/GetFilteredHistory"
+	Recovery_GetHistorialFiltrado_FullMethodName = "/cyberday.Recovery/GetHistorialFiltrado"
 )
 
 // RecoveryClient is the client API for Recovery service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RecoveryClient interface {
-	GetFilteredHistory(ctx context.Context, in *HistoryRequest, opts ...grpc.CallOption) (*HistoryResponse, error)
+	GetHistorialFiltrado(ctx context.Context, in *SolicitudHistorialConsumer, opts ...grpc.CallOption) (*RespuestaHistorialConsumer, error)
 }
 
 type recoveryClient struct {
@@ -689,10 +689,10 @@ func NewRecoveryClient(cc grpc.ClientConnInterface) RecoveryClient {
 	return &recoveryClient{cc}
 }
 
-func (c *recoveryClient) GetFilteredHistory(ctx context.Context, in *HistoryRequest, opts ...grpc.CallOption) (*HistoryResponse, error) {
+func (c *recoveryClient) GetHistorialFiltrado(ctx context.Context, in *SolicitudHistorialConsumer, opts ...grpc.CallOption) (*RespuestaHistorialConsumer, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HistoryResponse)
-	err := c.cc.Invoke(ctx, Recovery_GetFilteredHistory_FullMethodName, in, out, cOpts...)
+	out := new(RespuestaHistorialConsumer)
+	err := c.cc.Invoke(ctx, Recovery_GetHistorialFiltrado_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -703,7 +703,7 @@ func (c *recoveryClient) GetFilteredHistory(ctx context.Context, in *HistoryRequ
 // All implementations must embed UnimplementedRecoveryServer
 // for forward compatibility.
 type RecoveryServer interface {
-	GetFilteredHistory(context.Context, *HistoryRequest) (*HistoryResponse, error)
+	GetHistorialFiltrado(context.Context, *SolicitudHistorialConsumer) (*RespuestaHistorialConsumer, error)
 	mustEmbedUnimplementedRecoveryServer()
 }
 
@@ -714,8 +714,8 @@ type RecoveryServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRecoveryServer struct{}
 
-func (UnimplementedRecoveryServer) GetFilteredHistory(context.Context, *HistoryRequest) (*HistoryResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFilteredHistory not implemented")
+func (UnimplementedRecoveryServer) GetHistorialFiltrado(context.Context, *SolicitudHistorialConsumer) (*RespuestaHistorialConsumer, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHistorialFiltrado not implemented")
 }
 func (UnimplementedRecoveryServer) mustEmbedUnimplementedRecoveryServer() {}
 func (UnimplementedRecoveryServer) testEmbeddedByValue()                  {}
@@ -738,20 +738,20 @@ func RegisterRecoveryServer(s grpc.ServiceRegistrar, srv RecoveryServer) {
 	s.RegisterService(&Recovery_ServiceDesc, srv)
 }
 
-func _Recovery_GetFilteredHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HistoryRequest)
+func _Recovery_GetHistorialFiltrado_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SolicitudHistorialConsumer)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RecoveryServer).GetFilteredHistory(ctx, in)
+		return srv.(RecoveryServer).GetHistorialFiltrado(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Recovery_GetFilteredHistory_FullMethodName,
+		FullMethod: Recovery_GetHistorialFiltrado_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecoveryServer).GetFilteredHistory(ctx, req.(*HistoryRequest))
+		return srv.(RecoveryServer).GetHistorialFiltrado(ctx, req.(*SolicitudHistorialConsumer))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -764,8 +764,8 @@ var Recovery_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RecoveryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetFilteredHistory",
-			Handler:    _Recovery_GetFilteredHistory_Handler,
+			MethodName: "GetHistorialFiltrado",
+			Handler:    _Recovery_GetHistorialFiltrado_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

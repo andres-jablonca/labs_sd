@@ -8,40 +8,38 @@ Ofertas por tienda (Recibidas por Broker):
 Escrituras exitosas (W=2): 75
 Escrituras fallidas (W<2): 0
 
-Lecturas exitosas (R=2): 4
+Lecturas exitosas (R=2): 3
 Lecturas fallidas (R<2): 0
 
 Nodos BD caídos al finalizar: 0
 
 Caídas por nodo DB:
-  DB1: 1
 
 Caídas por Consumidor:
-  C1-2: 2
-  C3-2: 1
+  C1-1: 1
+  C2-4: 1
+  C3-1: 1
   C3-3: 1
-  C2-1: 1
 
 Resincronizaciones exitosas por Consumidor:
-  C2-1: 1
-  C1-2: 1
-  C3-2: 1
-  C3-3: 1
+  C3-1: 1
+  C1-1: 1
+  C2-4: 1
 
 Resumen por Consumidor:
-  C2-2: 51 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C2-1: 12 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C1-4: 4 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C1-2: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV no generado
-  C3-3: 4 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C3-1: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C3-4: 1 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C2-4: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C2-3: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C1-3: 25 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C1-1: 0 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
-  C3-2: 46 ofertas recibidas (recibidas directamente, no por resincronización). Archivo CSV generado
+  C2-3: 0 ofertas recibidas (directas). Archivo CSV generado
+  C2-4: 0 ofertas recibidas (directas). Archivo CSV generado
+  C2-1: 24 ofertas recibidas (directas). Archivo CSV generado
+  C3-2: 61 ofertas recibidas (directas). Archivo CSV generado
+  C3-3: 7 ofertas recibidas (directas). Archivo CSV no generado
+  C1-3: 25 ofertas recibidas (directas). Archivo CSV generado
+  C1-4: 4 ofertas recibidas (directas). Archivo CSV generado
+  C1-2: 2 ofertas recibidas (directas). Archivo CSV generado
+  C1-1: 0 ofertas recibidas (directas). Archivo CSV generado
+  C2-2: 52 ofertas recibidas (directas). Archivo CSV generado
+  C3-4: 2 ofertas recibidas (directas). Archivo CSV generado
+  C3-1: 1 ofertas recibidas (directas). Archivo CSV generado
 
 Conlusión final:
-SISTEMA ROBUSTO Y CONSISTENTE: El sistema demostró exitosamente su Tolerancia a Fallos y Consistencia. A pesar de registrarse caída(s) temporal(es) de nodos DB, todas las operaciones de escritura y lectura fueron exitosas, lo que prueba la correcta aplicación de los quorums W=2 y R=2 para garantizar la disponibilidad y la integridad del dato.
+NO EVIDENCIA DE TOLERANCIA A FALLOS: El sistema mantuvo la consistencia pero no se pudo evidenciar su tolerancia a fallos, ya que no se registró ninguna caída de nodos DB.
 ==============================================================

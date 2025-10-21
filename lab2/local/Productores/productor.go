@@ -18,16 +18,16 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// --- Constantes y Variables Globales ---
+const direccionBroker = "broker:50095"
 
-const brokerAddress = "broker:50095"
+// Flags default (cambian con cada productor)
 
 var (
 	entityID   = flag.String("id", "Riploy", "ID único de la entidad.")
 	entityPort = flag.String("port", ":50052", "Puerto local del servidor gRPC del Productor.")
 )
 
-// Categorías permitidas (match exacto tras normalización)
+// Categorías permitidas segun enunciado
 var allowedCategories = map[string]struct{}{
 	"Electrónica":       {},
 	"Moda":              {},
@@ -43,13 +43,16 @@ var allowedCategories = map[string]struct{}{
 	"Mascotas":          {},
 }
 
-type ProductBase struct {
-	Product   string
-	Category  string
-	BasePrice int64
-	BaseStock int32
+// Producto que viene en catalogo
+type ProductoBase struct {
+	IDProducto string
+	Producto   string
+	Categoria  string
+	PrecioBase int64
+	StockBase  int32
 }
 
+// Colores para mayor diferenciacion en prints
 const (
 	Red    = "\033[31m"
 	Green  = "\033[32m"
@@ -58,32 +61,36 @@ const (
 	Reset  = "\033[0m"
 )
 
-// Normaliza categorías: quita bullets y espacios
-func normalizeCategory(s string) string {
-	s = strings.TrimSpace(s)
-	if strings.HasPrefix(s, "•") {
-		s = strings.TrimSpace(strings.TrimPrefix(s, "•"))
-	}
-	return s
-}
-
-func isAllowedCategory(cat string) bool {
-	_, ok := allowedCategories[normalizeCategory(cat)]
+/*
+Nombre: CategoriaPermitida
+Parámetros: cat string
+Retorno: bool
+Descripción: Verifica si la categoría está permitida.
+*/
+func CategoriaPermitida(cat string) bool {
+	_, ok := allowedCategories[cat]
 	return ok
 }
 
-// -----------------------------------------------------------------------
-// 💡 FUNCIÓN DE GENERACIÓN DE ID SIN LIBRERÍA UUID
-// -----------------------------------------------------------------------
-func generatePseudoUUID() string {
+/*
+Nombre: GenerarUUID
+Parámetros: ninguno
+Retorno: string
+Descripción: Simula la generacion de un UUID basado en tiempo y aleatoriedad.
+*/
+func GenerarUUID() string {
 	timestamp := time.Now().UnixNano()
 	randomPart := rand.Intn(1000000)
 	return fmt.Sprintf("%x-%x", timestamp, randomPart)
 }
 
-// --- Funciones de Fase 1: Registro ---
-
-func registerWithBroker(client pb.EntityManagementClient) {
+/*
+Nombre: RegistrarConBroker
+Parámetros: client pb.RegistroEntidadesClient
+Retorno: ninguno
+Descripción: Registra el productor en el broker con su dirección gRPC.
+*/
+func RegistrarConBroker(client pb.RegistroEntidadesClient) {
 	fmt.Printf("Coordinando el registro con el Broker...\n")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -92,30 +99,33 @@ func registerWithBroker(client pb.EntityManagementClient) {
 	dockerServiceName := strings.ToLower(*entityID)
 	addressToRegister := dockerServiceName + *entityPort
 
-	req := &pb.RegistrationRequest{
-		EntityId:   *entityID,
-		EntityType: "Producer",
-		Address:    addressToRegister,
+	req := &pb.SolicitudRegistro{
+		IdEntidad:   *entityID,
+		TipoEntidad: "Producer",
+		Direccion:   addressToRegister,
 	}
 
-	resp, err := client.RegisterEntity(ctx, req)
+	resp, err := client.RegistrarEntidad(ctx, req)
 	if err != nil {
 		fmt.Printf("No se logró conectar con el broker: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Respuesta del Broker: Éxito=%t, Mensaje=%s\n", resp.Success, resp.Message)
+	fmt.Printf("Respuesta del Broker: Éxito=%t, Mensaje=%s\n", resp.GetExito(), resp.GetMensaje())
 
-	if !resp.Success {
+	if !resp.GetExito() {
 		os.Exit(1)
 	}
 }
 
-// --- Lógica de Fase 2: Producción de Ofertas ---
-
-// loadCatalog lee el archivo CSV del catálogo y filtra por categorías permitidas.
-func loadCatalog(filename string) []ProductBase {
-	catalog := []ProductBase{}
+/*
+Nombre: CargarCatalogo
+Parámetros: filename string
+Retorno: []ProductoBase
+Descripción: Carga catálogo CSV y filtra por categorías válidas.
+*/
+func CargarCatalogo(filename string) []ProductoBase {
+	catalog := []ProductoBase{}
 	fmt.Printf("Cargando catalogo desde %s...\n", filename)
 
 	file, err := os.Open(filename)
@@ -128,7 +138,6 @@ func loadCatalog(filename string) []ProductBase {
 	reader := csv.NewReader(file)
 	reader.FieldsPerRecord = 6
 
-	// Saltar la cabecera
 	_, err = reader.Read()
 	if err != nil && err != io.EOF {
 		fmt.Printf("Warning leyendo el header del catalogo: %v\n", err)
@@ -144,35 +153,42 @@ func loadCatalog(filename string) []ProductBase {
 			os.Exit(1)
 		}
 
-		category := normalizeCategory(record[2])
+		IDproducto := strings.TrimSpace(record[0])
+		if IDproducto == "" {
+			fmt.Printf("Fila con IDproducto vacío. Skipeando.\n")
+			continue
+		}
+
+		categoria := record[2]
 		productName := record[3]
 
-		if !isAllowedCategory(category) {
+		if !CategoriaPermitida(categoria) {
 			fmt.Printf(Yellow+"[SKIP] Producto '%s' ignorado por categoría no permitida: '%s'\n"+Reset, productName, record[2])
 			continue
 		}
 
-		price, err := strconv.ParseInt(record[4], 10, 64)
+		precio, err := strconv.ParseInt(record[4], 10, 64)
 		if err != nil {
 			fmt.Printf("Precio base inválido '%s' para el producto '%s'. Skipeando.\n", record[4], productName)
 			continue
 		}
 
-		stockParsed, err := strconv.ParseInt(record[5], 10, 64)
+		stock, err := strconv.ParseInt(record[5], 10, 64)
 		if err != nil {
 			fmt.Printf("Stock base inválido '%s' para el producto '%s'. Skipeando.\n", record[5], productName)
 			continue
 		}
-		if stockParsed <= 0 {
+		if stock <= 0 {
 			fmt.Printf("Stock base no positivo '%s' para el producto '%s'. Skipeando.\n", record[5], productName)
 			continue
 		}
 
-		catalog = append(catalog, ProductBase{
-			Product:   productName,
-			Category:  category, // ya normalizada
-			BasePrice: price,
-			BaseStock: int32(stockParsed),
+		catalog = append(catalog, ProductoBase{
+			IDProducto: IDproducto,
+			Producto:   productName,
+			Categoria:  categoria,
+			PrecioBase: precio,
+			StockBase:  int32(stock),
 		})
 	}
 
@@ -185,67 +201,68 @@ func loadCatalog(filename string) []ProductBase {
 	return catalog
 }
 
-// generateOffer crea una nueva oferta (descuento 10-50%, stock > 0, ID generado).
-func generateOffer(base ProductBase, tienda string) *pb.Offer {
-	// Descuento aleatorio entre 10% a 50%
-	discount := float64(rand.Intn(41)+10) / 100.0
-	newPrice := int64(float64(base.BasePrice) * (1.0 - discount))
-
-	// Stock estricto > 0 (hasta BaseStock)
-	stock := rand.Int31n(base.BaseStock) + 1
-
-	// Identificador pseudo-único
-	offerID := generatePseudoUUID()
-
-	// Fecha en el momento de generación
+/*
+Nombre: GenerarOferta
+Parámetros: base ProductoBase, tienda string
+Retorno: *pb.Oferta
+Descripción: Genera una nueva oferta con descuento y stock aleatorios (entre 10-50 y mayor a 0, respectivamente). Ademas agrega el id del producto base y lo junta con el uuid generado
+*/
+func GenerarOferta(base ProductoBase, tienda string) *pb.Oferta {
+	descuento := float64(rand.Intn(41)+10) / 100.0
+	nuevoPrecio := int64(float64(base.PrecioBase) * (1.0 - descuento))
+	stock := rand.Int31n(base.StockBase) + 1
+	ofertaID := fmt.Sprintf("%s-%s", base.IDProducto, GenerarUUID())
 	fecha := time.Now().Format("2006-01-02 15:04:05")
 
-	return &pb.Offer{
-		OfertaId:  offerID,
+	return &pb.Oferta{
+		OfertaId:  ofertaID,
 		Tienda:    tienda,
-		Categoria: base.Category, // ya verificada/permitida
-		Producto:  base.Product,
-		Precio:    newPrice,
+		Categoria: base.Categoria,
+		Producto:  base.Producto,
+		Precio:    nuevoPrecio,
 		Stock:     stock,
 		Fecha:     fecha,
-		Descuento: float32(discount),
+		Descuento: float32(descuento),
 	}
 }
 
-// startOfferProduction maneja el ciclo continuo de envío de ofertas al Broker.
-func startOfferProduction(catalog []ProductBase) {
-	conn, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+/*
+Nombre: IniciarProduccionOfertas
+Parámetros: catalog []ProductoBase
+Retorno: ninguno
+Descripción: Envía ofertas periódicamente al broker (2s) y detecta fin del evento cuando ya llega al limite de ofertas.
+*/
+func IniciarProduccionOfertas(catalog []ProductoBase) {
+	conn, err := grpc.Dial(direccionBroker, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Printf("Fallo al conectar con broker para producción de ofertas: %v\n", err)
 		os.Exit(1)
 	}
 	defer conn.Close()
 
-	client := pb.NewOfferSubmissionClient(conn)
+	client := pb.NewOfertasClient(conn)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	fmt.Printf("Iniciando producción de ofertas...\n")
 	for {
 		base := catalog[r.Intn(len(catalog))]
 
-		// Seguridad adicional: si por alguna razón llegara una categoría no permitida, se salta
-		if !isAllowedCategory(base.Category) {
-			fmt.Printf(Yellow+"[SKIP-RUNTIME] Categoría '%s' no permitida para '%s'\n"+Reset, base.Category, base.Product)
+		if !CategoriaPermitida(base.Categoria) {
+			fmt.Printf(Yellow+"[SKIP-RUNTIME] Categoría '%s' no permitida para '%s'\n"+Reset, base.Categoria, base.Producto)
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
-		offer := generateOffer(base, *entityID)
+		offer := GenerarOferta(base, *entityID)
 
-		// Enviar al Broker (Fase 2)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		resp1, err := client.SendOffer(ctx, offer)
+		resp1, err := client.EnviarOferta(ctx, offer)
 		cancel()
 		if err != nil {
-			fmt.Printf("Error enviando oferta %s (Broker caído?): %v\n", offer.OfertaId, err)
-		} else if resp1.Accepted {
-			fmt.Printf("Oferta %s de Producto **%s** con descuento de %f enviada y ACEPTADA (Precio: %d, Stock: %d)\n",
-				offer.OfertaId, offer.Producto, offer.Descuento, offer.Precio, offer.Stock)
+			fmt.Printf("Error enviando oferta %s (Broker caído?): %v\n", offer.GetOfertaId(), err)
+		} else if resp1.GetAceptado() {
+			fmt.Printf("Oferta %s de Producto %q con descuento %.2f enviada y ACEPTADA (Precio: %d, Stock: %d)\n",
+				offer.GetOfertaId(), offer.GetProducto(), offer.GetDescuento(), offer.GetPrecio(), offer.GetStock())
 		}
 
 		if resp1 != nil && resp1.GetTermino() {
@@ -256,45 +273,48 @@ func startOfferProduction(catalog []ProductBase) {
 	}
 }
 
-// --- Función Principal ---
-
+/*
+Nombre: main
+Parámetros: ninguno
+Retorno: ninguno
+Descripción: Registra el productor, espera READY del broker y envía ofertas.
+*/
 func main() {
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 
-	// 1. Registro (Fase 1)
-	connReg, err := grpc.Dial(brokerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	connReg, err := grpc.Dial(direccionBroker, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Printf("No se logró conectar con broker para el registro: %v\n", err)
 		os.Exit(1)
 	}
 	defer connReg.Close()
 
-	clientReg := pb.NewEntityManagementClient(connReg)
-	registerWithBroker(clientReg)
+	clientReg := pb.NewRegistroEntidadesClient(connReg)
+	RegistrarConBroker(clientReg)
 
 	clientConf := pb.NewConfirmarInicioClient(connReg)
+	time.Sleep(2 * time.Second)
 	for {
-		req := &pb.ConfirmRequest{}
+		req := &pb.SolicitudInicio{}
 		resp, err := clientConf.Confirmacion(context.Background(), req)
 		if err != nil {
 			fmt.Printf("No se logró conectar con el broker: %v\n", err)
 			os.Exit(1)
 		}
-		if resp.GetReady() {
+		if resp.GetListo() {
 			fmt.Println("Broker READY. ¡Comenzando a enviar ofertas!")
 			break
 		}
-		fmt.Println("Broker NO READY. Esperando 5 segundos antes de volver a preguntar...")
+		fmt.Println("Broker NO READY. Esperando 5 segundos...")
 		time.Sleep(5 * time.Second)
 	}
 
-	// 2. Carga del Catálogo y Producción de Ofertas (Fase 2)
 	lowerCaseID := strings.ToLower(*entityID)
-	catalogFile := fmt.Sprintf("Productores/catalogos/%s_catalogo.csv", lowerCaseID)
+	archivoCatalogo := fmt.Sprintf("Productores/catalogos/%s_catalogo.csv", lowerCaseID)
 
-	catalog := loadCatalog(catalogFile)
-	startOfferProduction(catalog)
+	catalogo := CargarCatalogo(archivoCatalogo)
+	IniciarProduccionOfertas(catalogo)
 
-	fmt.Printf("%s Cerrando tienda \n", *entityID)
+	fmt.Printf(Green+"%s Cerrando tienda \n"+Reset, *entityID)
 }
