@@ -1,0 +1,45 @@
+================= REPORTE FINAL =================
+
+Ofertas por tienda (Recibidas por Broker):
+  Parisio: 25
+  Falabellox: 25
+  Riploy: 25
+
+Escrituras exitosas (W=2): 75
+Escrituras fallidas (W<2): 0
+
+Lecturas exitosas (R=2): 3
+Lecturas fallidas (R<2): 0
+
+Nodos BD caídos al finalizar: 0
+
+Caídas por nodo DB:
+
+Caídas por Consumidor:
+  C1-1: 1
+  C2-4: 1
+  C3-1: 1
+  C3-3: 1
+
+Resincronizaciones exitosas por Consumidor:
+  C3-1: 1
+  C1-1: 1
+  C2-4: 1
+
+Resumen por Consumidor:
+  C2-3: 0 ofertas recibidas (directas). Archivo CSV generado
+  C2-4: 0 ofertas recibidas (directas). Archivo CSV generado
+  C2-1: 24 ofertas recibidas (directas). Archivo CSV generado
+  C3-2: 61 ofertas recibidas (directas). Archivo CSV generado
+  C3-3: 7 ofertas recibidas (directas). Archivo CSV no generado
+  C1-3: 25 ofertas recibidas (directas). Archivo CSV generado
+  C1-4: 4 ofertas recibidas (directas). Archivo CSV generado
+  C1-2: 2 ofertas recibidas (directas). Archivo CSV generado
+  C1-1: 0 ofertas recibidas (directas). Archivo CSV generado
+  C2-2: 52 ofertas recibidas (directas). Archivo CSV generado
+  C3-4: 2 ofertas recibidas (directas). Archivo CSV generado
+  C3-1: 1 ofertas recibidas (directas). Archivo CSV generado
+
+Conlusión final:
+NO EVIDENCIA DE TOLERANCIA A FALLOS: El sistema mantuvo la consistencia pero no se pudo evidenciar su tolerancia a fallos, ya que no se registró ninguna caída de nodos DB.
+==============================================================
