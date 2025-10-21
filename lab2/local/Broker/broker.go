@@ -1,4 +1,3 @@
-// broker.go
 package main
 
 import (
@@ -12,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	pb "lab2/proto"
@@ -285,7 +283,7 @@ func (s *BrokerServer) RegistrarEntidad(ctx context.Context, req *pb.SolicitudRe
 	fmt.Printf("[Registro] %s registrad@ correctamente (%s) en %s. Total de registrados: %d\n",
 		id, ent.Type, ent.Address, len(s.entidades))
 
-	atomic.AddInt64(&contadorRegistrados, 1)
+	contadorRegistrados++
 	return &pb.RespuestaRegistro{
 		Exito:   true,
 		Mensaje: "Registro exitoso. Bienvenido al CyberDay!.\n",
