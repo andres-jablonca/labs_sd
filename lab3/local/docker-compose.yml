@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # --- Datanodes (Servicios de Consistencia Eventual) ---
+  datanode1: &datanode_template # Template para reusar configuración
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGET_DIR: datanode
+    environment:
+      # Puerto y ID para la escucha del servicio
+      - LISTEN_PORT=:50061
+      - DATANODE_ID=DN-1
+    networks:
+      - aerodist-net
+  
+  datanode2:
+    <<: *datanode_template # Reutiliza el template
+    environment:
+      - LISTEN_PORT=:50062
+      - DATANODE_ID=DN-2
+    networks:
+      - aerodist-net
+  
+  datanode3:
+    <<: *datanode_template # Reutiliza el template
+    environment:
+      - LISTEN_PORT=:50063
+      - DATANODE_ID=DN-3
+    networks:
+      - aerodist-net
+
+  # --- Broker Central ---
+  broker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGET_DIR: broker
+    volumes:
+      # Mapea la carpeta local './data' a la carpeta '/app/data' dentro del contenedor
+      # Asegúrate de que tu archivo CSV esté en ./data/flight_updates.csv
+      - ./data:/app/data
+    environment:
+      - LISTEN_PORT=:50052
+      # Direcciones de los Datanodes. Usamos el nombre del servicio Docker (datanodeX)
+      - DATANODE_ADDRS=datanode1:50061,datanode2:50062,datanode3:50063 
+    networks:
+      - aerodist-net
+    depends_on:
+      - datanode1
+      - datanode2
+      - datanode3
+
+  # --- Coordinador (Gateway RYW) ---
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGET_DIR: coordinator
+    environment:
+      - LISTEN_PORT=:50051
+      # Dirección del Broker. Usamos el nombre del servicio Docker (broker)
+      - BROKER_ADDR=broker:50052
+    networks:
+      - aerodist-net
+    depends_on:
+      - broker
+
+  # --- Cliente RYW (Para Pruebas) ---
+  client_ryw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGET_DIR: client_ryw
+    environment:
+      # Dirección del Coordinador. Usamos el nombre del servicio Docker (coordinator)
+      - COORDINATOR_ADDR=coordinator:50051 
+    networks:
+      - aerodist-net
+    depends_on:
+      - coordinator
+    # Run once and exit
+    restart: "no"
+
+  # --- CLIENTE MONOTONIC READS (Pasajero Observador) ---
+  client_mr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Asumimos que el código de clientes.go está en un subdirectorio llamado 'observadores'
+        TARGET_DIR: client_mr
+    volumes:
+      # Necesita el CSV para leer la lista de IDs de vuelos
+      - ./data:/app/data 
+    environment:
+      # Dirección del Central Broker. Usamos el nombre del servicio Docker (broker:puerto)
+      - BROKER_ADDR=broker:50052 
+      - CSV_FILE_PATH=/app/data/flight_updates.csv
+    networks:
+      - aerodist-net
+    depends_on:
+      - broker # Depende de que el Broker esté corriendo
+    # El cliente correrá en un bucle infinito para consultar periódicamente.
+    # No usamos 'restart: "no"' para que se quede corriendo.
+
+networks:
+  aerodist-net:
+    driver: bridge

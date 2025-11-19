@@ -1,0 +1,148 @@
+syntax = "proto3";
+package aerodist;
+
+option go_package = "./proto;aerodist";
+
+// =======================================================
+// Servicios
+// =======================================================
+
+// Servicio: Expuesto por el Broker Central para Pasajeros Observadores
+service Broker {
+    // Consulta el estado de un vuelo, implementando la lógica de Monotonic Reads
+    // El cliente llama a esta RPC: client.GetFlightStatus(req)
+    rpc GetFlightStatus (FlightRequest) returns (FlightResponse);
+}
+
+// Servicio expuesto por los Datanodes
+service DatanodeService {
+    // RYW: Recibe la solicitud de escritura del Broker
+    rpc ApplyWrite (UpdateRequest) returns (UpdateResponse); 
+    // RYW: Recibe la solicitud de lectura del Broker o el Coordinador
+    rpc ReadData (ReadRequest) returns (ReadResponse); 
+    
+    // NUEVO (Eventual): RPC para recibir actualizaciones de estado de vuelo (Gossip/Broker)
+    rpc UpdateFlightStatus (UpdateFlightStatusRequest) returns (UpdateResponse); 
+    rpc GetFlightStatus (FlightRequest) returns (FlightResponse);
+}
+
+// Servicio expuesto por el Coordinador (Gateway de Check-in)
+service CheckInCoordinator {
+    // 1. Escritura: Para Check-in y selección de asiento (RYW).
+    rpc ProcessCheckIn (CheckInRequest) returns (CheckInResponse);
+    
+    // 2. Lectura: Para obtener la Tarjeta de Embarque, forzando RYW.
+    rpc GetBoardingPass (BoardingPassRequest) returns (BoardingPassResponse);
+}
+
+// Servicio expuesto por el Broker Central para interactuar con los Datanodes
+service CentralBroker {
+    // RYW: El coordinador reenvía la solicitud de escritura al Broker
+    rpc UpdateFlightData (UpdateRequest) returns (UpdateResponse);
+    // RYW/Monotonic: El coordinador pide al Broker que balancee una lectura
+    rpc GetFlightData (ReadRequest) returns (ReadResponse);
+    
+    // NUEVO (Eventual): El Broker inicia la distribución de la actualización del CSV a los Datanodes.
+    rpc BroadcastFlightStatus (UpdateFlightStatusRequest) returns (UpdateResponse);
+    // NUEVO: RPC dedicado para el Cliente Monotonic Reads (Pasajero Observador)
+    rpc GetFlightStatus (FlightRequest) returns (FlightResponse); 
+
+}
+
+// =======================================================
+// Mensajes de Check-in (Cliente RYW -> Coordinador)
+// =======================================================
+
+// Solicitud de Check-in / Escritura
+message CheckInRequest {
+    string client_id = 1; 
+    string flight_id = 2;
+    string seat_number = 3;
+    string request_uuid = 4;
+}
+
+// Respuesta de Check-in (se quitó 'optional')
+message CheckInResponse {
+    bool success = 1;
+    string message = 2;
+    string error_details = 3;
+}
+
+// Solicitud de Tarjeta de Embarque / Lectura (inmediata post-escritura)
+message BoardingPassRequest {
+    string client_id = 1;
+    string flight_id = 2;
+}
+
+// Respuesta con la Tarjeta de Embarque / Lectura
+message BoardingPassResponse {
+    string client_id = 1;
+    string flight_id = 2;
+    string seat_assigned = 3;
+    string gate = 4;
+    // ... más detalles del boarding pass
+}
+
+// =======================================================
+// Mensajes internos (Coordinador -> Broker -> Datanode, y Gossip)
+// =======================================================
+
+// Solicitud de actualización interna de datos de asiento (escritura RYW)
+message UpdateRequest {
+    string client_id = 1;
+    string flight_id = 2;
+    string seat_number = 3;
+    string request_uuid = 4;
+    // Puede incluir el vector clock si se usa para la escritura
+}
+
+// NUEVO: Solicitud de actualización de estado de vuelo (Consistencia Eventual / Gossip)
+message UpdateFlightStatusRequest {
+    string flight_id = 1;
+    // Mapa para Status: Ej. {"update_type": "update_value"}
+    map<string, string> status = 2;
+    // Reloj Vectorial: Ej. {"DN-1": 5, "DN-2": 2}
+    map<string, int64> vector_clock = 3;
+}
+
+message UpdateResponse {
+    bool success = 1;
+    string message = 2;
+    string datanode_id = 3;
+    // ✅ Campo para RYW: El Vector Clock final de la escritura (de DN)
+    map<string, int64> vector_clock = 4; 
+}
+
+// Solicitud de lectura de datos de vuelo (RYW/Monotonic)
+message ReadRequest {
+    string client_id = 1;
+    string flight_id = 2;
+    // ✅ Campo para RYW: El Vector Clock que el cliente vio por última vez
+    map<string, int64> client_vector_clock = 3; 
+}
+
+message ReadResponse {
+    string flight_id = 1;
+    string seat_assigned_to_client = 2;
+    // ✅ Campo para RYW: El Vector Clock devuelto por el Datanode
+    map<string, int64> vector_clock = 3; 
+    // ... más campos
+}
+
+// =======================================================
+// Mensajes Comunes para Monotonic Reads
+// =======================================================
+
+// Para las consultas de vuelo (usado por el cliente Observador)
+message FlightRequest {
+    string flightID = 1;  // ID del vuelo para consultar
+    int64 lastversion = 2; // Versión escalar del último dato conocido (para Monotonic Reads)
+}
+
+// Respuesta para la consulta del estado de un vuelo (usado por el cliente Observador)
+message FlightResponse {
+    string flightID = 1;
+    string status = 2;  // Ejemplo: "OnTime", "Delayed"
+    string gate = 3;    // Ejemplo: "G4"
+    int64 version = 4; // Versión escalar del dato que se devuelve
+}

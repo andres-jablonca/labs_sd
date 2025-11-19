@@ -1,0 +1,30 @@
+# Stage 1: Construcción del binario Go
+# CAMBIAR DE golang:1.22-alpine A golang:1.24-alpine (o superior)
+FROM golang:1.24-alpine AS builder
+
+# Argumento para especificar la carpeta de la entidad a construir (ej. datanode)
+ARG TARGET_DIR 
+
+WORKDIR /app
+
+# Copiar archivos de dependencia y descargar módulos
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copiar el código fuente completo
+COPY . .
+
+# Construir el binario de la entidad y colocarlo en /app/app_binary
+RUN CGO_ENABLED=0 go build -o /app/app_binary ./${TARGET_DIR}/main.go
+
+# Stage 2: Imagen de ejecución ligera
+FROM alpine:latest
+WORKDIR /app
+
+# Copiar el binario compilado de la etapa anterior
+COPY --from=builder /app/app_binary /app/
+
+# El ENTRYPOINT será el binario compilado.
+ENTRYPOINT ["/app/app_binary"]
+
+# El puerto se expondrá y el comando se definirá en docker-compose.yml
