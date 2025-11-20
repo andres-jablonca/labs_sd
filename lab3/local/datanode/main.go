@@ -179,7 +179,7 @@ func (s *DatanodeServer) UpdateFlightStatus(ctx context.Context, req *pb.UpdateF
 	if isPrior {
 		s.flightData[flightID] = incomingData
 	} else if isDescendant {
-		log.Printf("🗑️ DESCARTADO %s (Dato viejo).", flightID)
+		log.Printf("🗑️ DESCARTADO %s (Dato viejo) estado: %v", flightID, incomingData.Status["estado"])
 	} else {
 		resolvedData := s.ResolveConflict(existingData, incomingData)
 		s.flightData[flightID] = resolvedData

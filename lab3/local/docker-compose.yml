@@ -1,17 +1,19 @@
 version: '3.8'
 
 services:
-  # --- Datanodes (Servicios de Consistencia Eventual) ---
+  # ... (otros servicios)
 
   datanode1:
     build:
       context: .
-      dockerfile: Dockerfile  
+      dockerfile: Dockerfile # Usa tu Dockerfile con ENTRYPOINT
       args:
         TARGET_DIR: datanode
-    command: ["/app/datanode_bin", "-id=DN-1", "-port=:50061"]
+    container_name: datanode1
+    # CORRECCIÓN: Quitamos el path del binario, dejamos solo los flags
+    command: ["-id=DN-1", "-port=:50061"]
     ports:
-      - "50061:50061" 
+      - "50061:50061"
     networks:
       - aerodist-net
   
@@ -21,7 +23,9 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_DIR: datanode
-    command: ["/app/datanode_bin", "-id=DN-2", "-port=:50062"]
+    container_name: datanode2
+    # CORRECCIÓN: Solo flags
+    command: ["-id=DN-2", "-port=:50062"]
     ports:
       - "50062:50062"
     networks:
@@ -33,7 +37,9 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_DIR: datanode
-    command: ["/app/datanode_bin", "-id=DN-3", "-port=:50063"]
+    container_name: datanode3
+    # CORRECCIÓN: Solo flags
+    command: ["-id=DN-3", "-port=:50063"]
     ports:      
       - "50063:50063"
     networks:
