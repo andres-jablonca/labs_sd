@@ -1,16 +1,14 @@
 version: '3.8'
 
 services:
-  # ... (otros servicios)
 
   datanode1:
     build:
       context: .
-      dockerfile: Dockerfile # Usa tu Dockerfile con ENTRYPOINT
+      dockerfile: Dockerfile 
       args:
         TARGET_DIR: datanode
     container_name: datanode1
-    # CORRECCIÓN: Quitamos el path del binario, dejamos solo los flags
     command: ["-id=DN-1", "-port=:50061"]
     ports:
       - "50061:50061"
@@ -24,7 +22,6 @@ services:
       args:
         TARGET_DIR: datanode
     container_name: datanode2
-    # CORRECCIÓN: Solo flags
     command: ["-id=DN-2", "-port=:50062"]
     ports:
       - "50062:50062"
@@ -38,7 +35,6 @@ services:
       args:
         TARGET_DIR: datanode
     container_name: datanode3
-    # CORRECCIÓN: Solo flags
     command: ["-id=DN-3", "-port=:50063"]
     ports:      
       - "50063:50063"
@@ -67,14 +63,12 @@ services:
       - datanode2
       - datanode3
 
-  # --- Coordinador (Gateway RYW) ---
-  # Nuevo Servicio: Coordinador
+  # --- Coordinador ---
   coordinator:
     build: 
       context: .
       dockerfile: Dockerfile
       args:
-        # Asumimos que el código de clientes.go está en un subdirectorio llamado 'observadores'
         TARGET_DIR: coordinator
     container_name: coordinator-1
     ports:
@@ -87,16 +81,15 @@ services:
     networks:
       - aerodist-net
 
-  # --- Cliente RYW (Para Pruebas) ---
-  # Nuevo Cliente: Check-in (Read Your Writes)
+  # --- Cliente RYW ---
   client_ryw:
     build: 
       context: .
       dockerfile: Dockerfile
       args:
-          # Asumimos que el código de clientes.go está en un subdirectorio llamado 'observadores'
           TARGET_DIR: client_ryw
     container_name: client_ryw-1
+    command: ["-id=RYW-1"]
     environment:
       - COORDINATOR_ADDR=coordinator:50055
     depends_on:
@@ -104,28 +97,69 @@ services:
     networks:
       - aerodist-net
 
-  # --- CLIENTE MONOTONIC READS (Pasajero Observador) ---
+  client_ryw2:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+          TARGET_DIR: client_ryw
+    container_name: client_ryw-2
+    command: ["-id=RYW-2"]
+    environment:
+      - COORDINATOR_ADDR=coordinator:50055
+    depends_on:
+      - coordinator
+    networks:
+      - aerodist-net
+
+  client_ryw3:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+          TARGET_DIR: client_ryw
+    container_name: client_ryw-3
+    command: ["-id=RYW-3"]
+    environment:
+      - COORDINATOR_ADDR=coordinator:50055
+    depends_on:
+      - coordinator
+    networks:
+      - aerodist-net
+
+  # --- CLIENTE MONOTONIC READS ---
   client_mr:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        # Asumimos que el código de clientes.go está en un subdirectorio llamado 'observadores'
         TARGET_DIR: client_mr
     volumes:
-      # Necesita el CSV para leer la lista de IDs de vuelos
       - ./data:/app/data 
+    command: ["-id=MR-1"]
     environment:
-      # Dirección del Central Broker. Usamos el nombre del servicio Docker (broker:puerto)
       - BROKER_ADDR=broker:50052 
       - CSV_FILE_PATH=/app/data/flight_updates.csv
     networks:
       - aerodist-net
     depends_on:
-      - broker # Depende de que el Broker esté corriendo
-    # El cliente correrá en un bucle infinito para consultar periódicamente.
-    # No usamos 'restart: "no"' para que se quede corriendo.
-
+      - broker 
+  client_mr2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGET_DIR: client_mr
+    volumes:
+      - ./data:/app/data 
+    command: ["-id=MR-2"]
+    environment:
+      - BROKER_ADDR=broker:50052 
+      - CSV_FILE_PATH=/app/data/flight_updates.csv
+    networks:
+      - aerodist-net
+    depends_on:
+      - broker 
 networks:
   aerodist-net:
     driver: bridge

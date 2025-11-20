@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"log"
-	"math/rand" // Necesario para elegir nodo al azar
+	"math/rand"
 	"net"
 	"os"
 	"strings"
@@ -37,18 +37,18 @@ type BrokerServer struct {
 // ----------------------------------------------------
 
 func (s *BrokerServer) startEventSimulation() {
-	log.Printf("Simulador de Eventos: Iniciando lectura de %s...", CSV_FILE_PATH)
+	log.Printf("[INIT] Simulador de Eventos: Iniciando lectura de %s...", CSV_FILE_PATH)
 
 	file, err := os.Open(CSV_FILE_PATH)
 	if err != nil {
-		log.Fatalf("❌ ERROR: No se pudo abrir el CSV: %v", err)
+		log.Fatalf("[FATAL] No se pudo abrir el CSV: %v", err)
 	}
 	defer file.Close()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
-		log.Fatalf("❌ ERROR: No se pudo leer el CSV: %v", err)
+		log.Fatalf("[FATAL] No se pudo leer el CSV: %v", err)
 	}
 	if len(records) > 0 {
 		records = records[1:]
@@ -68,18 +68,44 @@ func (s *BrokerServer) startEventSimulation() {
 
 		s.mu.Lock()
 
+		numPeers := len(s.datanodeClients)
+		if numPeers == 0 {
+			s.mu.Unlock()
+			log.Println("[WARN] No hay Datanodes conectados para enviar actualización.")
+			continue
+		}
+
+		// 1. ELEGIR DESTINO PRIMERO
+		// Elegimos a qué nodo vamos a enviar el dato (0=DN1, 1=DN2, 2=DN3)
+		targetIndex := rand.Intn(numPeers)
+
+		// 2. ACTUALIZAR VECTOR CLOCK SEGÚN EL DESTINO
+		// Si va a DN1 -> Aumenta "A"
+		// Si va a DN2 -> Aumenta "B"
+		// Si va a DN3 -> Aumenta "C"
+		var clockEntity string
+		switch targetIndex {
+		case 0:
+			clockEntity = "A" // Datanode 1
+		case 1:
+			clockEntity = "B" // Datanode 2
+		case 2:
+			clockEntity = "C" // Datanode 3
+		default:
+			clockEntity = "X" // Fallback
+		}
+
 		currentVC, found := s.flightVCMaps[flightID]
 		if !found {
 			currentVC = make(map[string]int64)
+			// Inicializamos en 0 para que se vea bonito en el log [A:0 B:0 C:0]
+			currentVC["A"] = 0
+			currentVC["B"] = 0
+			currentVC["C"] = 0
 		}
 
-		// Simulamos 2 fuentes para forzar conflictos eventuales en los Datanodes
-		sourceID := "BROKER_A"
-		if rand.Intn(2) == 0 {
-			sourceID = "BROKER_B"
-		}
-
-		currentVC[sourceID]++
+		// Aumentar el reloj de la entidad correspondiente
+		currentVC[clockEntity]++
 		s.flightVCMaps[flightID] = currentVC
 
 		statusUpdate := map[string]string{
@@ -87,6 +113,7 @@ func (s *BrokerServer) startEventSimulation() {
 			"flight_id": flightID,
 		}
 
+		// Copia defensiva para envío gRPC
 		vcToSend := make(map[string]int64)
 		for k, v := range currentVC {
 			vcToSend[k] = v
@@ -99,38 +126,33 @@ func (s *BrokerServer) startEventSimulation() {
 		}
 		s.mu.Unlock()
 
-		// Enviar a UN solo nodo al azar (según diagrama)
-		s.dispatchToRandomNode(req, updateType)
+		// 3. ENVIAR ESPECÍFICAMENTE AL NODO ELEGIDO
+		s.dispatchToSpecificNode(targetIndex, req, updateType)
 	}
-	log.Println("✅ Simulador: CSV completado.")
+	log.Println("[INFO] Simulador: CSV completado.")
 }
 
-// MODIFICACIÓN CLAVE: En lugar de enviar a todos, elige uno al azar.
-func (s *BrokerServer) dispatchToRandomNode(req *pb.UpdateFlightStatusRequest, updateType string) {
+// dispatchToSpecificNode envía el request a un nodo específico por índice.
+func (s *BrokerServer) dispatchToSpecificNode(index int, req *pb.UpdateFlightStatusRequest, updateType string) {
 	s.mu.Lock()
-	numPeers := len(s.datanodeClients)
-	s.mu.Unlock()
-
-	if numPeers == 0 {
-		log.Println("⚠️ No hay Datanodes conectados para enviar actualización.")
+	// Doble chequeo de seguridad
+	if index >= len(s.datanodeClients) {
+		s.mu.Unlock()
 		return
 	}
+	client := s.datanodeClients[index]
+	targetAddr := s.peersAddr[index]
+	s.mu.Unlock()
 
-	// 1. Elegir un índice aleatorio
-	randomIndex := rand.Intn(numPeers)
-	client := s.datanodeClients[randomIndex]
-	targetAddr := s.peersAddr[randomIndex]
+	log.Printf("[DISPATCH] Enviando %s (Vuelo %s) a %s. Vector: %v",
+		updateType, req.FlightId, targetAddr, req.VectorClock)
 
-	log.Printf("🎲 DISPATCH: Enviando %s (Vuelo %s) ÚNICAMENTE a %s (Esperando Gossip...)",
-		updateType, req.FlightId, targetAddr)
-
-	// 2. Enviar RPC solo a ese nodo
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	_, err := client.UpdateFlightStatus(ctx, req)
 	if err != nil {
-		log.Printf("❌ ERROR enviando a %s: %v", targetAddr, err)
+		log.Printf("[ERROR] Fallo al enviar a %s: %v", targetAddr, err)
 	}
 }
 
@@ -140,8 +162,15 @@ func (s *BrokerServer) dispatchToRandomNode(req *pb.UpdateFlightStatusRequest, u
 
 func (s *BrokerServer) UpdateFlightData(ctx context.Context, req *pb.UpdateRequest) (*pb.UpdateResponse, error) {
 	s.mu.Lock()
+
+	if len(s.datanodeClients) == 0 {
+		s.mu.Unlock()
+		return &pb.UpdateResponse{Success: false, Message: "No hay Datanodes disponibles"}, nil
+	}
+
 	targetIndex := s.rrIndex % len(s.datanodeClients)
 	s.rrIndex++
+
 	client := s.datanodeClients[targetIndex]
 	targetAddr := s.peersAddr[targetIndex]
 
@@ -155,11 +184,11 @@ func (s *BrokerServer) UpdateFlightData(ctx context.Context, req *pb.UpdateReque
 	}
 	s.mu.Unlock()
 
-	log.Printf("⚖️ Broker: Redirigiendo Check-in (RYW) de Cliente %s al Datanode %s (%s)", req.ClientId, datanodeID, targetAddr)
+	log.Printf("[RYW] Broker: Redirigiendo Check-in de Cliente %s al Datanode %s (%s)", req.ClientId, datanodeID, targetAddr)
 
 	dnResp, err := client.ApplyWrite(ctx, req)
 	if err != nil {
-		log.Printf("❌ Error escribiendo en Datanode %s: %v", datanodeID, err)
+		log.Printf("[ERROR] Fallo escritura en Datanode %s: %v", datanodeID, err)
 		return &pb.UpdateResponse{Success: false, Message: "Fallo escritura en DN"}, err
 	}
 
@@ -172,13 +201,17 @@ func (s *BrokerServer) UpdateFlightData(ctx context.Context, req *pb.UpdateReque
 
 func (s *BrokerServer) GetFlightData(ctx context.Context, req *pb.ReadRequest) (*pb.ReadResponse, error) {
 	s.mu.Lock()
+	if len(s.datanodeClients) == 0 {
+		s.mu.Unlock()
+		return nil, grpc.Errorf(grpc.Code(nil), "No Datanodes available")
+	}
 	targetIndex := s.rrIndex % len(s.datanodeClients)
 	s.rrIndex++
 	client := s.datanodeClients[targetIndex]
 	targetAddr := s.peersAddr[targetIndex]
 	s.mu.Unlock()
 
-	log.Printf("🔄 Broker: Redirigiendo lectura de asiento (Fallback) de %s a %s", req.ClientId, targetAddr)
+	log.Printf("[READ] Broker: Redirigiendo lectura de asiento (Fallback) de %s a %s", req.ClientId, targetAddr)
 	return client.ReadData(ctx, req)
 }
 
@@ -207,30 +240,34 @@ func initDatanodeClients(peers []string) []pb.DatanodeServiceClient {
 	for _, addr := range peers {
 		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
 		if err != nil {
-			log.Fatalf("❌ ERROR: No se pudo conectar a Datanode %s: %v", addr, err)
+			log.Fatalf("[FATAL] No se pudo conectar a Datanode %s: %v", addr, err)
 		}
 		clients = append(clients, pb.NewDatanodeServiceClient(conn))
-		log.Printf("✅ Broker conectado a Datanode en %s", addr)
+		log.Printf("[INIT] Broker conectado a Datanode en %s", addr)
 	}
 	return clients
 }
 
 func (s *BrokerServer) GetFlightStatus(ctx context.Context, req *pb.FlightRequest) (*pb.FlightResponse, error) {
 	s.mu.Lock()
+	if len(s.datanodeClients) == 0 {
+		s.mu.Unlock()
+		return nil, grpc.Errorf(grpc.Code(nil), "No Datanodes available")
+	}
 	targetIndex := s.rrIndex % len(s.datanodeClients)
 	s.rrIndex++
 	selectedDatanodeClient := s.datanodeClients[targetIndex]
 	selectedDatanodeAddr := s.peersAddr[targetIndex]
 	s.mu.Unlock()
 
-	log.Printf("INFO: Broker delega lectura Monotonic de Vuelo %s (V%d) a Datanode %s",
+	log.Printf("[MONOTONIC] Broker delega lectura de Vuelo %s (V%d) a Datanode %s",
 		req.GetFlightID(), req.GetLastversion(), selectedDatanodeAddr)
 
 	return selectedDatanodeClient.GetFlightStatus(ctx, req)
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano()) // Semilla aleatoria necesaria
+	rand.Seed(time.Now().UnixNano())
 
 	port := getListenPort()
 	peers := getDatanodeAddresses()
@@ -238,7 +275,7 @@ func main() {
 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
-		log.Fatalf("❌ ERROR: Falló al escuchar el puerto %s: %v", port, err)
+		log.Fatalf("[FATAL] Falló al escuchar el puerto %s: %v", port, err)
 	}
 
 	s := grpc.NewServer()
@@ -252,9 +289,9 @@ func main() {
 
 	go server.startEventSimulation()
 
-	log.Printf("🚀 Broker Central escuchando en %s. Modelo: Inyección Aleatoria + Gossip.", port)
+	log.Printf("[INIT] Broker Central escuchando en %s. Modelo: Inyección A/B/C.", port)
 
 	if err := s.Serve(lis); err != nil {
-		log.Fatalf("falló al servir: %v", err)
+		log.Fatalf("[FATAL] Falló al servir: %v", err)
 	}
 }

@@ -44,7 +44,7 @@ var datanodeMap = map[string]string{
 // 1. ESCRITURA (ProcessCheckIn) -> Va al Broker, pero guarda quién lo atendió
 // ---------------------------------------------------------------------------
 func (s *CoordinatorServer) ProcessCheckIn(ctx context.Context, req *pb.CheckInRequest) (*pb.CheckInResponse, error) {
-	log.Printf("📝 Coordinador: Check-in recibido de Cliente %s para Vuelo %s Asiento %s", req.ClientId, req.FlightId, req.SeatNumber)
+	log.Printf("Coordinador: Check-in recibido de Cliente %s para Vuelo %s Asiento %s", req.ClientId, req.FlightId, req.SeatNumber)
 
 	// 1. Conectar al BROKER
 	conn, err := grpc.Dial(BROKER_ADDR, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -64,7 +64,7 @@ func (s *CoordinatorServer) ProcessCheckIn(ctx context.Context, req *pb.CheckInR
 
 	resp, err := brokerClient.UpdateFlightData(ctx, updateReq)
 	if err != nil {
-		log.Printf("❌ Error RPC Broker: %v", err)
+		log.Printf("Error RPC Broker: %v", err)
 		return &pb.CheckInResponse{Success: false, Message: "Fallo en Broker"}, err
 	}
 
@@ -76,7 +76,7 @@ func (s *CoordinatorServer) ProcessCheckIn(ctx context.Context, req *pb.CheckInR
 			LastAccess: time.Now(),
 		}
 		s.mu.Unlock()
-		log.Printf("📌 Sesión Creada: Cliente %s pegado a %s (Sticky)", req.ClientId, resp.DatanodeId)
+		log.Printf("Sesión Creada: Cliente %s pegado a %s (Sticky)", req.ClientId, resp.DatanodeId)
 	}
 
 	return &pb.CheckInResponse{
@@ -96,7 +96,7 @@ func (s *CoordinatorServer) GetBoardingPass(ctx context.Context, req *pb.Boardin
 	if exists && time.Since(session.LastAccess) > SESSION_TTL {
 		delete(s.sessions, req.ClientId)
 		exists = false
-		log.Printf("⚠️ Sesión expirada para Cliente %s", req.ClientId)
+		log.Printf("Sesión expirada para Cliente %s", req.ClientId)
 	}
 	s.mu.Unlock()
 
@@ -104,7 +104,7 @@ func (s *CoordinatorServer) GetBoardingPass(ctx context.Context, req *pb.Boardin
 	if exists {
 		targetAddr, ok := datanodeMap[session.DatanodeID]
 		if ok {
-			log.Printf("⚡ Sticky Read: Cliente %s redirigido directo a %s (%s)", req.ClientId, session.DatanodeID, targetAddr)
+			log.Printf("Sticky Read: Cliente %s redirigido directo a %s (%s)", req.ClientId, session.DatanodeID, targetAddr)
 
 			// Conexión efímera al Datanode específico
 			conn, err := grpc.Dial(targetAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -124,13 +124,13 @@ func (s *CoordinatorServer) GetBoardingPass(ctx context.Context, req *pb.Boardin
 					}, nil
 				}
 			}
-			log.Printf("⚠️ Falló Sticky Read con %s, haciendo fallback al Broker...", session.DatanodeID)
+			log.Printf("Falló Sticky Read con %s, haciendo fallback al Broker...", session.DatanodeID)
 		}
 	}
 
 	// --- CAMINO B: FALLBACK (Al Broker) ---
 	// Si no hay sesión o falló la conexión directa, le pedimos al Broker que busque.
-	log.Printf("🔄 Lectura Standard: Consultando al Broker para Cliente %s", req.ClientId)
+	log.Printf("Lectura Standard: Consultando al Broker para Cliente %s", req.ClientId)
 
 	conn, err := grpc.Dial(BROKER_ADDR, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -155,7 +155,7 @@ func (s *CoordinatorServer) GetBoardingPass(ctx context.Context, req *pb.Boardin
 func main() {
 	lis, err := net.Listen("tcp", PORT)
 	if err != nil {
-		log.Fatalf("❌ Falló al escuchar puerto %s: %v", PORT, err)
+		log.Fatalf("Falló al escuchar puerto %s: %v", PORT, err)
 	}
 
 	grpcServer := grpc.NewServer()
@@ -165,7 +165,7 @@ func main() {
 
 	pb.RegisterCheckInCoordinatorServer(grpcServer, coordinator)
 
-	log.Printf("🛂 Coordinador (Gateway) escuchando en %s", PORT)
+	log.Printf("Coordinador (Gateway) escuchando en %s", PORT)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Falló al servir gRPC: %v", err)
 	}

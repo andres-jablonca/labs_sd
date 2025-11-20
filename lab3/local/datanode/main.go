@@ -78,7 +78,7 @@ func (s *DatanodeServer) ApplyWrite(ctx context.Context, req *pb.UpdateRequest) 
 		return &pb.UpdateResponse{Success: false, Message: "Asiento ya ocupado."}, nil
 	}
 	s.rywState[key] = req.ClientId
-	log.Printf("📝 ESCRITURA RYW: Asiento %s asignado a %s en vuelo %s.", req.SeatNumber, req.ClientId, req.FlightId)
+	log.Printf("ESCRITURA RYW: Asiento %s asignado a %s en vuelo %s.", req.SeatNumber, req.ClientId, req.FlightId)
 	return &pb.UpdateResponse{Success: true, Message: "Escritura aplicada."}, nil
 }
 
@@ -96,7 +96,7 @@ func (s *DatanodeServer) ReadData(ctx context.Context, req *pb.ReadRequest) (*pb
 			break
 		}
 	}
-	log.Printf("🔎 LECTURA RYW: Cliente %s -> Asiento: %s", req.ClientId, assignedSeat)
+	log.Printf("LECTURA RYW: Cliente %s -> Asiento: %s", req.ClientId, assignedSeat)
 	return &pb.ReadResponse{
 		FlightId:             req.FlightId,
 		SeatAssignedToClient: assignedSeat,
@@ -130,7 +130,7 @@ func isCausallyPrior(vc1, vc2 map[string]int64) bool {
 }
 
 func (s *DatanodeServer) ResolveConflict(existingData, newData FlightData) FlightData {
-	log.Printf("⚡ ¡CONFLICTO! Resolviendo %v vs %v...", existingData.VC, newData.VC)
+	log.Printf("¡CONFLICTO! Resolviendo %v vs %v...", existingData.VC, newData.VC)
 
 	mergedVC := MergeVC(existingData.VC, newData.VC)
 	statusExisting := existingData.Status["estado"]
@@ -147,9 +147,9 @@ func (s *DatanodeServer) ResolveConflict(existingData, newData FlightData) Fligh
 	// REGLA: "Cancelado" gana
 	if statusExisting == "Cancelado" || statusNew == "Cancelado" {
 		finalStatusMap["estado"] = "Cancelado"
-		log.Printf("⚔️ Resolución: Ganó 'Cancelado'.")
+		log.Printf("Resolución: Ganó 'Cancelado'.")
 	} else {
-		log.Printf("🤝 Resolución: Fusión estándar.")
+		log.Printf("Resolución: Fusión estándar.")
 	}
 	return FlightData{Status: finalStatusMap, VC: mergedVC}
 }
@@ -167,7 +167,7 @@ func (s *DatanodeServer) UpdateFlightStatus(ctx context.Context, req *pb.UpdateF
 		if s.flightData[flightID].VC[s.id] == 0 {
 			s.flightData[flightID].VC[s.id] = 0
 		}
-		log.Printf("📥 ALMACENADO Inicial de %s. VC: %v", flightID, incomingData.VC)
+		log.Printf("ALMACENADO Inicial de %s. VC: %v", flightID, incomingData.VC)
 		return &pb.UpdateResponse{Success: true, Message: "Nuevo dato guardado."}, nil
 	}
 
@@ -179,7 +179,7 @@ func (s *DatanodeServer) UpdateFlightStatus(ctx context.Context, req *pb.UpdateF
 	if isPrior {
 		s.flightData[flightID] = incomingData
 	} else if isDescendant {
-		log.Printf("🗑️ DESCARTADO %s (Dato viejo) estado: %v", flightID, incomingData.Status["estado"])
+		log.Printf("DESCARTADO %s (Dato viejo) estado: %v", flightID, incomingData.Status["estado"])
 	} else {
 		resolvedData := s.ResolveConflict(existingData, incomingData)
 		s.flightData[flightID] = resolvedData
@@ -253,11 +253,11 @@ func (s *DatanodeServer) sendGossip() {
 	targetPeer := s.peers[rand.Intn(len(s.peers))]
 	s.mu.Unlock()
 
-	log.Printf("🗣️ Gossip: Sincronizando con %s...", targetPeer)
+	log.Printf("Gossip: Sincronizando con %s...", targetPeer)
 
 	conn, err := grpc.Dial(targetPeer, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithTimeout(2*time.Second))
 	if err != nil {
-		log.Printf("❌ Gossip falló conectando a %s: %v", targetPeer, err)
+		log.Printf("Gossip falló conectando a %s: %v", targetPeer, err)
 		return
 	}
 	defer conn.Close()
@@ -285,7 +285,7 @@ func main() {
 	// Iniciar Server
 	lis, err := net.Listen("tcp", *portPtr)
 	if err != nil {
-		log.Fatalf("❌ Falló al escuchar puerto %s: %v", *portPtr, err)
+		log.Fatalf("Falló al escuchar puerto %s: %v", *portPtr, err)
 	}
 
 	s := grpc.NewServer()
@@ -300,7 +300,7 @@ func main() {
 
 	go server.gossipLoop()
 
-	log.Printf("🚀 Datanode %s iniciado en puerto %s (Peers: %v)", *idPtr, *portPtr, myPeers)
+	log.Printf("Datanode %s iniciado en puerto %s (Peers: %v)", *idPtr, *portPtr, myPeers)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Falló al servir: %v", err)
 	}
