@@ -8,34 +8,53 @@ import (
 	"time"
 
 	pb "lab3/proto"
+
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-// DatanodeID es el ID del Datanode. SessionState mapea ClientID a DatanodeID.
-type SessionState struct {
-	DatanodeID string
-	ExpiryTime time.Time
-}
 const (
-    sessionTTL = time.Minute * 5 // Tiempo de vida de la sesión
-    coordinatorAddr = ":50051"   // Puerto donde escucha el Coordinador
-    brokerAddr = "localhost:50052" // Dirección del Broker Central
+	PORT        = ":50055"
+	BROKER_ADDR = "broker:50052"
+	SESSION_TTL = 30 * time.Second // Tiempo de vida de la sesión "Sticky"
 )
-// ... (resto de tu código)
+
+// Estructura para guardar la sesión del cliente
+type SessionEntry struct {
+	DatanodeID string
+	LastAccess time.Time
+}
 
 type CoordinatorServer struct {
 	pb.UnimplementedCheckInCoordinatorServer
-	sessionMap map[string]SessionState // client_id -> SessionState
-	mu         sync.RWMutex
-	brokerClient pb.CentralBrokerClient
+
+	// Mapa de Sesiones: ClientID -> DatanodeID
+	sessions map[string]SessionEntry
+	mu       sync.Mutex
 }
 
+// Mapa auxiliar para resolver IDs a Direcciones (Hardcoded por simplicidad del lab)
+var datanodeMap = map[string]string{
+	"DN-1": "datanode1:50061",
+	"DN-2": "datanode2:50062",
+	"DN-3": "datanode3:50063",
+}
 
-// ProcessCheckIn maneja la ESCRITURA del cliente RYW.
+// ---------------------------------------------------------------------------
+// 1. ESCRITURA (ProcessCheckIn) -> Va al Broker, pero guarda quién lo atendió
+// ---------------------------------------------------------------------------
 func (s *CoordinatorServer) ProcessCheckIn(ctx context.Context, req *pb.CheckInRequest) (*pb.CheckInResponse, error) {
-	// 1. Reenvía la escritura al Broker (el Broker elige el Datanode).
-	log.Printf("Coordinador: Recibida escritura de %s. Reenviando a Broker...", req.ClientId)
+	log.Printf("📝 Coordinador: Check-in recibido de Cliente %s para Vuelo %s Asiento %s", req.ClientId, req.FlightId, req.SeatNumber)
 
+	// 1. Conectar al BROKER
+	conn, err := grpc.Dial(BROKER_ADDR, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return &pb.CheckInResponse{Success: false, Message: "Error conectando al Broker"}, err
+	}
+	defer conn.Close()
+	brokerClient := pb.NewCentralBrokerClient(conn)
+
+	// 2. Enviar solicitud de actualización al Broker
 	updateReq := &pb.UpdateRequest{
 		ClientId:    req.ClientId,
 		FlightId:    req.FlightId,
@@ -43,135 +62,111 @@ func (s *CoordinatorServer) ProcessCheckIn(ctx context.Context, req *pb.CheckInR
 		RequestUuid: req.RequestUuid,
 	}
 
-	// Llama al Broker Central (asume que s.brokerClient está inicializado)
-	updateRes, err := s.brokerClient.UpdateFlightData(ctx, updateReq)
-	if err != nil || !updateRes.Success {
-		return &pb.CheckInResponse{Success: false, Message: "Error interno o de negocio."}, err
+	resp, err := brokerClient.UpdateFlightData(ctx, updateReq)
+	if err != nil {
+		log.Printf("❌ Error RPC Broker: %v", err)
+		return &pb.CheckInResponse{Success: false, Message: "Fallo en Broker"}, err
 	}
-	
-	// 2. REGISTRA AFINIDAD DE SESIÓN[cite: 67].
+
+	if resp.Success {
+		// 3. STICKY SESSION: Guardar qué Datanode atendió esta escritura
+		s.mu.Lock()
+		s.sessions[req.ClientId] = SessionEntry{
+			DatanodeID: resp.DatanodeId, // El proto nos devuelve quién escribió
+			LastAccess: time.Now(),
+		}
+		s.mu.Unlock()
+		log.Printf("📌 Sesión Creada: Cliente %s pegado a %s (Sticky)", req.ClientId, resp.DatanodeId)
+	}
+
+	return &pb.CheckInResponse{
+		Success:      resp.Success,
+		Message:      resp.Message,
+		ErrorDetails: "",
+	}, nil
+}
+
+// ---------------------------------------------------------------------------
+// 2. LECTURA (GetBoardingPass) -> Intenta ir directo al Datanode (Sticky Read)
+// ---------------------------------------------------------------------------
+func (s *CoordinatorServer) GetBoardingPass(ctx context.Context, req *pb.BoardingPassRequest) (*pb.BoardingPassResponse, error) {
 	s.mu.Lock()
-	s.sessionMap[req.ClientId] = SessionState{
-		DatanodeID: updateRes.DatanodeId, // Datanode que procesó la escritura
-		ExpiryTime: time.Now().Add(sessionTTL),
+	session, exists := s.sessions[req.ClientId]
+	// Validación simple de TTL
+	if exists && time.Since(session.LastAccess) > SESSION_TTL {
+		delete(s.sessions, req.ClientId)
+		exists = false
+		log.Printf("⚠️ Sesión expirada para Cliente %s", req.ClientId)
 	}
 	s.mu.Unlock()
-	log.Printf("Coordinador: Escritura de %s procesada por DN: %s. Sesión sticky registrada.", req.ClientId, updateRes.DatanodeId)
 
-	return &pb.CheckInResponse{Success: true, Message: "Check-in completado exitosamente."}, nil
-}
+	// --- CAMINO A: STICKY READ (Directo al Datanode) ---
+	if exists {
+		targetAddr, ok := datanodeMap[session.DatanodeID]
+		if ok {
+			log.Printf("⚡ Sticky Read: Cliente %s redirigido directo a %s (%s)", req.ClientId, session.DatanodeID, targetAddr)
 
-// En coordinator/main.go
+			// Conexión efímera al Datanode específico
+			conn, err := grpc.Dial(targetAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err == nil {
+				defer conn.Close()
+				dnClient := pb.NewDatanodeServiceClient(conn)
 
-// La función GetFlightData debe recibir el VC del cliente y pasarlo al Broker:
-// En coordinator/main.go
-
-func (s *CoordinatorServer) GetFlightData(ctx context.Context, req *pb.ReadRequest) (*pb.ReadResponse, error) {
-    log.Printf("Coordinador: Recibida solicitud de lectura RYW para %s. VC Cliente: %v", req.FlightId, req.ClientVectorClock)
-    
-    // 1. Reenviar el ReadRequest al Broker, incluyendo el VC del cliente
-    brokerResp, err := s.brokerClient.GetFlightData(ctx, &pb.ReadRequest{
-        FlightId:    req.FlightId,
-        // ✅ Corregido: Los campos ahora existen en pb.ReadRequest
-        ClientVectorClock: req.ClientVectorClock, 
-    })
-    
-    if err != nil {
-        log.Printf("❌ ERROR al obtener datos del Broker: %v", err)
-        return nil, err
-    }
-    
-    // 2. Devolver la respuesta del Broker, que incluye el VC del Datanode
-    return &pb.ReadResponse{
-        FlightId:             brokerResp.FlightId,
-        SeatAssignedToClient: brokerResp.SeatAssignedToClient,
-        // ✅ Corregido: El campo ahora existe en pb.ReadResponse
-        VectorClock:          brokerResp.VectorClock, 
-    }, nil
-}
-
-// GetBoardingPass maneja la LECTURA de confirmación RYW.
-func (s *CoordinatorServer) GetBoardingPass(ctx context.Context, req *pb.BoardingPassRequest) (*pb.BoardingPassResponse, error) {
-	s.mu.RLock()
-	session, active := s.sessionMap[req.ClientId]
-	s.mu.RUnlock()
-
-	// 1. VERIFICA AFINIDAD ACTIVA[cite: 70].
-	if active && session.ExpiryTime.After(time.Now()) {
-		log.Printf("Coordinador: Lectura de %s. SESIÓN ACTIVA (%s). Redirigiendo a Datanode %s.", 
-			req.ClientId, session.DatanodeID, session.DatanodeID)
-		
-		// 2. REDIRECCIÓN DIRECTA: Llama al Datanode específico (saltando el Broker).
-		// *En una implementación real, aquí se necesitaría un cliente gRPC para cada Datanode*
-		
-		// Simulación de lectura afín exitosa (asume que el DN tiene los datos)
-		// La llamada real sería a un método del Datanode, ej: datanodeClient.ReadData(ctx, readReq)
-		
-		return &pb.BoardingPassResponse{
-			ClientId: req.ClientId,
-			FlightId: req.FlightId,
-			SeatAssigned: "21A", // Debe ser el dato escrito previamente
-			Gate: "C7",
-		}, nil 
-
-	} else {
-		// 3. REDIRECCIÓN BALANCEADA: Si no hay sesión o expiró, reenvía al Broker para balanceo[cite: 71].
-		log.Printf("Coordinador: Lectura de %s. Sin sesión activa. Reenviando al Broker para balanceo.", req.ClientId)
-		
-		// Llama al Broker Central para lectura balanceada (el Broker elige cualquier DN).
-		readReq := &pb.ReadRequest{ClientId: req.ClientId, FlightId: req.FlightId}
-		readRes, err := s.brokerClient.GetFlightData(ctx, readReq)
-		if err != nil {
-			return nil, err
+				// Llamada directa
+				dnResp, err := dnClient.ReadData(ctx, &pb.ReadRequest{ClientId: req.ClientId, FlightId: req.FlightId})
+				if err == nil {
+					// Éxito leyendo directo del Datanode donde escribimos
+					return &pb.BoardingPassResponse{
+						ClientId:     req.ClientId,
+						FlightId:     dnResp.FlightId,
+						SeatAssigned: dnResp.SeatAssignedToClient,
+						Gate:         "Consultar Pantalla", // Dato dummy, el asiento es lo importante
+					}, nil
+				}
+			}
+			log.Printf("⚠️ Falló Sticky Read con %s, haciendo fallback al Broker...", session.DatanodeID)
 		}
-		
-		// Mapear la respuesta del Broker a la respuesta del Boarding Pass
-		return &pb.BoardingPassResponse{
-			ClientId: req.ClientId,
-			FlightId: readRes.FlightId,
-			SeatAssigned: readRes.SeatAssignedToClient,
-			Gate: "C7", // Ejemplo
-		}, nil
+	}
+
+	// --- CAMINO B: FALLBACK (Al Broker) ---
+	// Si no hay sesión o falló la conexión directa, le pedimos al Broker que busque.
+	log.Printf("🔄 Lectura Standard: Consultando al Broker para Cliente %s", req.ClientId)
+
+	conn, err := grpc.Dial(BROKER_ADDR, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	brokerClient := pb.NewCentralBrokerClient(conn)
+
+	resp, err := brokerClient.GetFlightData(ctx, &pb.ReadRequest{ClientId: req.ClientId, FlightId: req.FlightId})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.BoardingPassResponse{
+		ClientId:     req.ClientId,
+		FlightId:     resp.FlightId,
+		SeatAssigned: resp.SeatAssignedToClient,
+		Gate:         "Consultar Pantalla",
+	}, nil
+}
+
+func main() {
+	lis, err := net.Listen("tcp", PORT)
+	if err != nil {
+		log.Fatalf("❌ Falló al escuchar puerto %s: %v", PORT, err)
+	}
+
+	grpcServer := grpc.NewServer()
+	coordinator := &CoordinatorServer{
+		sessions: make(map[string]SessionEntry),
+	}
+
+	pb.RegisterCheckInCoordinatorServer(grpcServer, coordinator)
+
+	log.Printf("🛂 Coordinador (Gateway) escuchando en %s", PORT)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("Falló al servir gRPC: %v", err)
 	}
 }
-
-// Función principal para iniciar el servidor del Coordinador
-// ... (Todo el código de arriba: structs, ProcessCheckIn, GetBoardingPass)
-
-// Función principal para iniciar el servidor del Coordinador
-func main() {
-    log.Println("Coordinador: Intentando conectar al Broker Central...")
-
-    // 1. Conexión al Broker Central (Server del Broker)
-    connBroker, err := grpc.Dial(brokerAddr, grpc.WithInsecure(), grpc.WithBlock()) 
-    if err != nil { 
-        log.Fatalf("❌ ERROR: No se pudo conectar al Broker en %s: %v", brokerAddr, err)
-    }
-    defer connBroker.Close()
-    
-    brokerClient := pb.NewCentralBrokerClient(connBroker)
-    log.Printf("✅ Coordinador conectado al Broker en %s", brokerAddr)
-    
-    // 2. Inicialización del servidor Coordinador
-    lis, err := net.Listen("tcp", coordinatorAddr)
-    if err != nil {
-        log.Fatalf("❌ ERROR: Falló al escuchar en %s: %v", coordinatorAddr, err)
-    }
-
-    s := grpc.NewServer()
-    
-    // 3. Registro del servicio
-    pb.RegisterCheckInCoordinatorServer(s, &CoordinatorServer{
-        sessionMap: make(map[string]SessionState),
-        // Pasar la conexión inicializada al Broker
-        brokerClient: brokerClient, 
-    })
-
-    log.Printf("🚀 Coordinador (Gateway de Check-in) escuchando en %v", lis.Addr())
-    
-    // 4. Iniciar el servidor
-    if err := s.Serve(lis); err != nil {
-        log.Fatalf("falló al servir: %v", err)
-    }
-}
-

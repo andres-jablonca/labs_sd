@@ -2,55 +2,73 @@ package main
 
 import (
 	"context"
+	"flag" // IMPORTANTE: Para leer argumentos de línea de comandos
 	"log"
-	"math/rand" // NUEVO: Para seleccionar peers aleatoriamente
+	"math/rand"
 	"net"
-	"os"
 	"strings"
 	"sync"
-	"time" // NUEVO: Para el loop de Gossip
+	"time"
 
 	pb "lab3/proto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure" // NUEVO: Necesario para dial al peer
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
-// Constantes para la red y peers
 const (
-	GOSSIP_INTERVAL = 3 * time.Second
+	GOSSIP_INTERVAL = 5 * time.Second
 )
 
-// Estructura para almacenar el estado de un vuelo junto con su Vector Clock (VC).
+var (
+	idPtr   = flag.String("id", "DN-1", "ID del Datanode (Ej: DN-1, DN-2, DN-3)")
+	portPtr = flag.String("port", ":50061", "Puerto de escucha (Ej: :50061)")
+)
+
+// Estructura de datos
 type FlightData struct {
-	Status map[string]string // Ej: {"estado": "Retrasado", "puerta": "A2", ...}
-	VC     map[string]int64  // Vector Clock asociado a esta versión del dato (Ej: {"DN-1": 5, "DN-2": 2})
+	Status map[string]string
+	VC     map[string]int64
 }
 
-// DatanodeServer implementa un servicio (que el Broker llama) y almacena los datos.
+// Servidor Datanode
 type DatanodeServer struct {
 	pb.UnimplementedDatanodeServiceServer
-
-	// Data para RYW (Asignación de asientos - Key: FlightId:SeatNumber, Value: ClientId)
-	rywState map[string]string
-
-	// Data para Consistencia Eventual (Estado de vuelos - Key: FlightId, Value: FlightData)
+	rywState   map[string]string
 	flightData map[string]FlightData
-
-	mu sync.Mutex
-	id string // ID del Datanode (DN-1, DN-2, etc.)
-
-	// Configuración de red para Gossip
-	peers []string // Lista de direcciones de otros Datanodes (Ej: "datanode2:50062")
+	mu         sync.Mutex
+	id         string
+	peers      []string
 }
 
-// ----------------------------------------------------
-// RYW/CHECK-IN (Mantenido, usando rywState)
-// ----------------------------------------------------
+// =======================================================================
+// LÓGICA DE SELECCIÓN DE PEERS DINÁMICA
+// =======================================================================
+// Devuelve la lista de compañeros basada en mi propia identidad.
+func getPeers(myID string) []string {
+	// Mapa maestro de la topología de la red
+	// IMPORTANTE: Si mueves esto a VMs reales, cambia estos valores por las IPs reales (ej: "192.168.1.50:50062")
+	allNodes := map[string]string{
+		"DN-1": "datanode1:50061",
+		"DN-2": "datanode2:50062",
+		"DN-3": "datanode3:50063",
+	}
 
-// ApplyWrite maneja la asignación de asiento (Consistencia RYW).
+	var peers []string
+	for id, addr := range allNodes {
+		// Soy peer de todos MENOS de mí mismo
+		if id != myID {
+			peers = append(peers, addr)
+		}
+	}
+	return peers
+}
+
+// =======================================================================
+// LÓGICA RYW (Check-in)
+// =======================================================================
 func (s *DatanodeServer) ApplyWrite(ctx context.Context, req *pb.UpdateRequest) (*pb.UpdateResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -60,13 +78,10 @@ func (s *DatanodeServer) ApplyWrite(ctx context.Context, req *pb.UpdateRequest) 
 		return &pb.UpdateResponse{Success: false, Message: "Asiento ya ocupado."}, nil
 	}
 	s.rywState[key] = req.ClientId
-
-	log.Printf("Datanode %s: ESCRITURA RYW: Asiento %s asignado a %s en vuelo %s.", s.id, req.SeatNumber, req.ClientId, req.FlightId)
-
+	log.Printf("📝 ESCRITURA RYW: Asiento %s asignado a %s en vuelo %s.", req.SeatNumber, req.ClientId, req.FlightId)
 	return &pb.UpdateResponse{Success: true, Message: "Escritura aplicada."}, nil
 }
 
-// ReadData maneja la lectura de asiento (Consistencia RYW).
 func (s *DatanodeServer) ReadData(ctx context.Context, req *pb.ReadRequest) (*pb.ReadResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -81,27 +96,22 @@ func (s *DatanodeServer) ReadData(ctx context.Context, req *pb.ReadRequest) (*pb
 			break
 		}
 	}
-
-	log.Printf("Datanode %s: LECTURA RYW: Devolviendo estado para %s (Asiento: %s).", s.id, req.ClientId, assignedSeat)
-
+	log.Printf("🔎 LECTURA RYW: Cliente %s -> Asiento: %s", req.ClientId, assignedSeat)
 	return &pb.ReadResponse{
 		FlightId:             req.FlightId,
 		SeatAssignedToClient: assignedSeat,
 	}, nil
 }
 
-// ----------------------------------------------------
-// CONSISTENCIA EVENTUAL (ACTUALIZACIONES DE VUELO)
-// ----------------------------------------------------
+// =======================================================================
+// LÓGICA CONSISTENCIA EVENTUAL (Relojes & Conflictos)
+// =======================================================================
 
-// MergeVC fusiona dos Vector Clocks, tomando el máximo de cada componente.
 func MergeVC(vc1, vc2 map[string]int64) map[string]int64 {
 	merged := make(map[string]int64)
-	// Inicializar con vc1
 	for id, count := range vc1 {
 		merged[id] = count
 	}
-	// Fusionar con vc2 (tomando el máximo)
 	for id, count := range vc2 {
 		if count > merged[id] {
 			merged[id] = count
@@ -110,10 +120,8 @@ func MergeVC(vc1, vc2 map[string]int64) map[string]int64 {
 	return merged
 }
 
-// isCausallyPrior verifica si vc1 es causalmente anterior o igual a vc2.
 func isCausallyPrior(vc1, vc2 map[string]int64) bool {
 	for id, count1 := range vc1 {
-		// Si hay un componente en vc1 que es mayor que el mismo componente en vc2, no es anterior.
 		if count1 > vc2[id] {
 			return false
 		}
@@ -121,295 +129,179 @@ func isCausallyPrior(vc1, vc2 map[string]int64) bool {
 	return true
 }
 
-// ResolveConflict aplica la política de resolución determinista.
-// Por simplicidad, implementamos una política de fusión de estados simple y fusionamos los VCs.
 func (s *DatanodeServer) ResolveConflict(existingData, newData FlightData) FlightData {
-	log.Printf("Datanode %s: ⚠️ CONFLICTO DETECTADO para %s. Aplicando política de fusión.", s.id, newData.Status["flight_id"])
+	log.Printf("⚡ ¡CONFLICTO! Resolviendo %v vs %v...", existingData.VC, newData.VC)
 
-	// Fusionar estados (la última actualización recibida para un campo sobrescribe, es una simplificación)
+	mergedVC := MergeVC(existingData.VC, newData.VC)
+	statusExisting := existingData.Status["estado"]
+	statusNew := newData.Status["estado"]
+
+	finalStatusMap := make(map[string]string)
+	for k, v := range existingData.Status {
+		finalStatusMap[k] = v
+	}
 	for k, v := range newData.Status {
-		existingData.Status[k] = v
+		finalStatusMap[k] = v
 	}
 
-	// El nuevo VC es la fusión de ambos VCs
-	existingData.VC = MergeVC(existingData.VC, newData.VC)
-
-	return existingData
+	// REGLA: "Cancelado" gana
+	if statusExisting == "Cancelado" || statusNew == "Cancelado" {
+		finalStatusMap["estado"] = "Cancelado"
+		log.Printf("⚔️ Resolución: Ganó 'Cancelado'.")
+	} else {
+		log.Printf("🤝 Resolución: Fusión estándar.")
+	}
+	return FlightData{Status: finalStatusMap, VC: mergedVC}
 }
 
-// GetFlightStatus implementa la lógica de Monotonic Reads.
-// Sólo devuelve el dato si su versión es >= a la versión que el cliente vio por última vez.
-func (s *DatanodeServer) GetFlightStatus(ctx context.Context, req *pb.FlightRequest) (*pb.FlightResponse, error) {
-	// Bloqueamos la data para lectura concurrente
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	flightID := req.GetFlightID()
-	clientVersion := req.GetLastversion() // Versión escalar del cliente
-
-	currentData, found := s.flightData[flightID]
-
-	if !found {
-		// Si el vuelo no se encuentra (aún no se ha recibido la actualización), devolvemos error.
-		log.Printf("ADVERTENCIA: Vuelo %s no encontrado en Datanode %s. Reintentar.", flightID, s.id)
-		return nil, status.Errorf(codes.NotFound, "Vuelo %s no encontrado.", flightID)
-	}
-
-	// Extraer la versión escalar del dato local.
-	// ASUMIMOS que la versión escalar se rastrea con el componente "BROKER" en el Vector Clock.
-	currentVersion, ok := currentData.VC["BROKER"]
-	if !ok {
-		// Si el componente 'BROKER' no existe, asumimos V0.
-		currentVersion = 0
-	}
-
-	// =====================================================================
-	// 1. LÓGICA DE MONOTONIC READS (Monotonicidad)
-	// =====================================================================
-
-	if currentVersion < clientVersion {
-		// El dato local (V%d) es causalmente anterior al dato que el cliente ya vio (V%d).
-		// NO debemos responder, devolvemos un error para que el cliente reintente (esperando el Gossip).
-		log.Printf("ADVERTENCIA: Monotonic Read de %s falló. Datanode %s (V%d) está desactualizado respecto al cliente (V%d).",
-			flightID, s.id, currentVersion, clientVersion)
-
-		// Usamos codes.Unavailable para indicar que el recurso (la versión) no está listo.
-		return nil, status.Errorf(codes.Unavailable, "Versión de vuelo (V%d) es inferior a la vista por el cliente (V%d). Reintente.",
-			currentVersion, clientVersion)
-	}
-
-	// 2. Si currentVersion >= clientVersion, la lectura es segura y Monotónica.
-	log.Printf("INFO: Monotonic Read de %s SATISFECHO en Datanode %s. Local V%d >= Cliente V%d.", flightID, s.id, currentVersion, clientVersion)
-
-	// Construir y devolver la respuesta.
-	// Asumimos que la actualización de estado contiene los campos "estado" y "puerta".
-	res := &pb.FlightResponse{
-		FlightID: flightID,
-		// Debes mapear los campos del mapa Status a los campos del FlightResponse
-		Status:  currentData.Status["estado"],
-		Gate:    currentData.Status["puerta"],
-		Version: currentVersion, // Devolver la versión del dato que se acaba de leer.
-	}
-	return res, nil
-}
-
-// UpdateFlightStatus es el RPC para recibir actualizaciones del Broker (CSV) o de otros Datanodes (Gossip).
 func (s *DatanodeServer) UpdateFlightStatus(ctx context.Context, req *pb.UpdateFlightStatusRequest) (*pb.UpdateResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	flightID := req.FlightId
-	incomingData := FlightData{
-		Status: req.Status,
-		VC:     req.VectorClock,
-	}
-
+	incomingData := FlightData{Status: req.Status, VC: req.VectorClock}
 	existingData, found := s.flightData[flightID]
 
-	// En datanode/main.go, dentro de UpdateFlightStatus:
-
-	// ...
-
 	if !found {
-		// Nuevo dato: Simplemente almacenar el dato entrante con su VC.
-		// NO se debe incrementar el VC del Datanode (s.id) al recibir una actualización.
 		s.flightData[flightID] = incomingData
-
-		// El Datanode debe asegurarse de que su propio ID exista en el VC (con valor 0, si no ha escrito nada)
-		if incomingData.VC[s.id] == 0 {
-			incomingData.VC[s.id] = 0 // Inicializar a 0 si no existe
+		if s.flightData[flightID].VC[s.id] == 0 {
+			s.flightData[flightID].VC[s.id] = 0
 		}
-
-		log.Printf("Datanode %s: ALMACENADO Inicial de %s. VC: %v", s.id, flightID, incomingData.VC)
-		return &pb.UpdateResponse{Success: true, Message: "Escritura aplicada (Nuevo dato)."}, nil
+		log.Printf("📥 ALMACENADO Inicial de %s. VC: %v", flightID, incomingData.VC)
+		return &pb.UpdateResponse{Success: true, Message: "Nuevo dato guardado."}, nil
 	}
-
-	// ...
 
 	vcLocal := existingData.VC
 	vcIncoming := incomingData.VC
-
 	isPrior := isCausallyPrior(vcLocal, vcIncoming)
 	isDescendant := isCausallyPrior(vcIncoming, vcLocal)
 
 	if isPrior {
-		// Caso 1: Data entrante es más reciente o igual. Aceptar y actualizar.
 		s.flightData[flightID] = incomingData
-		//log.Printf("Datanode %s: ALMACENADO Causal de %s. Data entrante es más reciente. Nuevo VC: %v", s.id, flightID, incomingData.VC)
-
 	} else if isDescendant {
-		// Caso 2: Data entrante es desactualizada (Stale). Descartar.
-		log.Printf("Datanode %s: DESCARTADO de %s. Data entrante es desactualizada. VC Local: %v", s.id, flightID, vcLocal)
-
+		log.Printf("🗑️ DESCARTADO %s (Dato viejo).", flightID)
 	} else {
-		// Caso 3: CONFLICTO (VCs concurrentes). Aplicar resolución.
 		resolvedData := s.ResolveConflict(existingData, incomingData)
 		s.flightData[flightID] = resolvedData
-		log.Printf("Datanode %s: RESOLUCIÓN de CONFLICTO para %s. Fusionado VC: %v", s.id, flightID, resolvedData.VC)
 	}
-
-	return &pb.UpdateResponse{Success: true, Message: "Actualización de estado procesada."}, nil
+	return &pb.UpdateResponse{Success: true}, nil
 }
 
-// ----------------------------------------------------
-// GOSSIP: Sincronización entre pares
-// ----------------------------------------------------
+func (s *DatanodeServer) GetFlightStatus(ctx context.Context, req *pb.FlightRequest) (*pb.FlightResponse, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
+	flightID := req.GetFlightID()
+	clientVersion := req.GetLastversion()
+	currentData, found := s.flightData[flightID]
+
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "Vuelo no encontrado")
+	}
+
+	var currentScalar int64 = 0
+	for k, v := range currentData.VC {
+		if strings.Contains(k, "BROKER") {
+			if v > currentScalar {
+				currentScalar = v
+			}
+		}
+	}
+
+	if currentScalar < clientVersion {
+		return nil, status.Errorf(codes.Unavailable, "Dato desactualizado")
+	}
+
+	return &pb.FlightResponse{
+		FlightID: flightID,
+		Status:   currentData.Status["estado"],
+		Gate:     currentData.Status["puerta"],
+		Version:  currentScalar,
+	}, nil
+}
+
+// =======================================================================
+// GOSSIP
+// =======================================================================
 func (s *DatanodeServer) gossipLoop() {
-	// Inicializar la semilla de rand
-	rand.Seed(time.Now().UnixNano())
-
 	ticker := time.NewTicker(GOSSIP_INTERVAL)
 	defer ticker.Stop()
-
 	for range ticker.C {
 		s.sendGossip()
 	}
 }
 
 func (s *DatanodeServer) sendGossip() {
-
-	// 1. ADQUIRIR LOCK, tomar un SNAPSHOT de la data y seleccionar el peer.
 	s.mu.Lock()
-
-	// Crear una copia profunda (Deep Copy/Snapshot) de la data de vuelos
 	dataSnapshot := make(map[string]FlightData)
-	for flightID, data := range s.flightData {
-		// Copiar el VC y el Status (mapas)
+	for fId, data := range s.flightData {
 		vcCopy := make(map[string]int64)
 		for k, v := range data.VC {
 			vcCopy[k] = v
 		}
-		statusCopy := make(map[string]string)
+		stCopy := make(map[string]string)
 		for k, v := range data.Status {
-			statusCopy[k] = v
+			stCopy[k] = v
 		}
-		dataSnapshot[flightID] = FlightData{
-			Status: statusCopy,
-			VC:     vcCopy,
-		}
+		dataSnapshot[fId] = FlightData{Status: stCopy, VC: vcCopy}
 	}
 
-	// Seleccionar un Datanode vecino aleatorio
-	var availablePeers []string
-	for _, p := range s.peers {
-		// Asegura no seleccionarse a sí mismo como peer
-		if !strings.Contains(p, s.id) {
-			availablePeers = append(availablePeers, p)
-		}
-	}
-
-	if len(availablePeers) == 0 {
+	if len(s.peers) == 0 {
 		s.mu.Unlock()
 		return
 	}
-
-	// Declaración y asignación de targetPeer
-	targetPeer := availablePeers[rand.Intn(len(availablePeers))]
-
-	// 2. LIBERAR el lock inmediatamente antes de cualquier operación de red.
+	targetPeer := s.peers[rand.Intn(len(s.peers))]
 	s.mu.Unlock()
 
-	// Operaciones de red (gRPC) fuera del lock
+	log.Printf("🗣️ Gossip: Sincronizando con %s...", targetPeer)
 
-	log.Printf("Gossip: Iniciando sincronización con peer %s...", targetPeer)
-
-	// 3. Crear conexión gRPC con el peer. conn se declara aquí.
-	// Usamos el import "google.golang.org/grpc/credentials/insecure" que ahora sí es necesario.
 	conn, err := grpc.Dial(targetPeer, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithTimeout(2*time.Second))
 	if err != nil {
-		log.Printf("Gossip: Falló la conexión con %s: %v", targetPeer, err)
+		log.Printf("❌ Gossip falló conectando a %s: %v", targetPeer, err)
 		return
 	}
 	defer conn.Close()
-
 	client := pb.NewDatanodeServiceClient(conn)
 
-	// 4. Enviar la data usando el SNAPSHOT COPIADO
-	for flightID, data := range dataSnapshot {
-		// Crear el request con el VC y la data del snapshot
-		req := &pb.UpdateFlightStatusRequest{
-			FlightId:    flightID,
-			Status:      data.Status,
-			VectorClock: data.VC,
-		}
-
-		// Timeout corto para Gossip (ej. 2 segundos)
+	for fId, data := range dataSnapshot {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		// Descartamos el error ya que Gossip es 'best-effort'
-		_, _ = client.UpdateFlightStatus(ctx, req)
+		req := &pb.UpdateFlightStatusRequest{
+			FlightId: fId, Status: data.Status, VectorClock: data.VC,
+		}
+		client.UpdateFlightStatus(ctx, req)
 		cancel()
 	}
-	log.Printf("Gossip: Finalizada sincronización con %s.", targetPeer)
 }
 
-// ----------------------------------------------------
-// FUNCIONES DE UTILIDAD PARA DOCKER
-// ----------------------------------------------------
-
-func getListenPort() string {
-	port := os.Getenv("LISTEN_PORT")
-	if port == "" {
-		return ":50061"
-	}
-	return port
-}
-
-func getDatanodeId() string {
-	id := os.Getenv("DATANODE_ID")
-	if id == "" {
-		return "DN-X"
-	}
-	return id
-}
-
-// getPeers define las direcciones internas de los otros Datanodes en Docker Compose.
-func getPeers(currentID string) []string {
-	// Usamos los nombres de servicio de Docker Compose (datanodeX) + el puerto de escucha.
-	// Esto debe coincidir con la configuración en docker-compose.yml.
-	allPeers := []string{
-		"datanode1:50061",
-		"datanode2:50062",
-		"datanode3:50063",
-	}
-
-	return allPeers
-}
-
-// ----------------------------------------------------
-// FUNCION MAIN - PUNTO DE ENTRADA NECESARIO
-// ----------------------------------------------------
+// =======================================================================
+// MAIN CON FLAGS
+// =======================================================================
 func main() {
+	rand.Seed(time.Now().UnixNano())
+	flag.Parse()
 
-	datanodeID := getDatanodeId()
-	port := getListenPort()
-	peers := getPeers(datanodeID)
+	myPeers := getPeers(*idPtr)
 
-	lis, err := net.Listen("tcp", port)
+	// Iniciar Server
+	lis, err := net.Listen("tcp", *portPtr)
 	if err != nil {
-		log.Fatalf("❌ ERROR: Falló al escuchar el puerto %s: %v", port, err)
+		log.Fatalf("❌ Falló al escuchar puerto %s: %v", *portPtr, err)
 	}
 
 	s := grpc.NewServer()
-
-	// Inicialización del servidor con la nueva estructura
 	server := &DatanodeServer{
 		rywState:   make(map[string]string),
 		flightData: make(map[string]FlightData),
-		id:         datanodeID,
-		peers:      peers,
+		id:         *idPtr,
+		peers:      myPeers,
 	}
 
-	pb.RegisterDatanodeServiceServer(s, server) // Asumiendo que el nuevo RPC está en este servicio
+	pb.RegisterDatanodeServiceServer(s, server)
 
-	// 1. Iniciar el goroutine de Gossip (Consistencia Eventual)
 	go server.gossipLoop()
-	//log.Printf("Gossip: Iniciado con intervalo de %v. Peers: %v", GOSSIP_INTERVAL, peers)
 
-	log.Printf("🚀 Datanode %s escuchando en %s", datanodeID, port)
-
-	// 2. Inicia el servidor gRPC
+	log.Printf("🚀 Datanode %s iniciado en puerto %s (Peers: %v)", *idPtr, *portPtr, myPeers)
 	if err := s.Serve(lis); err != nil {
-		log.Fatalf("falló al servir: %v", err)
+		log.Fatalf("Falló al servir: %v", err)
 	}
 }

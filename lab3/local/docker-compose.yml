@@ -2,32 +2,40 @@ version: '3.8'
 
 services:
   # --- Datanodes (Servicios de Consistencia Eventual) ---
-  datanode1: &datanode_template # Template para reusar configuración
+
+  datanode1:
+    build:
+      context: .
+      dockerfile: Dockerfile  
+      args:
+        TARGET_DIR: datanode
+    command: ["/app/datanode_bin", "-id=DN-1", "-port=:50061"]
+    ports:
+      - "50061:50061" 
+    networks:
+      - aerodist-net
+  
+  datanode2:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         TARGET_DIR: datanode
-    environment:
-      # Puerto y ID para la escucha del servicio
-      - LISTEN_PORT=:50061
-      - DATANODE_ID=DN-1
-    networks:
-      - aerodist-net
-  
-  datanode2:
-    <<: *datanode_template # Reutiliza el template
-    environment:
-      - LISTEN_PORT=:50062
-      - DATANODE_ID=DN-2
+    command: ["/app/datanode_bin", "-id=DN-2", "-port=:50062"]
+    ports:
+      - "50062:50062"
     networks:
       - aerodist-net
   
   datanode3:
-    <<: *datanode_template # Reutiliza el template
-    environment:
-      - LISTEN_PORT=:50063
-      - DATANODE_ID=DN-3
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGET_DIR: datanode
+    command: ["/app/datanode_bin", "-id=DN-3", "-port=:50063"]
+    ports:      
+      - "50063:50063"
     networks:
       - aerodist-net
 
@@ -54,37 +62,41 @@ services:
       - datanode3
 
   # --- Coordinador (Gateway RYW) ---
+  # Nuevo Servicio: Coordinador
   coordinator:
-    build:
+    build: 
       context: .
       dockerfile: Dockerfile
       args:
+        # Asumimos que el código de clientes.go está en un subdirectorio llamado 'observadores'
         TARGET_DIR: coordinator
+    container_name: coordinator-1
+    ports:
+      - "50055:50055"
     environment:
-      - LISTEN_PORT=:50051
-      # Dirección del Broker. Usamos el nombre del servicio Docker (broker)
-      - BROKER_ADDR=broker:50052
-    networks:
-      - aerodist-net
+      - LISTEN_PORT=:50055
     depends_on:
       - broker
+      - datanode1
+    networks:
+      - aerodist-net
 
   # --- Cliente RYW (Para Pruebas) ---
+  # Nuevo Cliente: Check-in (Read Your Writes)
   client_ryw:
-    build:
+    build: 
       context: .
       dockerfile: Dockerfile
       args:
-        TARGET_DIR: client_ryw
+          # Asumimos que el código de clientes.go está en un subdirectorio llamado 'observadores'
+          TARGET_DIR: client_ryw
+    container_name: client_ryw-1
     environment:
-      # Dirección del Coordinador. Usamos el nombre del servicio Docker (coordinator)
-      - COORDINATOR_ADDR=coordinator:50051 
-    networks:
-      - aerodist-net
+      - COORDINATOR_ADDR=coordinator:50055
     depends_on:
       - coordinator
-    # Run once and exit
-    restart: "no"
+    networks:
+      - aerodist-net
 
   # --- CLIENTE MONOTONIC READS (Pasajero Observador) ---
   client_mr:

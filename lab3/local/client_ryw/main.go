@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
-	"os"
-	"strconv"
-	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -16,109 +15,114 @@ import (
 )
 
 const (
-	coordinatorAddr = "coordinator:50051"
-	clientID        = "RYW-Client-1"
-	flightID        = "LA-500"
+	COORDINATOR_ADDR = "coordinator:50055"
 )
 
-// Global para almacenar el Vector Clock local (RYW)
-var clientVC = make(map[string]int64)
-var mu sync.Mutex
-
-// mergeVC es una función auxiliar para fusionar dos VCs, tomando el máximo
-func mergeVC(vc1, vc2 map[string]int64) map[string]int64 {
-	result := make(map[string]int64)
-	for k, v := range vc1 {
-		result[k] = v
-	}
-	for k, v := range vc2 {
-		if v > result[k] {
-			result[k] = v
-		}
-	}
-	return result
-}
-
-// En client_ryw/main.go
-
-func checkin(client pb.CheckInCoordinatorClient) {
-	rand.Seed(time.Now().UnixNano()) // Usar math/rand
-
-	// --- 1. ESCRITURA (Check-in) ---
-	log.Printf("Cliente (%s): Iniciando Check-in (Escritura) para asiento 14A...", clientID)
-	
-	// Usamos rand y strconv para un request_uuid único (elimina warnings)
-	requestUUID := "req-" + clientID + "-" + time.Now().Format("0405") + "-" + strconv.Itoa(rand.Intn(10000))
-
-	checkInReq := &pb.CheckInRequest{
-		ClientId:    clientID,
-		FlightId:    flightID,
-		SeatNumber:  "14A",
-		RequestUuid: requestUUID,
-	}
-
-	checkInResp, err := client.ProcessCheckIn(context.Background(), checkInReq)
-	if err != nil {
-		log.Fatalf("❌ Error en Check-in: %v", err)
-	}
-	
-	if !checkInResp.Success {
-		log.Printf("⚠️ Check-in fallido: %s", checkInResp.Message)
-	} else {
-		log.Printf("✅ Check-in exitoso. Mensaje: %s", checkInResp.Message)
-	}
-	
-	log.Println("--- Esperando 3s para simular una pausa y forzar el Gossip ---")
-	time.Sleep(3 * time.Second) 
-
-	// --- 2. LECTURA (Obtener Tarjeta de Embarque RYW) ---
-	log.Printf("Cliente (%s): Solicitando Tarjeta de Embarque (Lectura RYW)...", clientID)
-	
-	// NO NECESITAS readVC, solo necesitas el valor de clientVC.
-	mu.Lock()
-	// Eliminada: readVC := clientVC
-	// El clientVC se usaría en bpReq si el proto lo permitiera.
-	mu.Unlock() 
-	
-	bpReq := &pb.BoardingPassRequest{ 
-		FlightId: flightID,
-		ClientId: clientID,
-		// Si BoardingPassRequest tuviera el campo, la lógica RYW correcta sería:
-		// ClientVectorClock: clientVC, 
-	}
-	
-	bpResp, err := client.GetBoardingPass(context.Background(), bpReq)
-	if err != nil {
-		log.Printf("❌ Error al obtener Tarjeta de Embarque: %v", err)
-		return
-	}
-
-	// Simulación RYW: El Coordinador/Broker DEBE DEVOLVER el VC en BoardingPassResponse.
-	// Simulamos la actualización con un VC ficticio.
-	simulatedVCFromCoord := map[string]int64{"BROKER": 1, "DN-1": 1} 
-	
-	mu.Lock()
-	clientVC = mergeVC(clientVC, simulatedVCFromCoord) // Fusionar el VC devuelto
-	log.Printf("✅ Lectura de Tarjeta de Embarque exitosa. Asiento: %s, Gate: %s. Último VC conocido: %v", bpResp.SeatAssigned, bpResp.Gate, clientVC)
-	mu.Unlock()
+// Lista de vuelos conocidos (extraídos de tus logs anteriores)
+var knownFlights = []string{
+	"LA-500",  // Latam
+	"SK-772",  // Sky
+	"AA-901",  // American
+	"DL-456",  // Delta
+	"AF-021",  // Air France
+	"IB-6833", // Iberia
 }
 
 func main() {
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
-	
-	// Conexión gRPC
-	conn, err := grpc.Dial(coordinatorAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock()) // Usa grpc y insecure
+	// Semilla para aleatoriedad
+	rand.Seed(time.Now().UnixNano())
+
+	// Esperar un poco a que el sistema levante completamente
+	log.Println("⏳ Esperando 10s para iniciar tráfico de pasajeros...")
+	time.Sleep(10 * time.Second)
+	log.Println("--- 🛫 TRÁFICO DE PASAJEROS RYW INICIADO 🛬 ---")
+
+	// Conexión PERSISTENTE al Coordinador (se reutiliza para todos los pasajeros)
+	conn, err := grpc.Dial(COORDINATOR_ADDR, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("❌ No se pudo conectar al Coordinador: %v", err)
-		os.Exit(1) // Usa os
+		log.Fatalf("❌ FATAL: No se pudo conectar al Coordinador: %v", err)
 	}
 	defer conn.Close()
 
 	client := pb.NewCheckInCoordinatorClient(conn)
-	log.Printf("Cliente RYW: Conectado al Coordinador en %s", coordinatorAddr)
 
+	// BUCLE INFINITO DE SIMULACIÓN
 	for {
-		checkin(client)
-		time.Sleep(5 * time.Second) // Ejecutar cada 5 segundos
+		// 1. Generar datos aleatorios para un NUEVO pasajero
+		passengerID := fmt.Sprintf("Pasajero-%d", rand.Intn(10000)) // Ej: Pasajero-4023
+		flightID := knownFlights[rand.Intn(len(knownFlights))]      // Vuelo al azar
+		seatRow := rand.Intn(30) + 1                                // Fila 1 a 30
+		seatLetter := string(rune('A' + rand.Intn(6)))              // Letra A-F
+		targetSeat := fmt.Sprintf("%d%s", seatRow, seatLetter)      // Ej: "12C"
+		reqUUID := uuid.New().String()
+
+		log.Printf("---------------------------------------------------------------")
+		log.Printf("👤 %s inicia proceso para Vuelo %s, Asiento %s", passengerID, flightID, targetSeat)
+
+		// ========================================================================
+		// PASO 1: ESCRITURA (Check-in)
+		// ========================================================================
+		// log.Printf("🎫 Enviando Check-in (UUID: %s)...", reqUUID)
+
+		checkInCtx, cancelWrite := context.WithTimeout(context.Background(), 5*time.Second)
+		checkInResp, err := client.ProcessCheckIn(checkInCtx, &pb.CheckInRequest{
+			ClientId:    passengerID,
+			FlightId:    flightID,
+			SeatNumber:  targetSeat,
+			RequestUuid: reqUUID,
+		})
+		cancelWrite()
+
+		if err != nil {
+			log.Printf("❌ Error RPC Check-in: %v. Saltando pasajero...", err)
+			waitNextIteration()
+			continue
+		}
+
+		if !checkInResp.Success {
+			log.Printf("⛔ Check-in rechazado por lógica de negocio: %s. Saltando...", checkInResp.Message)
+			waitNextIteration()
+			continue
+		}
+
+		log.Printf("✅ Escritura Confirmada: %s", checkInResp.Message)
+
+		// ========================================================================
+		// PASO 2: LECTURA INMEDIATA (Read Your Writes)
+		// ========================================================================
+		// log.Println("🔎 Solicitando Tarjeta de Embarque (Verificación RYW)...")
+
+		readCtx, cancelRead := context.WithTimeout(context.Background(), 5*time.Second)
+		boardingPass, err := client.GetBoardingPass(readCtx, &pb.BoardingPassRequest{
+			ClientId: passengerID,
+			FlightId: flightID,
+		})
+		cancelRead()
+
+		if err != nil {
+			log.Printf("❌ Error RPC GetBoardingPass: %v", err)
+			waitNextIteration()
+			continue
+		}
+
+		// ========================================================================
+		// PASO 3: VALIDACIÓN DE CONSISTENCIA
+		// ========================================================================
+		if boardingPass.SeatAssigned == targetSeat {
+			log.Printf("✨ ÉXITO RYW: %s obtuvo su tarjeta para %s en %s correctamente.",
+				passengerID, boardingPass.FlightId, boardingPass.SeatAssigned)
+		} else {
+			log.Printf("💀 FALLO DE CONSISTENCIA CRÍTICO: Esperaba %s, recibió '%s'", targetSeat, boardingPass.SeatAssigned)
+		}
+
+		// Esperar antes del siguiente pasajero para no saturar el log instantáneamente
+		waitNextIteration()
 	}
+}
+
+func waitNextIteration() {
+	// Tiempo aleatorio entre 3 y 6 segundos
+	delay := time.Duration(rand.Intn(4)+3) * time.Second
+	// log.Printf("💤 Esperando %v para el siguiente pasajero...", delay)
+	time.Sleep(delay)
 }

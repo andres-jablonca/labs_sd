@@ -1,6 +1,8 @@
 sim_time_sec,flight_id,update_type,update_value
 2,AF-021,estado,En vuelo
+2,AF-021,estado,Cancelado
 4,LA-500,puerta,A2
+4,LA-500,estado,Cancelado
 6,DL-456,estado,En vuelo
 7,AA-901,estado,Cancelado
 8,LA-500,estado,Retrasado

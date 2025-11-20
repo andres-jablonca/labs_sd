@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv" // Nuevo: Para leer el CSV
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"strings"
@@ -19,7 +20,6 @@ import (
 const (
 	// Ruta corregida a /app/data/flight_updates.csv según tu docker-compose.yml
 	CSV_FILE_PATH = "/app/data/flight_updates.csv"
-	BROKER_ID     = "BROKER" // ID para el Vector Clock
 )
 
 // BrokerServer implementa el servicio CentralBroker (para Coordinador)
@@ -48,7 +48,7 @@ func (s *BrokerServer) startEventSimulation() {
 
 	file, err := os.Open(CSV_FILE_PATH)
 	if err != nil {
-		log.Fatalf("❌ ERROR: No se pudo abrir el CSV en %s: %v", CSV_FILE_PATH, err)
+		log.Fatalf("❌ ERROR: No se pudo abrir el CSV: %v", err)
 	}
 	defer file.Close()
 
@@ -57,59 +57,68 @@ func (s *BrokerServer) startEventSimulation() {
 	if err != nil {
 		log.Fatalf("❌ ERROR: No se pudo leer el CSV: %v", err)
 	}
-
-	// Saltar la cabecera del CSV
 	if len(records) > 0 {
 		records = records[1:]
-	}
+	} // Saltar header
 
 	startTime := time.Now()
 
 	for _, record := range records {
-		// Asumimos el formato: [sim_time_sec, flight_id, update_type, update_value]
-		simTime, _ := time.ParseDuration(record[0] + "s") // Convertir "10" a 10s
+		// Parsear tiempo
+		simTime, _ := time.ParseDuration(record[0] + "s")
 		flightID := record[1]
 		updateType := record[2]
 		updateValue := record[3]
 
-		// Esperar hasta el tiempo de simulación correcto
-		timeToWait := startTime.Add(simTime).Sub(time.Now())
-		if timeToWait > 0 {
-			time.Sleep(timeToWait)
+		// Esperar tiempo de simulación
+		if wait := startTime.Add(simTime).Sub(time.Now()); wait > 0 {
+			time.Sleep(wait)
 		}
 
 		s.mu.Lock()
 
-		// 1. Obtener/Inicializar el Vector Clock (VC)
+		// 1. Obtener VC actual
 		currentVC, found := s.flightVCMaps[flightID]
 		if !found {
 			currentVC = make(map[string]int64)
 		}
 
-		// 2. Incrementar la entrada del Broker
-		currentVC[BROKER_ID]++
-		s.flightVCMaps[flightID] = currentVC
-
-		// 3. Preparar la actualización (Status Map)
-		statusUpdate := map[string]string{
-			updateType:  updateValue,
-			"flight_id": flightID, // Incluir el ID de vuelo para que el DN sepa qué dato está resolviendo
+		// ---------------------------------------------------------
+		// 🔥 EL CAMBIO CLAVE PARA LOGRAR EL DIAGRAMA 🔥
+		// Simulamos 2 fuentes de escritura para crear bifurcaciones
+		// en la historia causal (Vectores concurrentes).
+		// ---------------------------------------------------------
+		sourceID := "BROKER_A"
+		if rand.Intn(2) == 0 {
+			sourceID = "BROKER_B"
 		}
 
-		// 4. Crear el Request con el VC y la data
+		currentVC[sourceID]++
+		s.flightVCMaps[flightID] = currentVC
+		// ---------------------------------------------------------
+
+		statusUpdate := map[string]string{
+			updateType:  updateValue,
+			"flight_id": flightID,
+		}
+
+		// Copia defensiva del VC para enviar
+		vcToSend := make(map[string]int64)
+		for k, v := range currentVC {
+			vcToSend[k] = v
+		}
+
 		req := &pb.UpdateFlightStatusRequest{
 			FlightId:    flightID,
 			Status:      statusUpdate,
-			VectorClock: currentVC,
+			VectorClock: vcToSend,
 		}
-
 		s.mu.Unlock()
 
-		// 5. Iniciar Broadcast a todos los Datanodes
-		s.broadcastUpdate(req, updateType) // ✅ CORREGIDO: Se pasa updateType
+		// Enviar a todos los nodos
+		s.broadcastUpdate(req, updateType)
 	}
-
-	log.Println("Simulador de Eventos: CSV completado. Fin de la inyección de datos.")
+	log.Println("✅ Simulador: CSV completado.")
 }
 
 // En broker/main.go
@@ -130,21 +139,69 @@ func (s *BrokerServer) broadcastUpdate(req *pb.UpdateFlightStatusRequest, update
 	}
 }
 
-// ----------------------------------------------------
-// 2. SERVICIOS DEL BROKER (Para Coordinador)
-// ----------------------------------------------------
+// -----------------------------------------------------------------------
+// FUNCIONES PARA RYW (Coordinador -> Broker -> Datanode)
+// -----------------------------------------------------------------------
 
-// UpdateFlightData (RYW) y GetFlightData (Lectura) no necesitan ser modificados por ahora,
-// ya que el Check-in (RYW) ya estaba funcional usando estas llamadas.
-
+// UpdateFlightData: Maneja la ESCRITURA del Check-in.
+// Modificación Clave: Ahora devuelve el 'DatanodeId' para que el Coordinador haga Sticky Session.
 func (s *BrokerServer) UpdateFlightData(ctx context.Context, req *pb.UpdateRequest) (*pb.UpdateResponse, error) {
-	// ... Lógica Round-Robin y reenvío a Datanode (código que ya tenías)
-	return &pb.UpdateResponse{Success: true, Message: "Placeholder: Escritura re-enviada."}, nil
+	s.mu.Lock()
+
+	// 1. Balanceo de Carga (Round Robin)
+	targetIndex := s.rrIndex % len(s.datanodeClients)
+	s.rrIndex++
+
+	client := s.datanodeClients[targetIndex]
+	targetAddr := s.peersAddr[targetIndex] // Ej: "datanode1:50061"
+
+	// 2. Identificar el ID del Datanode para devolverlo al Coordinador
+	// Esto es vital para que funcione el Sticky Session.
+	datanodeID := "DN-UNK"
+	if strings.Contains(targetAddr, "datanode1") {
+		datanodeID = "DN-1"
+	} else if strings.Contains(targetAddr, "datanode2") {
+		datanodeID = "DN-2"
+	} else if strings.Contains(targetAddr, "datanode3") {
+		datanodeID = "DN-3"
+	}
+
+	s.mu.Unlock()
+
+	log.Printf("⚖️ Broker: Redirigiendo Check-in (RYW) de Cliente %s al Datanode %s (%s)", req.ClientId, datanodeID, targetAddr)
+
+	// 3. Llamar al Datanode real (ApplyWrite)
+	// El Datanode guardará el asiento en su mapa 'rywState'
+	dnResp, err := client.ApplyWrite(ctx, req)
+	if err != nil {
+		log.Printf("❌ Error escribiendo en Datanode %s: %v", datanodeID, err)
+		return &pb.UpdateResponse{Success: false, Message: "Fallo escritura en DN"}, err
+	}
+
+	// 4. Responder al Coordinador con el ID del nodo que hizo el trabajo
+	return &pb.UpdateResponse{
+		Success:    dnResp.Success,
+		Message:    dnResp.Message,
+		DatanodeId: datanodeID, // <--- ¡ESTO HABILITA EL STICKY SESSION!
+	}, nil
 }
 
+// GetFlightData: Maneja la LECTURA de asientos (Fallback si falla el Sticky Read).
+// Nota: Esto es distinto a GetFlightStatus (que es para ver si el vuelo está retrasado).
 func (s *BrokerServer) GetFlightData(ctx context.Context, req *pb.ReadRequest) (*pb.ReadResponse, error) {
-	// ... Lógica Round-Robin para lectura (código que ya tenías)
-	return &pb.ReadResponse{FlightId: req.FlightId, SeatAssignedToClient: "Placeholder: 21A"}, nil
+	s.mu.Lock()
+	// Round Robin simple
+	targetIndex := s.rrIndex % len(s.datanodeClients)
+	s.rrIndex++
+
+	client := s.datanodeClients[targetIndex]
+	targetAddr := s.peersAddr[targetIndex]
+	s.mu.Unlock()
+
+	log.Printf("🔄 Broker: Redirigiendo lectura de asiento (Fallback) de %s a %s", req.ClientId, targetAddr)
+
+	// Llamada directa al Datanode (ReadData)
+	return client.ReadData(ctx, req)
 }
 
 // ----------------------------------------------------
