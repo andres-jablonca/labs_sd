@@ -28,3 +28,6 @@ docker-mv4:
 
 reporte:
 	@cat Broker/Reporte.txt
+
+clean-report:
+	@rm -f Broker/Reporte.txt
