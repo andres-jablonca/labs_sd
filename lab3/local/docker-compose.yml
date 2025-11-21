@@ -52,6 +52,7 @@ services:
       # Mapea la carpeta local './data' a la carpeta '/app/data' dentro del contenedor
       # Asegúrate de que tu archivo CSV esté en ./data/flight_updates.csv
       - ./data:/app/data
+      - ./:/app/output
     environment:
       - LISTEN_PORT=:50052
       # Direcciones de los Datanodes. Usamos el nombre del servicio Docker (datanodeX)

@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"flag" // IMPORTANTE: Para leer argumentos de línea de comandos
+	"flag"
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -20,11 +21,6 @@ import (
 
 const (
 	GOSSIP_INTERVAL = 5 * time.Second
-)
-
-var (
-	idPtr   = flag.String("id", "DN-1", "ID del Datanode (Ej: DN-1, DN-2, DN-3)")
-	portPtr = flag.String("port", ":50061", "Puerto de escucha (Ej: :50061)")
 )
 
 // Estructura de datos
@@ -46,10 +42,7 @@ type DatanodeServer struct {
 // =======================================================================
 // LÓGICA DE SELECCIÓN DE PEERS DINÁMICA
 // =======================================================================
-// Devuelve la lista de compañeros basada en mi propia identidad.
 func getPeers(myID string) []string {
-	// Mapa maestro de la topología de la red
-	// IMPORTANTE: Si mueves esto a VMs reales, cambia estos valores por las IPs reales (ej: "192.168.1.50:50062")
 	allNodes := map[string]string{
 		"DN-1": "datanode1:50061",
 		"DN-2": "datanode2:50062",
@@ -58,7 +51,6 @@ func getPeers(myID string) []string {
 
 	var peers []string
 	for id, addr := range allNodes {
-		// Soy peer de todos MENOS de mí mismo
 		if id != myID {
 			peers = append(peers, addr)
 		}
@@ -104,7 +96,7 @@ func (s *DatanodeServer) ReadData(ctx context.Context, req *pb.ReadRequest) (*pb
 }
 
 // =======================================================================
-// LÓGICA CONSISTENCIA EVENTUAL (Relojes & Conflictos)
+// LÓGICA CONSISTENCIA EVENTUAL
 // =======================================================================
 
 func MergeVC(vc1, vc2 map[string]int64) map[string]int64 {
@@ -144,12 +136,19 @@ func (s *DatanodeServer) ResolveConflict(existingData, newData FlightData) Fligh
 		finalStatusMap[k] = v
 	}
 
-	// REGLA: "Cancelado" gana
+	// REGLA 1: "Cancelado" siempre gana
 	if statusExisting == "Cancelado" || statusNew == "Cancelado" {
 		finalStatusMap["estado"] = "Cancelado"
-		log.Printf("Resolución: Ganó 'Cancelado'.")
+		log.Printf("Resolución: Ganó 'Cancelado' (Regla de Negocio).")
 	} else {
-		log.Printf("Resolución: Fusión estándar.")
+		// REGLA 2: Tie-Break Alfabético
+		if statusExisting > statusNew {
+			finalStatusMap["estado"] = statusExisting
+			log.Printf("Resolución: Ganó '%s' sobre '%s' (Alfabético).", statusExisting, statusNew)
+		} else {
+			finalStatusMap["estado"] = statusNew
+			log.Printf("Resolución: Ganó '%s' sobre '%s' (Alfabético).", statusNew, statusExisting)
+		}
 	}
 	return FlightData{Status: finalStatusMap, VC: mergedVC}
 }
@@ -179,7 +178,10 @@ func (s *DatanodeServer) UpdateFlightStatus(ctx context.Context, req *pb.UpdateF
 	if isPrior {
 		s.flightData[flightID] = incomingData
 	} else if isDescendant {
-		log.Printf("DESCARTADO %s (Dato viejo) estado: %v", flightID, incomingData.Status["estado"])
+		localState := existingData.Status["estado"]
+		incomingState := incomingData.Status["estado"]
+		log.Printf("DESCARTADO %s. Se ignoró '%s' (VC: %v) porque ya tenemos '%s' (VC: %v).",
+			flightID, incomingState, vcIncoming, localState, vcLocal)
 	} else {
 		resolvedData := s.ResolveConflict(existingData, incomingData)
 		s.flightData[flightID] = resolvedData
@@ -187,6 +189,9 @@ func (s *DatanodeServer) UpdateFlightStatus(ctx context.Context, req *pb.UpdateF
 	return &pb.UpdateResponse{Success: true}, nil
 }
 
+// -----------------------------------------------------------------------
+// CORRECCIÓN AQUÍ: Cálculo correcto de la versión escalar
+// -----------------------------------------------------------------------
 func (s *DatanodeServer) GetFlightStatus(ctx context.Context, req *pb.FlightRequest) (*pb.FlightResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -199,17 +204,15 @@ func (s *DatanodeServer) GetFlightStatus(ctx context.Context, req *pb.FlightRequ
 		return nil, status.Errorf(codes.NotFound, "Vuelo no encontrado")
 	}
 
+	// CORRECCIÓN: Sumar las componentes A, B y C para obtener la versión total
 	var currentScalar int64 = 0
-	for k, v := range currentData.VC {
-		if strings.Contains(k, "BROKER") {
-			if v > currentScalar {
-				currentScalar = v
-			}
-		}
-	}
+	currentScalar += currentData.VC["A"]
+	currentScalar += currentData.VC["B"]
+	currentScalar += currentData.VC["C"]
 
+	// Verificación de Monotonic Reads
 	if currentScalar < clientVersion {
-		return nil, status.Errorf(codes.Unavailable, "Dato desactualizado")
+		return nil, status.Errorf(codes.Unavailable, "Dato desactualizado (Server V%d < Cliente V%d)", currentScalar, clientVersion)
 	}
 
 	return &pb.FlightResponse{
@@ -273,26 +276,42 @@ func (s *DatanodeServer) sendGossip() {
 	}
 }
 
-// =======================================================================
-// MAIN CON FLAGS
-// =======================================================================
+// Implementación de Shutdown
+func (s *DatanodeServer) Shutdown(ctx context.Context, req *pb.NoParams) (*pb.Ack, error) {
+	log.Println("[SHUTDOWN] Orden de apagado recibida del Broker.")
+
+	// Lanzamos una goroutine para salir después de responder
+	go func() {
+		time.Sleep(1 * time.Second) // Esperar un poco para que el Ack llegue al Broker
+		log.Println("[SHUTDOWN] Cerrando Datanode. ¡Hasta luego!")
+		os.Exit(0)
+	}()
+
+	return &pb.Ack{Success: true, Message: "Apagando..."}, nil
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
+
+	idPtr := flag.String("id", "DN-1", "ID del Datanode")
+	portPtr := flag.String("port", ":50061", "Puerto de escucha")
+
 	flag.Parse()
 
-	myPeers := getPeers(*idPtr)
+	myID := *idPtr
+	myPort := *portPtr
+	myPeers := getPeers(myID)
 
-	// Iniciar Server
-	lis, err := net.Listen("tcp", *portPtr)
+	lis, err := net.Listen("tcp", myPort)
 	if err != nil {
-		log.Fatalf("Falló al escuchar puerto %s: %v", *portPtr, err)
+		log.Fatalf("Falló al escuchar puerto %s: %v", myPort, err)
 	}
 
 	s := grpc.NewServer()
 	server := &DatanodeServer{
 		rywState:   make(map[string]string),
 		flightData: make(map[string]FlightData),
-		id:         *idPtr,
+		id:         myID,
 		peers:      myPeers,
 	}
 
@@ -300,7 +319,8 @@ func main() {
 
 	go server.gossipLoop()
 
-	log.Printf("Datanode %s iniciado en puerto %s (Peers: %v)", *idPtr, *portPtr, myPeers)
+	log.Printf("Datanode %s iniciado en puerto %s (Peers: %v)", myID, myPort, myPeers)
+
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Falló al servir: %v", err)
 	}

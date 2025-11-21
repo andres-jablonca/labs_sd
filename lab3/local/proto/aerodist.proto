@@ -13,6 +13,12 @@ service Broker {
     // El cliente llama a esta RPC: client.GetFlightStatus(req)
     rpc GetFlightStatus (FlightRequest) returns (FlightResponse);
 }
+message NoParams {}
+
+message Ack {
+    bool success = 1;
+    string message = 2;
+}
 
 // Servicio expuesto por los Datanodes
 service DatanodeService {
@@ -24,6 +30,7 @@ service DatanodeService {
     // NUEVO (Eventual): RPC para recibir actualizaciones de estado de vuelo (Gossip/Broker)
     rpc UpdateFlightStatus (UpdateFlightStatusRequest) returns (UpdateResponse); 
     rpc GetFlightStatus (FlightRequest) returns (FlightResponse);
+    rpc Shutdown (NoParams) returns (Ack);
 }
 
 // Servicio expuesto por el Coordinador (Gateway de Check-in)
@@ -33,6 +40,7 @@ service CheckInCoordinator {
     
     // 2. Lectura: Para obtener la Tarjeta de Embarque, forzando RYW.
     rpc GetBoardingPass (BoardingPassRequest) returns (BoardingPassResponse);
+    rpc Shutdown (NoParams) returns (Ack);
 }
 
 // Servicio expuesto por el Broker Central para interactuar con los Datanodes
@@ -137,6 +145,7 @@ message ReadResponse {
 message FlightRequest {
     string flightID = 1;  // ID del vuelo para consultar
     int64 lastversion = 2; // Versión escalar del último dato conocido (para Monotonic Reads)
+    string client_id = 3; // ID del cliente que hace la consulta
 }
 
 // Respuesta para la consulta del estado de un vuelo (usado por el cliente Observador)

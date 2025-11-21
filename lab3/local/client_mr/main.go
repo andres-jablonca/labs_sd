@@ -5,7 +5,7 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
-	pb "lab3/proto" // Asegúrate de que esta importación esté correcta
+	pb "lab3/proto"
 	"log"
 	"math/rand"
 	"os"
@@ -20,6 +20,7 @@ import (
 type Client struct {
 	flightID     string
 	NuevaVersion int64
+	clientID     string
 }
 
 // Para almacenar el estado de cada vuelo individual en la función main
@@ -43,37 +44,34 @@ func loadFlightsFromCSV(filePath string) ([]string, error) {
 	}
 
 	for i, row := range rows {
-		if i == 0 || len(row) < 2 { // Saltear la primera fila (encabezados) o si no hay suficientes columnas
+		if i == 0 || len(row) < 2 {
 			continue
 		}
-		flightID := row[1] // Suponiendo que el flightID está en la segunda columna
+		flightID := row[1]
 		flightIDs = append(flightIDs, flightID)
 	}
 
 	return flightIDs, nil
 }
 
-// Obtener el estado de un vuelo, implementando la lógica de Monotonic Reads
-func (c *Client) getFlightStatus(client pb.CentralBrokerClient) (bool, error) {
+// Obtener el estado de un vuelo
+func (c *Client) getFlightStatus(client pb.CentralBrokerClient, clientID string) (bool, error) {
 	req := &pb.FlightRequest{
 		FlightID:    c.flightID,
 		Lastversion: c.NuevaVersion,
+		ClientId:    c.clientID,
 	}
-
 	fmt.Printf("Consultando vuelo %s, enviando versión cliente V%d...\n", c.flightID, c.NuevaVersion)
 
 	res, err := client.GetFlightStatus(context.Background(), req)
 	if err != nil {
-		// --- Manejo de errores para saltar vuelos no inicializados ---
+		// El manejo de error y log se hace aquí, pero devolvemos el error para que el main decida si morir
 		st, ok := status.FromError(err)
 		if ok && (st.Code() == codes.NotFound || st.Code() == codes.Unavailable) {
-			// El vuelo no está inicializado o la versión no está lista.
-			log.Printf("Advertencia: Vuelo %s no encontrado/desactualizado (V%d). Reintentando otro vuelo. Causa: %s\n",
-				c.flightID, c.NuevaVersion, st.Message())
+			log.Printf("Advertencia: Vuelo %s no encontrado/desactualizado o Broker caído. Causa: %s\n",
+				c.flightID, st.Message())
 			return false, err
 		}
-
-		// Otros errores gRPC (ej. conexión)
 		log.Printf("Advertencia: Error al consultar estado de vuelo (%s). Error fatal: %v\n", c.flightID, err)
 		return false, err
 	}
@@ -90,7 +88,7 @@ func main() {
 	// OBTENER VARIABLES DE ENTORNO
 	idPtr := flag.String("id", "RYW-Generic", "ID del Cliente para logs")
 	flag.Parse()
-	// Configurar el prefijo del log para identificar quién habla
+
 	clientIDLog := fmt.Sprintf("[%s] ", *idPtr)
 	log.SetPrefix(clientIDLog)
 	brokerAddr := os.Getenv("BROKER_ADDR")
@@ -98,7 +96,7 @@ func main() {
 		log.Fatalf("La variable de entorno BROKER_ADDR no está definida.")
 	}
 
-	time.Sleep(11 * time.Second) // Esperar a que el broker y datanodes estén listos
+	time.Sleep(11 * time.Second)
 
 	// CONEXIÓN
 	conn, err := grpc.Dial(brokerAddr, grpc.WithInsecure())
@@ -126,13 +124,16 @@ func main() {
 		flightStates[id] = &FlightState{VersionGuardada: 0}
 	}
 
-	// Slice de IDs para elegir al azar (más fácil de indexar)
 	keys := make([]string, 0, len(flightIDs))
 	for k := range flightStates {
 		keys = append(keys, k)
 	}
 
 	fmt.Printf("------- PASAJEROS MR INICIADO -------\n")
+
+	// --- CONTADOR DE FALLOS ---
+	consecutiveFailures := 0
+	const maxFailures = 3
 
 	for {
 		// 1. Seleccionar un vuelo aleatorio
@@ -147,22 +148,43 @@ func main() {
 
 		state := flightStates[selectedFlightID]
 
-		// 2. Crear un cliente temporal con el estado del vuelo seleccionado
+		// 2. Crear un cliente temporal
 		tempClient := &Client{
 			flightID:     selectedFlightID,
 			NuevaVersion: state.VersionGuardada,
 		}
 
 		// 3. Intentar obtener el estado
-		success, _ := tempClient.getFlightStatus(client)
+		success, err := tempClient.getFlightStatus(client, *idPtr)
 
-		// 4. Analizar el resultado
+		// 4. Analizar el resultado y manejar contador de suicidio
 		if success {
-			// "cuando el vuelo AA-901 reciba su versión V1 entonces que guarde el estado V1 de ese vuelo y tire rand para pedir información de otro vuelo"
+			// Conexión exitosa, reiniciamos contador
+			consecutiveFailures = 0
+
 			state.VersionGuardada = tempClient.NuevaVersion
 			time.Sleep(500 * time.Millisecond)
 		} else {
-			// Si es que escoge un id y este no ha sido cargado aún entonces que escoja otro id
+			// Hubo error, analizamos si es de conexión
+			if err != nil {
+				st, ok := status.FromError(err)
+				// Si el error es UNAVAILABLE (Broker caído/apagado) aumentamos contador
+				if ok && st.Code() == codes.Unavailable {
+					consecutiveFailures++
+					log.Printf("[ALERTA] Fallo de conexión con Broker detectado (%d/%d).", consecutiveFailures, maxFailures)
+				} else {
+					// Si el error es NotFound (el vuelo no existe aun) el Broker SÍ responde,
+					// así que la conexión está viva. Reiniciamos contador.
+					consecutiveFailures = 0
+				}
+			}
+
+			// Verificamos si debemos suicidarnos
+			if consecutiveFailures >= maxFailures {
+				log.Println("[SHUTDOWN] El Broker no responde tras 3 intentos. Cerrando Cliente MR.")
+				os.Exit(0) // Finaliza el programa
+			}
+
 			time.Sleep(2 * time.Second)
 		}
 	}

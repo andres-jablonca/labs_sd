@@ -21,6 +21,94 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type NoParams struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NoParams) Reset() {
+	*x = NoParams{}
+	mi := &file_proto_aerodist_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NoParams) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NoParams) ProtoMessage() {}
+
+func (x *NoParams) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_aerodist_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NoParams.ProtoReflect.Descriptor instead.
+func (*NoParams) Descriptor() ([]byte, []int) {
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{0}
+}
+
+type Ack struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Ack) Reset() {
+	*x = Ack{}
+	mi := &file_proto_aerodist_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Ack) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Ack) ProtoMessage() {}
+
+func (x *Ack) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_aerodist_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Ack.ProtoReflect.Descriptor instead.
+func (*Ack) Descriptor() ([]byte, []int) {
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Ack) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *Ack) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 // Solicitud de Check-in / Escritura
 type CheckInRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -34,7 +122,7 @@ type CheckInRequest struct {
 
 func (x *CheckInRequest) Reset() {
 	*x = CheckInRequest{}
-	mi := &file_proto_aerodist_proto_msgTypes[0]
+	mi := &file_proto_aerodist_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +134,7 @@ func (x *CheckInRequest) String() string {
 func (*CheckInRequest) ProtoMessage() {}
 
 func (x *CheckInRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[0]
+	mi := &file_proto_aerodist_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +147,7 @@ func (x *CheckInRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckInRequest.ProtoReflect.Descriptor instead.
 func (*CheckInRequest) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{0}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CheckInRequest) GetClientId() string {
@@ -102,7 +190,7 @@ type CheckInResponse struct {
 
 func (x *CheckInResponse) Reset() {
 	*x = CheckInResponse{}
-	mi := &file_proto_aerodist_proto_msgTypes[1]
+	mi := &file_proto_aerodist_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -114,7 +202,7 @@ func (x *CheckInResponse) String() string {
 func (*CheckInResponse) ProtoMessage() {}
 
 func (x *CheckInResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[1]
+	mi := &file_proto_aerodist_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -127,7 +215,7 @@ func (x *CheckInResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckInResponse.ProtoReflect.Descriptor instead.
 func (*CheckInResponse) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{1}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CheckInResponse) GetSuccess() bool {
@@ -162,7 +250,7 @@ type BoardingPassRequest struct {
 
 func (x *BoardingPassRequest) Reset() {
 	*x = BoardingPassRequest{}
-	mi := &file_proto_aerodist_proto_msgTypes[2]
+	mi := &file_proto_aerodist_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -174,7 +262,7 @@ func (x *BoardingPassRequest) String() string {
 func (*BoardingPassRequest) ProtoMessage() {}
 
 func (x *BoardingPassRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[2]
+	mi := &file_proto_aerodist_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +275,7 @@ func (x *BoardingPassRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BoardingPassRequest.ProtoReflect.Descriptor instead.
 func (*BoardingPassRequest) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{2}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *BoardingPassRequest) GetClientId() string {
@@ -217,7 +305,7 @@ type BoardingPassResponse struct {
 
 func (x *BoardingPassResponse) Reset() {
 	*x = BoardingPassResponse{}
-	mi := &file_proto_aerodist_proto_msgTypes[3]
+	mi := &file_proto_aerodist_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -229,7 +317,7 @@ func (x *BoardingPassResponse) String() string {
 func (*BoardingPassResponse) ProtoMessage() {}
 
 func (x *BoardingPassResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[3]
+	mi := &file_proto_aerodist_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -242,7 +330,7 @@ func (x *BoardingPassResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BoardingPassResponse.ProtoReflect.Descriptor instead.
 func (*BoardingPassResponse) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{3}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BoardingPassResponse) GetClientId() string {
@@ -286,7 +374,7 @@ type UpdateRequest struct {
 
 func (x *UpdateRequest) Reset() {
 	*x = UpdateRequest{}
-	mi := &file_proto_aerodist_proto_msgTypes[4]
+	mi := &file_proto_aerodist_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -298,7 +386,7 @@ func (x *UpdateRequest) String() string {
 func (*UpdateRequest) ProtoMessage() {}
 
 func (x *UpdateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[4]
+	mi := &file_proto_aerodist_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -311,7 +399,7 @@ func (x *UpdateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRequest.ProtoReflect.Descriptor instead.
 func (*UpdateRequest) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{4}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *UpdateRequest) GetClientId() string {
@@ -356,7 +444,7 @@ type UpdateFlightStatusRequest struct {
 
 func (x *UpdateFlightStatusRequest) Reset() {
 	*x = UpdateFlightStatusRequest{}
-	mi := &file_proto_aerodist_proto_msgTypes[5]
+	mi := &file_proto_aerodist_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -368,7 +456,7 @@ func (x *UpdateFlightStatusRequest) String() string {
 func (*UpdateFlightStatusRequest) ProtoMessage() {}
 
 func (x *UpdateFlightStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[5]
+	mi := &file_proto_aerodist_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -381,7 +469,7 @@ func (x *UpdateFlightStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateFlightStatusRequest.ProtoReflect.Descriptor instead.
 func (*UpdateFlightStatusRequest) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{5}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *UpdateFlightStatusRequest) GetFlightId() string {
@@ -418,7 +506,7 @@ type UpdateResponse struct {
 
 func (x *UpdateResponse) Reset() {
 	*x = UpdateResponse{}
-	mi := &file_proto_aerodist_proto_msgTypes[6]
+	mi := &file_proto_aerodist_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -430,7 +518,7 @@ func (x *UpdateResponse) String() string {
 func (*UpdateResponse) ProtoMessage() {}
 
 func (x *UpdateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[6]
+	mi := &file_proto_aerodist_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -443,7 +531,7 @@ func (x *UpdateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateResponse.ProtoReflect.Descriptor instead.
 func (*UpdateResponse) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{6}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UpdateResponse) GetSuccess() bool {
@@ -487,7 +575,7 @@ type ReadRequest struct {
 
 func (x *ReadRequest) Reset() {
 	*x = ReadRequest{}
-	mi := &file_proto_aerodist_proto_msgTypes[7]
+	mi := &file_proto_aerodist_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -499,7 +587,7 @@ func (x *ReadRequest) String() string {
 func (*ReadRequest) ProtoMessage() {}
 
 func (x *ReadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[7]
+	mi := &file_proto_aerodist_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -512,7 +600,7 @@ func (x *ReadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadRequest.ProtoReflect.Descriptor instead.
 func (*ReadRequest) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{7}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ReadRequest) GetClientId() string {
@@ -548,7 +636,7 @@ type ReadResponse struct {
 
 func (x *ReadResponse) Reset() {
 	*x = ReadResponse{}
-	mi := &file_proto_aerodist_proto_msgTypes[8]
+	mi := &file_proto_aerodist_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -560,7 +648,7 @@ func (x *ReadResponse) String() string {
 func (*ReadResponse) ProtoMessage() {}
 
 func (x *ReadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[8]
+	mi := &file_proto_aerodist_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -573,7 +661,7 @@ func (x *ReadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadResponse.ProtoReflect.Descriptor instead.
 func (*ReadResponse) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{8}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ReadResponse) GetFlightId() string {
@@ -600,15 +688,16 @@ func (x *ReadResponse) GetVectorClock() map[string]int64 {
 // Para las consultas de vuelo (usado por el cliente Observador)
 type FlightRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FlightID      string                 `protobuf:"bytes,1,opt,name=flightID,proto3" json:"flightID,omitempty"`        // ID del vuelo para consultar
-	Lastversion   int64                  `protobuf:"varint,2,opt,name=lastversion,proto3" json:"lastversion,omitempty"` // Versión escalar del último dato conocido (para Monotonic Reads)
+	FlightID      string                 `protobuf:"bytes,1,opt,name=flightID,proto3" json:"flightID,omitempty"`                 // ID del vuelo para consultar
+	Lastversion   int64                  `protobuf:"varint,2,opt,name=lastversion,proto3" json:"lastversion,omitempty"`          // Versión escalar del último dato conocido (para Monotonic Reads)
+	ClientId      string                 `protobuf:"bytes,3,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"` // ID del cliente que hace la consulta
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FlightRequest) Reset() {
 	*x = FlightRequest{}
-	mi := &file_proto_aerodist_proto_msgTypes[9]
+	mi := &file_proto_aerodist_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -620,7 +709,7 @@ func (x *FlightRequest) String() string {
 func (*FlightRequest) ProtoMessage() {}
 
 func (x *FlightRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[9]
+	mi := &file_proto_aerodist_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -633,7 +722,7 @@ func (x *FlightRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlightRequest.ProtoReflect.Descriptor instead.
 func (*FlightRequest) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{9}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *FlightRequest) GetFlightID() string {
@@ -650,6 +739,13 @@ func (x *FlightRequest) GetLastversion() int64 {
 	return 0
 }
 
+func (x *FlightRequest) GetClientId() string {
+	if x != nil {
+		return x.ClientId
+	}
+	return ""
+}
+
 // Respuesta para la consulta del estado de un vuelo (usado por el cliente Observador)
 type FlightResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -663,7 +759,7 @@ type FlightResponse struct {
 
 func (x *FlightResponse) Reset() {
 	*x = FlightResponse{}
-	mi := &file_proto_aerodist_proto_msgTypes[10]
+	mi := &file_proto_aerodist_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -675,7 +771,7 @@ func (x *FlightResponse) String() string {
 func (*FlightResponse) ProtoMessage() {}
 
 func (x *FlightResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_aerodist_proto_msgTypes[10]
+	mi := &file_proto_aerodist_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -688,7 +784,7 @@ func (x *FlightResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlightResponse.ProtoReflect.Descriptor instead.
 func (*FlightResponse) Descriptor() ([]byte, []int) {
-	return file_proto_aerodist_proto_rawDescGZIP(), []int{10}
+	return file_proto_aerodist_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *FlightResponse) GetFlightID() string {
@@ -723,7 +819,12 @@ var File_proto_aerodist_proto protoreflect.FileDescriptor
 
 const file_proto_aerodist_proto_rawDesc = "" +
 	"\n" +
-	"\x14proto/aerodist.proto\x12\baerodist\"\x8e\x01\n" +
+	"\x14proto/aerodist.proto\x12\baerodist\"\n" +
+	"\n" +
+	"\bNoParams\"9\n" +
+	"\x03Ack\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\x8e\x01\n" +
 	"\x0eCheckInRequest\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\x12\x1b\n" +
 	"\tflight_id\x18\x02 \x01(\tR\bflightId\x12\x1f\n" +
@@ -780,26 +881,29 @@ const file_proto_aerodist_proto_rawDesc = "" +
 	"\fvector_clock\x18\x03 \x03(\v2'.aerodist.ReadResponse.VectorClockEntryR\vvectorClock\x1a>\n" +
 	"\x10VectorClockEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"M\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"j\n" +
 	"\rFlightRequest\x12\x1a\n" +
 	"\bflightID\x18\x01 \x01(\tR\bflightID\x12 \n" +
-	"\vlastversion\x18\x02 \x01(\x03R\vlastversion\"r\n" +
+	"\vlastversion\x18\x02 \x01(\x03R\vlastversion\x12\x1b\n" +
+	"\tclient_id\x18\x03 \x01(\tR\bclientId\"r\n" +
 	"\x0eFlightResponse\x12\x1a\n" +
 	"\bflightID\x18\x01 \x01(\tR\bflightID\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x12\n" +
 	"\x04gate\x18\x03 \x01(\tR\x04gate\x12\x18\n" +
 	"\aversion\x18\x04 \x01(\x03R\aversion2N\n" +
 	"\x06Broker\x12D\n" +
-	"\x0fGetFlightStatus\x12\x17.aerodist.FlightRequest\x1a\x18.aerodist.FlightResponse2\xa8\x02\n" +
+	"\x0fGetFlightStatus\x12\x17.aerodist.FlightRequest\x1a\x18.aerodist.FlightResponse2\xd7\x02\n" +
 	"\x0fDatanodeService\x12?\n" +
 	"\n" +
 	"ApplyWrite\x12\x17.aerodist.UpdateRequest\x1a\x18.aerodist.UpdateResponse\x129\n" +
 	"\bReadData\x12\x15.aerodist.ReadRequest\x1a\x16.aerodist.ReadResponse\x12S\n" +
 	"\x12UpdateFlightStatus\x12#.aerodist.UpdateFlightStatusRequest\x1a\x18.aerodist.UpdateResponse\x12D\n" +
-	"\x0fGetFlightStatus\x12\x17.aerodist.FlightRequest\x1a\x18.aerodist.FlightResponse2\xad\x01\n" +
+	"\x0fGetFlightStatus\x12\x17.aerodist.FlightRequest\x1a\x18.aerodist.FlightResponse\x12-\n" +
+	"\bShutdown\x12\x12.aerodist.NoParams\x1a\r.aerodist.Ack2\xdc\x01\n" +
 	"\x12CheckInCoordinator\x12E\n" +
 	"\x0eProcessCheckIn\x12\x18.aerodist.CheckInRequest\x1a\x19.aerodist.CheckInResponse\x12P\n" +
-	"\x0fGetBoardingPass\x12\x1d.aerodist.BoardingPassRequest\x1a\x1e.aerodist.BoardingPassResponse2\xb4\x02\n" +
+	"\x0fGetBoardingPass\x12\x1d.aerodist.BoardingPassRequest\x1a\x1e.aerodist.BoardingPassResponse\x12-\n" +
+	"\bShutdown\x12\x12.aerodist.NoParams\x1a\r.aerodist.Ack2\xb4\x02\n" +
 	"\rCentralBroker\x12E\n" +
 	"\x10UpdateFlightData\x12\x17.aerodist.UpdateRequest\x1a\x18.aerodist.UpdateResponse\x12>\n" +
 	"\rGetFlightData\x12\x15.aerodist.ReadRequest\x1a\x16.aerodist.ReadResponse\x12V\n" +
@@ -818,55 +922,61 @@ func file_proto_aerodist_proto_rawDescGZIP() []byte {
 	return file_proto_aerodist_proto_rawDescData
 }
 
-var file_proto_aerodist_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_proto_aerodist_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_proto_aerodist_proto_goTypes = []any{
-	(*CheckInRequest)(nil),            // 0: aerodist.CheckInRequest
-	(*CheckInResponse)(nil),           // 1: aerodist.CheckInResponse
-	(*BoardingPassRequest)(nil),       // 2: aerodist.BoardingPassRequest
-	(*BoardingPassResponse)(nil),      // 3: aerodist.BoardingPassResponse
-	(*UpdateRequest)(nil),             // 4: aerodist.UpdateRequest
-	(*UpdateFlightStatusRequest)(nil), // 5: aerodist.UpdateFlightStatusRequest
-	(*UpdateResponse)(nil),            // 6: aerodist.UpdateResponse
-	(*ReadRequest)(nil),               // 7: aerodist.ReadRequest
-	(*ReadResponse)(nil),              // 8: aerodist.ReadResponse
-	(*FlightRequest)(nil),             // 9: aerodist.FlightRequest
-	(*FlightResponse)(nil),            // 10: aerodist.FlightResponse
-	nil,                               // 11: aerodist.UpdateFlightStatusRequest.StatusEntry
-	nil,                               // 12: aerodist.UpdateFlightStatusRequest.VectorClockEntry
-	nil,                               // 13: aerodist.UpdateResponse.VectorClockEntry
-	nil,                               // 14: aerodist.ReadRequest.ClientVectorClockEntry
-	nil,                               // 15: aerodist.ReadResponse.VectorClockEntry
+	(*NoParams)(nil),                  // 0: aerodist.NoParams
+	(*Ack)(nil),                       // 1: aerodist.Ack
+	(*CheckInRequest)(nil),            // 2: aerodist.CheckInRequest
+	(*CheckInResponse)(nil),           // 3: aerodist.CheckInResponse
+	(*BoardingPassRequest)(nil),       // 4: aerodist.BoardingPassRequest
+	(*BoardingPassResponse)(nil),      // 5: aerodist.BoardingPassResponse
+	(*UpdateRequest)(nil),             // 6: aerodist.UpdateRequest
+	(*UpdateFlightStatusRequest)(nil), // 7: aerodist.UpdateFlightStatusRequest
+	(*UpdateResponse)(nil),            // 8: aerodist.UpdateResponse
+	(*ReadRequest)(nil),               // 9: aerodist.ReadRequest
+	(*ReadResponse)(nil),              // 10: aerodist.ReadResponse
+	(*FlightRequest)(nil),             // 11: aerodist.FlightRequest
+	(*FlightResponse)(nil),            // 12: aerodist.FlightResponse
+	nil,                               // 13: aerodist.UpdateFlightStatusRequest.StatusEntry
+	nil,                               // 14: aerodist.UpdateFlightStatusRequest.VectorClockEntry
+	nil,                               // 15: aerodist.UpdateResponse.VectorClockEntry
+	nil,                               // 16: aerodist.ReadRequest.ClientVectorClockEntry
+	nil,                               // 17: aerodist.ReadResponse.VectorClockEntry
 }
 var file_proto_aerodist_proto_depIdxs = []int32{
-	11, // 0: aerodist.UpdateFlightStatusRequest.status:type_name -> aerodist.UpdateFlightStatusRequest.StatusEntry
-	12, // 1: aerodist.UpdateFlightStatusRequest.vector_clock:type_name -> aerodist.UpdateFlightStatusRequest.VectorClockEntry
-	13, // 2: aerodist.UpdateResponse.vector_clock:type_name -> aerodist.UpdateResponse.VectorClockEntry
-	14, // 3: aerodist.ReadRequest.client_vector_clock:type_name -> aerodist.ReadRequest.ClientVectorClockEntry
-	15, // 4: aerodist.ReadResponse.vector_clock:type_name -> aerodist.ReadResponse.VectorClockEntry
-	9,  // 5: aerodist.Broker.GetFlightStatus:input_type -> aerodist.FlightRequest
-	4,  // 6: aerodist.DatanodeService.ApplyWrite:input_type -> aerodist.UpdateRequest
-	7,  // 7: aerodist.DatanodeService.ReadData:input_type -> aerodist.ReadRequest
-	5,  // 8: aerodist.DatanodeService.UpdateFlightStatus:input_type -> aerodist.UpdateFlightStatusRequest
-	9,  // 9: aerodist.DatanodeService.GetFlightStatus:input_type -> aerodist.FlightRequest
-	0,  // 10: aerodist.CheckInCoordinator.ProcessCheckIn:input_type -> aerodist.CheckInRequest
-	2,  // 11: aerodist.CheckInCoordinator.GetBoardingPass:input_type -> aerodist.BoardingPassRequest
-	4,  // 12: aerodist.CentralBroker.UpdateFlightData:input_type -> aerodist.UpdateRequest
-	7,  // 13: aerodist.CentralBroker.GetFlightData:input_type -> aerodist.ReadRequest
-	5,  // 14: aerodist.CentralBroker.BroadcastFlightStatus:input_type -> aerodist.UpdateFlightStatusRequest
-	9,  // 15: aerodist.CentralBroker.GetFlightStatus:input_type -> aerodist.FlightRequest
-	10, // 16: aerodist.Broker.GetFlightStatus:output_type -> aerodist.FlightResponse
-	6,  // 17: aerodist.DatanodeService.ApplyWrite:output_type -> aerodist.UpdateResponse
-	8,  // 18: aerodist.DatanodeService.ReadData:output_type -> aerodist.ReadResponse
-	6,  // 19: aerodist.DatanodeService.UpdateFlightStatus:output_type -> aerodist.UpdateResponse
-	10, // 20: aerodist.DatanodeService.GetFlightStatus:output_type -> aerodist.FlightResponse
-	1,  // 21: aerodist.CheckInCoordinator.ProcessCheckIn:output_type -> aerodist.CheckInResponse
-	3,  // 22: aerodist.CheckInCoordinator.GetBoardingPass:output_type -> aerodist.BoardingPassResponse
-	6,  // 23: aerodist.CentralBroker.UpdateFlightData:output_type -> aerodist.UpdateResponse
-	8,  // 24: aerodist.CentralBroker.GetFlightData:output_type -> aerodist.ReadResponse
-	6,  // 25: aerodist.CentralBroker.BroadcastFlightStatus:output_type -> aerodist.UpdateResponse
-	10, // 26: aerodist.CentralBroker.GetFlightStatus:output_type -> aerodist.FlightResponse
-	16, // [16:27] is the sub-list for method output_type
-	5,  // [5:16] is the sub-list for method input_type
+	13, // 0: aerodist.UpdateFlightStatusRequest.status:type_name -> aerodist.UpdateFlightStatusRequest.StatusEntry
+	14, // 1: aerodist.UpdateFlightStatusRequest.vector_clock:type_name -> aerodist.UpdateFlightStatusRequest.VectorClockEntry
+	15, // 2: aerodist.UpdateResponse.vector_clock:type_name -> aerodist.UpdateResponse.VectorClockEntry
+	16, // 3: aerodist.ReadRequest.client_vector_clock:type_name -> aerodist.ReadRequest.ClientVectorClockEntry
+	17, // 4: aerodist.ReadResponse.vector_clock:type_name -> aerodist.ReadResponse.VectorClockEntry
+	11, // 5: aerodist.Broker.GetFlightStatus:input_type -> aerodist.FlightRequest
+	6,  // 6: aerodist.DatanodeService.ApplyWrite:input_type -> aerodist.UpdateRequest
+	9,  // 7: aerodist.DatanodeService.ReadData:input_type -> aerodist.ReadRequest
+	7,  // 8: aerodist.DatanodeService.UpdateFlightStatus:input_type -> aerodist.UpdateFlightStatusRequest
+	11, // 9: aerodist.DatanodeService.GetFlightStatus:input_type -> aerodist.FlightRequest
+	0,  // 10: aerodist.DatanodeService.Shutdown:input_type -> aerodist.NoParams
+	2,  // 11: aerodist.CheckInCoordinator.ProcessCheckIn:input_type -> aerodist.CheckInRequest
+	4,  // 12: aerodist.CheckInCoordinator.GetBoardingPass:input_type -> aerodist.BoardingPassRequest
+	0,  // 13: aerodist.CheckInCoordinator.Shutdown:input_type -> aerodist.NoParams
+	6,  // 14: aerodist.CentralBroker.UpdateFlightData:input_type -> aerodist.UpdateRequest
+	9,  // 15: aerodist.CentralBroker.GetFlightData:input_type -> aerodist.ReadRequest
+	7,  // 16: aerodist.CentralBroker.BroadcastFlightStatus:input_type -> aerodist.UpdateFlightStatusRequest
+	11, // 17: aerodist.CentralBroker.GetFlightStatus:input_type -> aerodist.FlightRequest
+	12, // 18: aerodist.Broker.GetFlightStatus:output_type -> aerodist.FlightResponse
+	8,  // 19: aerodist.DatanodeService.ApplyWrite:output_type -> aerodist.UpdateResponse
+	10, // 20: aerodist.DatanodeService.ReadData:output_type -> aerodist.ReadResponse
+	8,  // 21: aerodist.DatanodeService.UpdateFlightStatus:output_type -> aerodist.UpdateResponse
+	12, // 22: aerodist.DatanodeService.GetFlightStatus:output_type -> aerodist.FlightResponse
+	1,  // 23: aerodist.DatanodeService.Shutdown:output_type -> aerodist.Ack
+	3,  // 24: aerodist.CheckInCoordinator.ProcessCheckIn:output_type -> aerodist.CheckInResponse
+	5,  // 25: aerodist.CheckInCoordinator.GetBoardingPass:output_type -> aerodist.BoardingPassResponse
+	1,  // 26: aerodist.CheckInCoordinator.Shutdown:output_type -> aerodist.Ack
+	8,  // 27: aerodist.CentralBroker.UpdateFlightData:output_type -> aerodist.UpdateResponse
+	10, // 28: aerodist.CentralBroker.GetFlightData:output_type -> aerodist.ReadResponse
+	8,  // 29: aerodist.CentralBroker.BroadcastFlightStatus:output_type -> aerodist.UpdateResponse
+	12, // 30: aerodist.CentralBroker.GetFlightStatus:output_type -> aerodist.FlightResponse
+	18, // [18:31] is the sub-list for method output_type
+	5,  // [5:18] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -883,7 +993,7 @@ func file_proto_aerodist_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_aerodist_proto_rawDesc), len(file_proto_aerodist_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   4,
 		},

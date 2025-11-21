@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"os"
 	"sync"
 	"time"
 
@@ -150,6 +151,16 @@ func (s *CoordinatorServer) GetBoardingPass(ctx context.Context, req *pb.Boardin
 		SeatAssigned: resp.SeatAssignedToClient,
 		Gate:         "Consultar Pantalla",
 	}, nil
+}
+
+// Implementación de Shutdown en el Coordinador
+func (s *CoordinatorServer) Shutdown(ctx context.Context, req *pb.NoParams) (*pb.Ack, error) {
+	log.Println("[SHUTDOWN] El Broker me ordenó apagarme.")
+	go func() {
+		time.Sleep(1 * time.Second)
+		os.Exit(0)
+	}()
+	return &pb.Ack{Success: true, Message: "Coordinador cerrando..."}, nil
 }
 
 func main() {

@@ -133,6 +133,7 @@ const (
 	DatanodeService_ReadData_FullMethodName           = "/aerodist.DatanodeService/ReadData"
 	DatanodeService_UpdateFlightStatus_FullMethodName = "/aerodist.DatanodeService/UpdateFlightStatus"
 	DatanodeService_GetFlightStatus_FullMethodName    = "/aerodist.DatanodeService/GetFlightStatus"
+	DatanodeService_Shutdown_FullMethodName           = "/aerodist.DatanodeService/Shutdown"
 )
 
 // DatanodeServiceClient is the client API for DatanodeService service.
@@ -148,6 +149,7 @@ type DatanodeServiceClient interface {
 	// NUEVO (Eventual): RPC para recibir actualizaciones de estado de vuelo (Gossip/Broker)
 	UpdateFlightStatus(ctx context.Context, in *UpdateFlightStatusRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
 	GetFlightStatus(ctx context.Context, in *FlightRequest, opts ...grpc.CallOption) (*FlightResponse, error)
+	Shutdown(ctx context.Context, in *NoParams, opts ...grpc.CallOption) (*Ack, error)
 }
 
 type datanodeServiceClient struct {
@@ -198,6 +200,16 @@ func (c *datanodeServiceClient) GetFlightStatus(ctx context.Context, in *FlightR
 	return out, nil
 }
 
+func (c *datanodeServiceClient) Shutdown(ctx context.Context, in *NoParams, opts ...grpc.CallOption) (*Ack, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Ack)
+	err := c.cc.Invoke(ctx, DatanodeService_Shutdown_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DatanodeServiceServer is the server API for DatanodeService service.
 // All implementations must embed UnimplementedDatanodeServiceServer
 // for forward compatibility.
@@ -211,6 +223,7 @@ type DatanodeServiceServer interface {
 	// NUEVO (Eventual): RPC para recibir actualizaciones de estado de vuelo (Gossip/Broker)
 	UpdateFlightStatus(context.Context, *UpdateFlightStatusRequest) (*UpdateResponse, error)
 	GetFlightStatus(context.Context, *FlightRequest) (*FlightResponse, error)
+	Shutdown(context.Context, *NoParams) (*Ack, error)
 	mustEmbedUnimplementedDatanodeServiceServer()
 }
 
@@ -232,6 +245,9 @@ func (UnimplementedDatanodeServiceServer) UpdateFlightStatus(context.Context, *U
 }
 func (UnimplementedDatanodeServiceServer) GetFlightStatus(context.Context, *FlightRequest) (*FlightResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFlightStatus not implemented")
+}
+func (UnimplementedDatanodeServiceServer) Shutdown(context.Context, *NoParams) (*Ack, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Shutdown not implemented")
 }
 func (UnimplementedDatanodeServiceServer) mustEmbedUnimplementedDatanodeServiceServer() {}
 func (UnimplementedDatanodeServiceServer) testEmbeddedByValue()                         {}
@@ -326,6 +342,24 @@ func _DatanodeService_GetFlightStatus_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DatanodeService_Shutdown_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NoParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DatanodeServiceServer).Shutdown(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DatanodeService_Shutdown_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DatanodeServiceServer).Shutdown(ctx, req.(*NoParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DatanodeService_ServiceDesc is the grpc.ServiceDesc for DatanodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -349,6 +383,10 @@ var DatanodeService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetFlightStatus",
 			Handler:    _DatanodeService_GetFlightStatus_Handler,
 		},
+		{
+			MethodName: "Shutdown",
+			Handler:    _DatanodeService_Shutdown_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/aerodist.proto",
@@ -357,6 +395,7 @@ var DatanodeService_ServiceDesc = grpc.ServiceDesc{
 const (
 	CheckInCoordinator_ProcessCheckIn_FullMethodName  = "/aerodist.CheckInCoordinator/ProcessCheckIn"
 	CheckInCoordinator_GetBoardingPass_FullMethodName = "/aerodist.CheckInCoordinator/GetBoardingPass"
+	CheckInCoordinator_Shutdown_FullMethodName        = "/aerodist.CheckInCoordinator/Shutdown"
 )
 
 // CheckInCoordinatorClient is the client API for CheckInCoordinator service.
@@ -369,6 +408,7 @@ type CheckInCoordinatorClient interface {
 	ProcessCheckIn(ctx context.Context, in *CheckInRequest, opts ...grpc.CallOption) (*CheckInResponse, error)
 	// 2. Lectura: Para obtener la Tarjeta de Embarque, forzando RYW.
 	GetBoardingPass(ctx context.Context, in *BoardingPassRequest, opts ...grpc.CallOption) (*BoardingPassResponse, error)
+	Shutdown(ctx context.Context, in *NoParams, opts ...grpc.CallOption) (*Ack, error)
 }
 
 type checkInCoordinatorClient struct {
@@ -399,6 +439,16 @@ func (c *checkInCoordinatorClient) GetBoardingPass(ctx context.Context, in *Boar
 	return out, nil
 }
 
+func (c *checkInCoordinatorClient) Shutdown(ctx context.Context, in *NoParams, opts ...grpc.CallOption) (*Ack, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Ack)
+	err := c.cc.Invoke(ctx, CheckInCoordinator_Shutdown_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CheckInCoordinatorServer is the server API for CheckInCoordinator service.
 // All implementations must embed UnimplementedCheckInCoordinatorServer
 // for forward compatibility.
@@ -409,6 +459,7 @@ type CheckInCoordinatorServer interface {
 	ProcessCheckIn(context.Context, *CheckInRequest) (*CheckInResponse, error)
 	// 2. Lectura: Para obtener la Tarjeta de Embarque, forzando RYW.
 	GetBoardingPass(context.Context, *BoardingPassRequest) (*BoardingPassResponse, error)
+	Shutdown(context.Context, *NoParams) (*Ack, error)
 	mustEmbedUnimplementedCheckInCoordinatorServer()
 }
 
@@ -424,6 +475,9 @@ func (UnimplementedCheckInCoordinatorServer) ProcessCheckIn(context.Context, *Ch
 }
 func (UnimplementedCheckInCoordinatorServer) GetBoardingPass(context.Context, *BoardingPassRequest) (*BoardingPassResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBoardingPass not implemented")
+}
+func (UnimplementedCheckInCoordinatorServer) Shutdown(context.Context, *NoParams) (*Ack, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Shutdown not implemented")
 }
 func (UnimplementedCheckInCoordinatorServer) mustEmbedUnimplementedCheckInCoordinatorServer() {}
 func (UnimplementedCheckInCoordinatorServer) testEmbeddedByValue()                            {}
@@ -482,6 +536,24 @@ func _CheckInCoordinator_GetBoardingPass_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CheckInCoordinator_Shutdown_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NoParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CheckInCoordinatorServer).Shutdown(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CheckInCoordinator_Shutdown_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CheckInCoordinatorServer).Shutdown(ctx, req.(*NoParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CheckInCoordinator_ServiceDesc is the grpc.ServiceDesc for CheckInCoordinator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -496,6 +568,10 @@ var CheckInCoordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBoardingPass",
 			Handler:    _CheckInCoordinator_GetBoardingPass_Handler,
+		},
+		{
+			MethodName: "Shutdown",
+			Handler:    _CheckInCoordinator_Shutdown_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

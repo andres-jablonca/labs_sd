@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes" // IMPORTANTE: Para detectar código de error
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status" // IMPORTANTE: Para leer el estatus del error
 
 	pb "lab3/proto"
 )
@@ -52,6 +55,10 @@ func main() {
 
 	client := pb.NewCheckInCoordinatorClient(conn)
 
+	// --- CONTADOR DE FALLOS ---
+	consecutiveFailures := 0
+	const maxFailures = 3
+
 	for {
 		// Generar datos aleatorios
 		passengerID := fmt.Sprintf("Pasajero-%d", rand.Intn(10000))
@@ -74,10 +81,29 @@ func main() {
 		cancelWrite()
 
 		if err != nil {
+			// --- MANEJO DE SUICIDIO POR FALLO DE CONEXIÓN ---
+			st, ok := status.FromError(err)
+			if ok && st.Code() == codes.Unavailable {
+				consecutiveFailures++
+				log.Printf("[ALERTA] Fallo de conexión con Coordinador (%d/%d).", consecutiveFailures, maxFailures)
+
+				if consecutiveFailures >= maxFailures {
+					log.Println("[SHUTDOWN] El Coordinador no responde tras 3 intentos. Cerrando Cliente RYW.")
+					os.Exit(0)
+				}
+			} else {
+				// Si responde con otro error, es que el server está vivo. Reiniciamos contador.
+				consecutiveFailures = 0
+			}
+			// ------------------------------------------------
+
 			log.Printf("Error RPC Check-in: %v. Saltando...", err)
 			waitNextIteration()
 			continue
 		}
+
+		// Si llegamos aquí, la conexión funcionó
+		consecutiveFailures = 0
 
 		if !checkInResp.Success {
 			log.Printf("Rechazado: %s.", checkInResp.Message)
@@ -96,6 +122,13 @@ func main() {
 		cancelRead()
 
 		if err != nil {
+			// También revisamos aquí por si el coordinador muere justo entre la escritura y lectura
+			st, ok := status.FromError(err)
+			if ok && st.Code() == codes.Unavailable {
+				log.Println("[ALERTA] Coordinador desapareció durante la lectura.")
+				consecutiveFailures++ // Aumentamos, la próxima iteración probablemente matará el proceso
+			}
+
 			log.Printf("Error RPC Lectura: %v", err)
 			waitNextIteration()
 			continue

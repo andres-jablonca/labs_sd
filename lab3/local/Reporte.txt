@@ -1,0 +1,32 @@
+--------------------------------------------------
+          REPORTE FINAL - AERODIST BROKER         
+--------------------------------------------------
+Fecha de generación: 2025-11-21 / 02:16:50
+Estado de finalización: Finalizado
+
+Total de eventos procesados (Writes): 14
+
+--- Desglose por Tipo de Actualización ---
+- estado: 7
+- puerta: 7
+
+--- Desglose por Vuelo (Top Activity) ---
+- Vuelo AF-021: 3 actualizaciones
+- Vuelo LA-500: 5 actualizaciones
+- Vuelo DL-456: 1 actualizaciones
+- Vuelo AA-901: 4 actualizaciones
+- Vuelo SK-772: 1 actualizaciones
+
+--- Estado Final de Relojes Vectoriales ---
+- DL-456: map[A:0 B:0 C:1]
+- AA-901: map[A:1 B:1 C:2]
+- SK-772: map[A:0 B:0 C:1]
+- AF-021: map[A:1 B:1 C:1]
+- LA-500: map[A:3 B:0 C:2]
+
+--- Estadísticas de Clientes Monotonic Reads ---
+Cliente #1 (Anónimo):
+   - Total Consultas: 15
+   - Consultas Fallidas/Espera: 2
+   - Consultas Exitosas: 13
+--------------------------------------------------
